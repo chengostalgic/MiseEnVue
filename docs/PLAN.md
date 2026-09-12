@@ -46,6 +46,14 @@ detail behind this shape.
       "cuisine_tags": ["american", "asian-fusion"],
       "trend_score": 87.4,
       "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 342,
+        "by_source": { "reddit": 310, "google_trends": 32 },
+        "total_engagement": 48200,
+        "sentiment": { "positive": 0.81, "negative": 0.08, "neutral": 0.11 },
+        "negative_theme": "Cloyingly sweet when the honey is overdone."
+      },
       "why_trending": {
         "summary": "Short-form video driven; chili crisp crossover into bar food.",
         "drivers": ["visual sizzle shots", "cheap ingredient swap on existing wings"],
@@ -69,8 +77,27 @@ Part 1 stops at "what is trending and why." It does not reason about ingredients
 cost, or feasibility — those are Part 2's concerns, derivable from `name` and
 `aliases` without needing anything else from here.
 
+Three things carry the product, and each answers a different owner question:
+
+- **`name`** — what would go on the menu.
+- **`why_trending`** — why anyone cares, which is also the raw material for Part 3's
+  campaign angle.
+- **`metrics`** — the hard numbers behind the recommendation. `trend_score` alone is
+  an opaque composite nobody has reason to trust; "342 mentions in 7 days, 81%
+  positive" is what actually convinces someone to change a menu. The score
+  summarizes the evidence, it never replaces it.
+
+`negative_theme` is a string rather than just the `negative` percentage on purpose.
+A bare `0.18` is a dead end; "arrives soggy by delivery" tells the restaurant how to
+differentiate and hands Part 3 a campaign angle. Negative sentiment is a feature of
+the output, not a warning label on it.
+
 `evidence` is never dropped — the owner must be able to see the receipts behind a
 recommendation.
+
+A hand-written sample lives at `data/out/trends.json` (`_meta.fixture: true`) so
+Parts 2 and 3 can build against the real shape today. The pipeline overwrites that
+same path.
 
 ### Architecture
 
