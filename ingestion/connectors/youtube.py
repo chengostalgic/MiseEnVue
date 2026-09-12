@@ -62,10 +62,19 @@ class YouTubeConnector(Connector):
                     "q": query,
                     "part": "snippet",
                     "type": "video",
-                    "order": "viewCount",
                     "publishedAfter": published_after,
                     "maxResults": per_query,
                     "relevanceLanguage": "en",
+                    "regionCode": self.config.get("region", "US"),
+                    # Shorts are where the tag spam lives -- generic queries sorted
+                    # by view count return engagement bait with #viral #recipe
+                    # attached and no dish in them. Excluding short videos filters
+                    # nearly all of it. Verified against live results.
+                    "videoDuration": self.config.get("duration", "medium"),
+                    # Relevance, not viewCount, for the same reason: the highest
+                    # view counts belong to huge general channels, not to whoever
+                    # is actually cooking the trending dish.
+                    "order": self.config.get("order", "relevance"),
                 },
                 timeout=30,
             )

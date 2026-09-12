@@ -5,16 +5,27 @@
 
 youtube:
   # search.list costs 100 quota units per query against a 10,000/day budget, so
-  # keep this list short and broad. Everything else in the run is ~1 unit.
+  # this list is the main thing controlling burn rate. Everything else is ~1 unit.
+  #
+  # Queries are category-scoped on purpose, verified against live results:
+  #   - "viral <category> recipe" returns actual dishes, and the same dish
+  #     appearing across several creators is the trend signal we want.
+  #   - Abstract queries ("food trends 2026", "new restaurant dish") return
+  #     industry commentary, expo announcements, and travel guides. No dishes.
   queries:
-    - viral recipe
-    - trending food
-    - restaurant dish recipe
-    - food trend
-    - what to order
+    - viral chicken recipe
+    - viral pasta dish
+    - trending dessert recipe
+    - viral beef recipe
+    - viral seafood recipe
+    - trending appetizer recipe
   results_per_query: 25
   # Comments carry the sentiment signal; titles and descriptions are marketing.
   comments_per_video: 20
+  region: US
+  # "medium" excludes Shorts, which is where hashtag spam concentrates.
+  duration: medium
+  order: relevance
 
 google_trends:
   # Task #6. Terms are seeded from the dish names extraction finds, not hardcoded.

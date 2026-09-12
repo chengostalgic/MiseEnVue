@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,9 +27,26 @@ from ingestion.score import score_all
 
 CONFIG_PATH = Path("ingestion/config.yaml")
 OUT_PATH = Path("data/out/trends.json")
+ENV_PATH = Path(".env")
 
 # Add connectors here as they land. Order is display order only.
 CONNECTORS = [YouTubeConnector]
+
+
+def load_env(path: Path = ENV_PATH) -> None:
+    """Read KEY=value lines from .env into os.environ.
+
+    Hand-rolled rather than pulling in python-dotenv for six lines. Existing
+    environment variables win, so an inline override still works.
+    """
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
 def _is_hand_written(path: Path) -> bool:
@@ -42,6 +60,7 @@ def _is_hand_written(path: Path) -> bool:
 
 
 def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> int:
+    load_env()
     config = yaml.safe_load(CONFIG_PATH.read_text())
 
     print(f"Window: {since_days}d | offline: {offline}")
