@@ -6,25 +6,21 @@ import TrendPipeline from "@/components/TrendPipeline";
 import OpportunityMatrix from "@/components/OpportunityMatrix";
 import CsvStudio from "@/components/CsvStudio";
 import { getSupabaseClient } from "@/lib/supabase";
-import type { OpportunityCard } from "@/lib/opportunities";
-import { FileSpreadsheet, Radio, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { FileSpreadsheet, Sparkles, TrendingUp, Zap } from "lucide-react";
 
 type View = "pipeline" | "opportunities" | "csv";
 
 export default function ProductShell({
   session,
   restaurantName,
+  restaurantCity,
 }: {
   session: Session;
   restaurantName?: string | null;
+  restaurantCity?: string | null;
 }) {
   const [currentView, setCurrentView] = useState<View>("opportunities");
-  const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityCard | null>(null);
-
-  function handleSelectForCampaign(opportunity: OpportunityCard) {
-    setSelectedOpportunity(opportunity);
-    setCurrentView("pipeline");
-  }
+  const location = [restaurantName, restaurantCity].filter(Boolean).join(" · ");
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
@@ -39,7 +35,7 @@ export default function ProductShell({
                 <span className="font-extrabold tracking-tight text-white text-lg">MiseEnVue</span>
               </div>
               <div className="text-[11px] text-neutral-400 truncate">
-                {restaurantName || session.user.email}
+                {location || session.user.email}
               </div>
             </div>
           </div>
@@ -80,38 +76,20 @@ export default function ProductShell({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 font-mono text-[11px]">
-              <Radio className="w-3 h-3 animate-pulse text-emerald-400" />
-              Live
-            </span>
-            <button
-              type="button"
-              className="text-xs font-semibold text-neutral-300 border border-neutral-800 rounded-lg px-2.5 py-1 hover:bg-neutral-800"
-              onClick={() => getSupabaseClient().auth.signOut()}
-            >
-              Sign out
-            </button>
-          </div>
+          <button
+            type="button"
+            className="text-xs font-semibold text-neutral-300 border border-neutral-800 rounded-lg px-2.5 py-1 hover:bg-neutral-800"
+            onClick={() => getSupabaseClient().auth.signOut()}
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
-        {currentView === "opportunities" && (
-          <OpportunityMatrix onSelectForCampaign={handleSelectForCampaign} />
-        )}
-        {currentView === "pipeline" && (
-          <TrendPipeline initialTopic={selectedOpportunity?.dishName} />
-        )}
-        {currentView === "csv" && (
-          <CsvStudio
-            currentTrendingDish={
-              selectedOpportunity
-                ? { name: selectedOpportunity.dishName }
-                : undefined
-            }
-          />
-        )}
+        {currentView === "opportunities" && <OpportunityMatrix />}
+        {currentView === "pipeline" && <TrendPipeline />}
+        {currentView === "csv" && <CsvStudio />}
       </main>
     </div>
   );

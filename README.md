@@ -17,7 +17,10 @@ npm install
 npm run dev
 ```
 
-Sign in as `owner@miseenvue.test` / `password123` to see seeded Ember & Rye opportunities.
+Sign in as `owner@miseenvue.test` / `password123` for Ember & Rye (full loop), or
+`owner3@miseenvue.test` / `password123` for Night Owl Noodles (menu only, no sales).
+
+Upload-shaped fixtures live in `data/fixtures/`.
 
 ```bash
 cd agent

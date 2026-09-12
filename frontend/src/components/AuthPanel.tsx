@@ -73,7 +73,10 @@ export default function AuthPanel({
         <div className="eyebrow">MiseEnVue</div>
         <h1>Sign in to your restaurant</h1>
         <p className="intro">
-          Seed demo: <code>owner@miseenvue.test</code> / <code>password123</code>
+          Ember & Rye: <code>owner@miseenvue.test</code> / <code>password123</code>
+          <br />
+          Night Owl (brief only): <code>owner3@miseenvue.test</code> /{" "}
+          <code>password123</code>
         </p>
 
         <div className="mode-switch" aria-label="Authentication mode">

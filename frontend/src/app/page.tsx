@@ -9,6 +9,7 @@ import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [restaurantCity, setRestaurantCity] = useState<string | null>(null);
   const [checking, setChecking] = useState(isSupabaseConfigured());
 
   useEffect(() => {
@@ -39,10 +40,11 @@ export default function Home() {
 
     void getSupabaseClient()
       .from("restaurants")
-      .select("name")
+      .select("name, city")
       .limit(1)
       .then(({ data }) => {
         setRestaurantName(data?.[0]?.name ?? null);
+        setRestaurantCity(data?.[0]?.city ?? null);
       });
   }, [session]);
 
@@ -58,5 +60,11 @@ export default function Home() {
     return <AuthPanel onSignedIn={setSession} />;
   }
 
-  return <ProductShell session={session} restaurantName={restaurantName} />;
+  return (
+    <ProductShell
+      session={session}
+      restaurantName={restaurantName}
+      restaurantCity={restaurantCity}
+    />
+  );
 }

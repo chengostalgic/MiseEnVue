@@ -1,0 +1,723 @@
+menu_item,sold_at,quantity,revenue,channel
+Crispy Chicken Sandwich,2026-08-13T11:152:00-05:00,26,351.00,online
+Crispy Chicken Sandwich,2026-08-13T18:118:00-05:00,29,391.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-13T11:66:00-05:00,13,185.25,online
+Nashville Hot Chicken Sandwich,2026-08-13T18:144:00-05:00,19,270.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-13T11:101:00-05:00,11,129.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-13T18:133:00-05:00,14,164.50,in_store
+Classic Cheeseburger,2026-08-13T11:151:00-05:00,17,212.50,in_store
+Classic Cheeseburger,2026-08-13T18:48:00-05:00,16,200.00,in_store
+Smoked Brisket Sandwich,2026-08-13T11:19:00-05:00,7,112.00,online
+Smoked Brisket Sandwich,2026-08-13T18:28:00-05:00,9,144.00,in_store
+Loaded Waffle Fries,2026-08-13T11:04:00-05:00,13,107.25,online
+Loaded Waffle Fries,2026-08-13T18:150:00-05:00,23,189.75,in_store
+Buffalo Wings (8 pc),2026-08-13T11:88:00-05:00,12,156.00,in_store
+Buffalo Wings (8 pc),2026-08-13T18:60:00-05:00,14,182.00,in_store
+Street Corn Elote Cup,2026-08-13T11:07:00-05:00,6,39.00,doordash
+Street Corn Elote Cup,2026-08-13T18:67:00-05:00,9,58.50,in_store
+Kale Caesar Salad,2026-08-13T11:150:00-05:00,7,73.50,in_store
+Kale Caesar Salad,2026-08-13T18:158:00-05:00,8,84.00,doordash
+Matcha Latte,2026-08-13T11:84:00-05:00,10,57.50,in_store
+Matcha Latte,2026-08-13T18:03:00-05:00,9,51.75,doordash
+Horchata Cold Brew,2026-08-13T11:44:00-05:00,6,31.50,doordash
+Horchata Cold Brew,2026-08-13T18:04:00-05:00,7,36.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-13T11:07:00-05:00,10,37.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-13T18:115:00-05:00,16,60.00,in_store
+Crispy Chicken Sandwich,2026-08-14T11:93:00-05:00,29,391.50,in_store
+Crispy Chicken Sandwich,2026-08-14T18:06:00-05:00,28,378.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-14T11:143:00-05:00,20,285.00,doordash
+Nashville Hot Chicken Sandwich,2026-08-14T18:103:00-05:00,22,313.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-14T11:57:00-05:00,13,152.75,online
+Buttermilk Fried Chicken Tenders,2026-08-14T18:158:00-05:00,20,235.00,in_store
+Classic Cheeseburger,2026-08-14T11:44:00-05:00,17,212.50,in_store
+Classic Cheeseburger,2026-08-14T18:140:00-05:00,27,337.50,in_store
+Smoked Brisket Sandwich,2026-08-14T11:20:00-05:00,9,144.00,in_store
+Smoked Brisket Sandwich,2026-08-14T18:165:00-05:00,16,256.00,in_store
+Loaded Waffle Fries,2026-08-14T11:02:00-05:00,17,140.25,online
+Loaded Waffle Fries,2026-08-14T18:41:00-05:00,23,189.75,in_store
+Buffalo Wings (8 pc),2026-08-14T11:133:00-05:00,17,221.00,in_store
+Buffalo Wings (8 pc),2026-08-14T18:12:00-05:00,15,195.00,ubereats
+Street Corn Elote Cup,2026-08-14T11:156:00-05:00,12,78.00,doordash
+Street Corn Elote Cup,2026-08-14T18:150:00-05:00,14,91.00,in_store
+Kale Caesar Salad,2026-08-14T11:29:00-05:00,6,63.00,doordash
+Kale Caesar Salad,2026-08-14T18:147:00-05:00,11,115.50,in_store
+Matcha Latte,2026-08-14T11:71:00-05:00,12,69.00,online
+Matcha Latte,2026-08-14T18:10:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-08-14T11:91:00-05:00,9,47.25,online
+Horchata Cold Brew,2026-08-14T18:79:00-05:00,11,57.75,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-14T11:97:00-05:00,17,63.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-14T18:138:00-05:00,22,82.50,in_store
+Crispy Chicken Sandwich,2026-08-15T11:158:00-05:00,36,486.00,in_store
+Crispy Chicken Sandwich,2026-08-15T18:73:00-05:00,36,486.00,ubereats
+Nashville Hot Chicken Sandwich,2026-08-15T11:52:00-05:00,17,242.25,in_store
+Nashville Hot Chicken Sandwich,2026-08-15T18:56:00-05:00,21,299.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-15T11:04:00-05:00,11,129.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-15T18:151:00-05:00,21,246.75,ubereats
+Classic Cheeseburger,2026-08-15T11:117:00-05:00,22,275.00,in_store
+Classic Cheeseburger,2026-08-15T18:01:00-05:00,19,237.50,doordash
+Smoked Brisket Sandwich,2026-08-15T11:139:00-05:00,13,208.00,doordash
+Smoked Brisket Sandwich,2026-08-15T18:68:00-05:00,14,224.00,in_store
+Loaded Waffle Fries,2026-08-15T11:26:00-05:00,19,156.75,in_store
+Loaded Waffle Fries,2026-08-15T18:154:00-05:00,32,264.00,doordash
+Buffalo Wings (8 pc),2026-08-15T11:97:00-05:00,17,221.00,in_store
+Buffalo Wings (8 pc),2026-08-15T18:37:00-05:00,17,221.00,in_store
+Street Corn Elote Cup,2026-08-15T11:74:00-05:00,10,65.00,in_store
+Street Corn Elote Cup,2026-08-15T18:166:00-05:00,15,97.50,in_store
+Kale Caesar Salad,2026-08-15T11:87:00-05:00,8,84.00,doordash
+Kale Caesar Salad,2026-08-15T18:107:00-05:00,10,105.00,doordash
+Matcha Latte,2026-08-15T11:42:00-05:00,12,69.00,in_store
+Matcha Latte,2026-08-15T18:96:00-05:00,16,92.00,doordash
+Horchata Cold Brew,2026-08-15T11:37:00-05:00,9,47.25,in_store
+Horchata Cold Brew,2026-08-15T18:128:00-05:00,13,68.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-15T11:20:00-05:00,14,52.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-15T18:141:00-05:00,24,90.00,in_store
+Crispy Chicken Sandwich,2026-08-16T11:120:00-05:00,23,310.50,in_store
+Crispy Chicken Sandwich,2026-08-16T18:114:00-05:00,28,378.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-16T11:54:00-05:00,12,171.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-16T18:136:00-05:00,18,256.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-16T11:120:00-05:00,11,129.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-16T18:78:00-05:00,12,141.00,in_store
+Classic Cheeseburger,2026-08-16T11:08:00-05:00,11,137.50,in_store
+Classic Cheeseburger,2026-08-16T18:01:00-05:00,14,175.00,online
+Smoked Brisket Sandwich,2026-08-16T11:169:00-05:00,10,160.00,in_store
+Smoked Brisket Sandwich,2026-08-16T18:117:00-05:00,11,176.00,online
+Loaded Waffle Fries,2026-08-16T11:122:00-05:00,17,140.25,in_store
+Loaded Waffle Fries,2026-08-16T18:73:00-05:00,18,148.50,doordash
+Buffalo Wings (8 pc),2026-08-16T11:150:00-05:00,13,169.00,doordash
+Buffalo Wings (8 pc),2026-08-16T18:126:00-05:00,16,208.00,doordash
+Street Corn Elote Cup,2026-08-16T11:95:00-05:00,8,52.00,in_store
+Street Corn Elote Cup,2026-08-16T18:40:00-05:00,8,52.00,in_store
+Kale Caesar Salad,2026-08-16T11:105:00-05:00,6,63.00,online
+Kale Caesar Salad,2026-08-16T18:140:00-05:00,8,84.00,online
+Matcha Latte,2026-08-16T11:106:00-05:00,10,57.50,online
+Matcha Latte,2026-08-16T18:40:00-05:00,10,57.50,online
+Horchata Cold Brew,2026-08-16T11:56:00-05:00,6,31.50,ubereats
+Horchata Cold Brew,2026-08-16T18:55:00-05:00,8,42.00,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-16T11:116:00-05:00,13,48.75,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-16T18:59:00-05:00,14,52.50,in_store
+Crispy Chicken Sandwich,2026-08-17T11:103:00-05:00,18,243.00,doordash
+Crispy Chicken Sandwich,2026-08-17T18:151:00-05:00,24,324.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-17T11:00:00-05:00,8,114.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-17T18:49:00-05:00,11,156.75,online
+Buttermilk Fried Chicken Tenders,2026-08-17T11:19:00-05:00,7,82.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-17T18:80:00-05:00,10,117.50,online
+Classic Cheeseburger,2026-08-17T11:151:00-05:00,13,162.50,in_store
+Classic Cheeseburger,2026-08-17T18:118:00-05:00,15,187.50,in_store
+Smoked Brisket Sandwich,2026-08-17T11:45:00-05:00,6,96.00,in_store
+Smoked Brisket Sandwich,2026-08-17T18:107:00-05:00,9,144.00,ubereats
+Loaded Waffle Fries,2026-08-17T11:19:00-05:00,10,82.50,in_store
+Loaded Waffle Fries,2026-08-17T18:131:00-05:00,17,140.25,in_store
+Buffalo Wings (8 pc),2026-08-17T11:32:00-05:00,8,104.00,in_store
+Buffalo Wings (8 pc),2026-08-17T18:54:00-05:00,10,130.00,ubereats
+Street Corn Elote Cup,2026-08-17T11:165:00-05:00,7,45.50,in_store
+Street Corn Elote Cup,2026-08-17T18:152:00-05:00,8,52.00,in_store
+Kale Caesar Salad,2026-08-17T11:18:00-05:00,4,42.00,online
+Kale Caesar Salad,2026-08-17T18:16:00-05:00,4,42.00,in_store
+Matcha Latte,2026-08-17T11:91:00-05:00,8,46.00,in_store
+Matcha Latte,2026-08-17T18:13:00-05:00,7,40.25,in_store
+Horchata Cold Brew,2026-08-17T11:78:00-05:00,5,26.25,in_store
+Horchata Cold Brew,2026-08-17T18:23:00-05:00,6,31.50,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-17T11:59:00-05:00,9,33.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-17T18:89:00-05:00,12,45.00,in_store
+Crispy Chicken Sandwich,2026-08-18T11:107:00-05:00,19,256.50,in_store
+Crispy Chicken Sandwich,2026-08-18T18:45:00-05:00,19,256.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-18T11:30:00-05:00,9,128.25,in_store
+Nashville Hot Chicken Sandwich,2026-08-18T18:10:00-05:00,11,156.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-18T11:124:00-05:00,9,105.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-18T18:27:00-05:00,9,105.75,online
+Classic Cheeseburger,2026-08-18T11:111:00-05:00,13,162.50,in_store
+Classic Cheeseburger,2026-08-18T18:144:00-05:00,17,212.50,ubereats
+Smoked Brisket Sandwich,2026-08-18T11:87:00-05:00,7,112.00,online
+Smoked Brisket Sandwich,2026-08-18T18:130:00-05:00,10,160.00,in_store
+Loaded Waffle Fries,2026-08-18T11:56:00-05:00,12,99.00,online
+Loaded Waffle Fries,2026-08-18T18:144:00-05:00,19,156.75,online
+Buffalo Wings (8 pc),2026-08-18T11:24:00-05:00,8,104.00,ubereats
+Buffalo Wings (8 pc),2026-08-18T18:04:00-05:00,9,117.00,in_store
+Street Corn Elote Cup,2026-08-18T11:03:00-05:00,5,32.50,ubereats
+Street Corn Elote Cup,2026-08-18T18:73:00-05:00,7,45.50,in_store
+Kale Caesar Salad,2026-08-18T11:82:00-05:00,5,52.50,ubereats
+Kale Caesar Salad,2026-08-18T18:01:00-05:00,4,42.00,online
+Matcha Latte,2026-08-18T11:13:00-05:00,6,34.50,in_store
+Matcha Latte,2026-08-18T18:74:00-05:00,9,51.75,doordash
+Horchata Cold Brew,2026-08-18T11:37:00-05:00,5,26.25,doordash
+Horchata Cold Brew,2026-08-18T18:30:00-05:00,6,31.50,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-18T11:120:00-05:00,11,41.25,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-18T18:125:00-05:00,14,52.50,online
+Crispy Chicken Sandwich,2026-08-19T11:11:00-05:00,16,216.00,doordash
+Crispy Chicken Sandwich,2026-08-19T18:76:00-05:00,23,310.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-19T11:81:00-05:00,12,171.00,doordash
+Nashville Hot Chicken Sandwich,2026-08-19T18:76:00-05:00,14,199.50,online
+Buttermilk Fried Chicken Tenders,2026-08-19T11:69:00-05:00,9,105.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-19T18:85:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-08-19T11:103:00-05:00,14,175.00,ubereats
+Classic Cheeseburger,2026-08-19T18:39:00-05:00,14,175.00,in_store
+Smoked Brisket Sandwich,2026-08-19T11:156:00-05:00,9,144.00,online
+Smoked Brisket Sandwich,2026-08-19T18:134:00-05:00,10,160.00,in_store
+Loaded Waffle Fries,2026-08-19T11:113:00-05:00,15,123.75,ubereats
+Loaded Waffle Fries,2026-08-19T18:144:00-05:00,20,165.00,in_store
+Buffalo Wings (8 pc),2026-08-19T11:86:00-05:00,11,143.00,online
+Buffalo Wings (8 pc),2026-08-19T18:112:00-05:00,14,182.00,in_store
+Street Corn Elote Cup,2026-08-19T11:54:00-05:00,6,39.00,online
+Street Corn Elote Cup,2026-08-19T18:39:00-05:00,7,45.50,in_store
+Kale Caesar Salad,2026-08-19T11:145:00-05:00,6,63.00,in_store
+Kale Caesar Salad,2026-08-19T18:80:00-05:00,6,63.00,ubereats
+Matcha Latte,2026-08-19T11:116:00-05:00,9,51.75,online
+Matcha Latte,2026-08-19T18:76:00-05:00,10,57.50,online
+Horchata Cold Brew,2026-08-19T11:97:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-08-19T18:63:00-05:00,7,36.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-19T11:00:00-05:00,9,33.75,online
+Brown Butter Chocolate Chip Cookie,2026-08-19T18:50:00-05:00,12,45.00,in_store
+Crispy Chicken Sandwich,2026-08-20T11:87:00-05:00,22,297.00,online
+Crispy Chicken Sandwich,2026-08-20T18:91:00-05:00,27,364.50,online
+Nashville Hot Chicken Sandwich,2026-08-20T11:43:00-05:00,12,171.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-20T18:48:00-05:00,15,213.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-20T11:63:00-05:00,10,117.50,online
+Buttermilk Fried Chicken Tenders,2026-08-20T18:17:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-08-20T11:23:00-05:00,12,150.00,doordash
+Classic Cheeseburger,2026-08-20T18:125:00-05:00,20,250.00,ubereats
+Smoked Brisket Sandwich,2026-08-20T11:51:00-05:00,8,128.00,in_store
+Smoked Brisket Sandwich,2026-08-20T18:48:00-05:00,9,144.00,online
+Loaded Waffle Fries,2026-08-20T11:46:00-05:00,15,123.75,in_store
+Loaded Waffle Fries,2026-08-20T18:77:00-05:00,19,156.75,doordash
+Buffalo Wings (8 pc),2026-08-20T11:42:00-05:00,11,143.00,online
+Buffalo Wings (8 pc),2026-08-20T18:24:00-05:00,12,156.00,in_store
+Street Corn Elote Cup,2026-08-20T11:167:00-05:00,9,58.50,ubereats
+Street Corn Elote Cup,2026-08-20T18:23:00-05:00,8,52.00,in_store
+Kale Caesar Salad,2026-08-20T11:165:00-05:00,7,73.50,in_store
+Kale Caesar Salad,2026-08-20T18:64:00-05:00,7,73.50,in_store
+Matcha Latte,2026-08-20T11:112:00-05:00,10,57.50,in_store
+Matcha Latte,2026-08-20T18:90:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-08-20T11:84:00-05:00,7,36.75,online
+Horchata Cold Brew,2026-08-20T18:35:00-05:00,8,42.00,doordash
+Brown Butter Chocolate Chip Cookie,2026-08-20T11:72:00-05:00,12,45.00,online
+Brown Butter Chocolate Chip Cookie,2026-08-20T18:109:00-05:00,16,60.00,in_store
+Crispy Chicken Sandwich,2026-08-21T11:169:00-05:00,35,472.50,online
+Crispy Chicken Sandwich,2026-08-21T18:18:00-05:00,29,391.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-21T11:165:00-05:00,21,299.25,in_store
+Nashville Hot Chicken Sandwich,2026-08-21T18:163:00-05:00,26,370.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-21T11:59:00-05:00,13,152.75,online
+Buttermilk Fried Chicken Tenders,2026-08-21T18:91:00-05:00,17,199.75,in_store
+Classic Cheeseburger,2026-08-21T11:59:00-05:00,18,225.00,in_store
+Classic Cheeseburger,2026-08-21T18:42:00-05:00,21,262.50,in_store
+Smoked Brisket Sandwich,2026-08-21T11:129:00-05:00,12,192.00,online
+Smoked Brisket Sandwich,2026-08-21T18:09:00-05:00,11,176.00,online
+Loaded Waffle Fries,2026-08-21T11:07:00-05:00,17,140.25,in_store
+Loaded Waffle Fries,2026-08-21T18:157:00-05:00,31,255.75,online
+Buffalo Wings (8 pc),2026-08-21T11:93:00-05:00,16,208.00,in_store
+Buffalo Wings (8 pc),2026-08-21T18:118:00-05:00,21,273.00,online
+Street Corn Elote Cup,2026-08-21T11:106:00-05:00,10,65.00,in_store
+Street Corn Elote Cup,2026-08-21T18:58:00-05:00,11,71.50,in_store
+Kale Caesar Salad,2026-08-21T11:105:00-05:00,8,84.00,online
+Kale Caesar Salad,2026-08-21T18:80:00-05:00,9,94.50,doordash
+Matcha Latte,2026-08-21T11:131:00-05:00,14,80.50,in_store
+Matcha Latte,2026-08-21T18:48:00-05:00,14,80.50,in_store
+Horchata Cold Brew,2026-08-21T11:37:00-05:00,8,42.00,in_store
+Horchata Cold Brew,2026-08-21T18:134:00-05:00,13,68.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-21T11:74:00-05:00,16,60.00,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-21T18:162:00-05:00,24,90.00,online
+Crispy Chicken Sandwich,2026-08-22T11:162:00-05:00,36,486.00,ubereats
+Crispy Chicken Sandwich,2026-08-22T18:13:00-05:00,30,405.00,ubereats
+Nashville Hot Chicken Sandwich,2026-08-22T11:142:00-05:00,21,299.25,doordash
+Nashville Hot Chicken Sandwich,2026-08-22T18:48:00-05:00,20,285.00,online
+Buttermilk Fried Chicken Tenders,2026-08-22T11:117:00-05:00,16,188.00,in_store
+Buttermilk Fried Chicken Tenders,2026-08-22T18:61:00-05:00,16,188.00,in_store
+Classic Cheeseburger,2026-08-22T11:26:00-05:00,17,212.50,in_store
+Classic Cheeseburger,2026-08-22T18:15:00-05:00,20,250.00,doordash
+Smoked Brisket Sandwich,2026-08-22T11:164:00-05:00,14,224.00,doordash
+Smoked Brisket Sandwich,2026-08-22T18:19:00-05:00,12,192.00,doordash
+Loaded Waffle Fries,2026-08-22T11:130:00-05:00,25,206.25,online
+Loaded Waffle Fries,2026-08-22T18:135:00-05:00,31,255.75,in_store
+Buffalo Wings (8 pc),2026-08-22T11:75:00-05:00,16,208.00,in_store
+Buffalo Wings (8 pc),2026-08-22T18:01:00-05:00,16,208.00,doordash
+Street Corn Elote Cup,2026-08-22T11:137:00-05:00,12,78.00,in_store
+Street Corn Elote Cup,2026-08-22T18:162:00-05:00,15,97.50,ubereats
+Kale Caesar Salad,2026-08-22T11:46:00-05:00,7,73.50,in_store
+Kale Caesar Salad,2026-08-22T18:49:00-05:00,9,94.50,in_store
+Matcha Latte,2026-08-22T11:54:00-05:00,12,69.00,online
+Matcha Latte,2026-08-22T18:155:00-05:00,19,109.25,doordash
+Horchata Cold Brew,2026-08-22T11:38:00-05:00,9,47.25,in_store
+Horchata Cold Brew,2026-08-22T18:20:00-05:00,10,52.50,online
+Brown Butter Chocolate Chip Cookie,2026-08-22T11:10:00-05:00,14,52.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-22T18:79:00-05:00,20,75.00,in_store
+Crispy Chicken Sandwich,2026-08-23T11:134:00-05:00,24,324.00,in_store
+Crispy Chicken Sandwich,2026-08-23T18:37:00-05:00,23,310.50,online
+Nashville Hot Chicken Sandwich,2026-08-23T11:148:00-05:00,15,213.75,in_store
+Nashville Hot Chicken Sandwich,2026-08-23T18:19:00-05:00,13,185.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-23T11:70:00-05:00,10,117.50,doordash
+Buttermilk Fried Chicken Tenders,2026-08-23T18:34:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-08-23T11:106:00-05:00,15,187.50,in_store
+Classic Cheeseburger,2026-08-23T18:107:00-05:00,18,225.00,online
+Smoked Brisket Sandwich,2026-08-23T11:78:00-05:00,8,128.00,in_store
+Smoked Brisket Sandwich,2026-08-23T18:62:00-05:00,9,144.00,ubereats
+Loaded Waffle Fries,2026-08-23T11:27:00-05:00,13,107.25,in_store
+Loaded Waffle Fries,2026-08-23T18:63:00-05:00,18,148.50,in_store
+Buffalo Wings (8 pc),2026-08-23T11:14:00-05:00,9,117.00,online
+Buffalo Wings (8 pc),2026-08-23T18:99:00-05:00,15,195.00,in_store
+Street Corn Elote Cup,2026-08-23T11:83:00-05:00,7,45.50,doordash
+Street Corn Elote Cup,2026-08-23T18:25:00-05:00,8,52.00,in_store
+Kale Caesar Salad,2026-08-23T11:169:00-05:00,7,73.50,doordash
+Kale Caesar Salad,2026-08-23T18:12:00-05:00,5,52.50,in_store
+Matcha Latte,2026-08-23T11:28:00-05:00,8,46.00,in_store
+Matcha Latte,2026-08-23T18:78:00-05:00,11,63.25,in_store
+Horchata Cold Brew,2026-08-23T11:162:00-05:00,8,42.00,doordash
+Horchata Cold Brew,2026-08-23T18:166:00-05:00,10,52.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-23T11:21:00-05:00,10,37.50,online
+Brown Butter Chocolate Chip Cookie,2026-08-23T18:163:00-05:00,18,67.50,in_store
+Crispy Chicken Sandwich,2026-08-24T11:156:00-05:00,20,270.00,in_store
+Crispy Chicken Sandwich,2026-08-24T18:165:00-05:00,25,337.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-24T11:06:00-05:00,8,114.00,doordash
+Nashville Hot Chicken Sandwich,2026-08-24T18:06:00-05:00,10,142.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-24T11:96:00-05:00,8,94.00,in_store
+Buttermilk Fried Chicken Tenders,2026-08-24T18:94:00-05:00,10,117.50,ubereats
+Classic Cheeseburger,2026-08-24T11:97:00-05:00,12,150.00,online
+Classic Cheeseburger,2026-08-24T18:115:00-05:00,15,187.50,in_store
+Smoked Brisket Sandwich,2026-08-24T11:22:00-05:00,6,96.00,doordash
+Smoked Brisket Sandwich,2026-08-24T18:120:00-05:00,9,144.00,online
+Loaded Waffle Fries,2026-08-24T11:151:00-05:00,15,123.75,in_store
+Loaded Waffle Fries,2026-08-24T18:57:00-05:00,14,115.50,in_store
+Buffalo Wings (8 pc),2026-08-24T11:45:00-05:00,8,104.00,online
+Buffalo Wings (8 pc),2026-08-24T18:157:00-05:00,13,169.00,in_store
+Street Corn Elote Cup,2026-08-24T11:22:00-05:00,5,32.50,online
+Street Corn Elote Cup,2026-08-24T18:09:00-05:00,6,39.00,online
+Kale Caesar Salad,2026-08-24T11:57:00-05:00,4,42.00,doordash
+Kale Caesar Salad,2026-08-24T18:67:00-05:00,5,52.50,in_store
+Matcha Latte,2026-08-24T11:102:00-05:00,8,46.00,in_store
+Matcha Latte,2026-08-24T18:137:00-05:00,10,57.50,in_store
+Horchata Cold Brew,2026-08-24T11:99:00-05:00,6,31.50,doordash
+Horchata Cold Brew,2026-08-24T18:156:00-05:00,8,42.00,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-24T11:05:00-05:00,8,30.00,doordash
+Brown Butter Chocolate Chip Cookie,2026-08-24T18:64:00-05:00,11,41.25,doordash
+Crispy Chicken Sandwich,2026-08-25T11:61:00-05:00,17,229.50,online
+Crispy Chicken Sandwich,2026-08-25T18:115:00-05:00,23,310.50,doordash
+Nashville Hot Chicken Sandwich,2026-08-25T11:24:00-05:00,9,128.25,online
+Nashville Hot Chicken Sandwich,2026-08-25T18:75:00-05:00,13,185.25,online
+Buttermilk Fried Chicken Tenders,2026-08-25T11:150:00-05:00,10,117.50,online
+Buttermilk Fried Chicken Tenders,2026-08-25T18:113:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-08-25T11:16:00-05:00,10,125.00,in_store
+Classic Cheeseburger,2026-08-25T18:151:00-05:00,17,212.50,ubereats
+Smoked Brisket Sandwich,2026-08-25T11:17:00-05:00,6,96.00,ubereats
+Smoked Brisket Sandwich,2026-08-25T18:80:00-05:00,8,128.00,in_store
+Loaded Waffle Fries,2026-08-25T11:149:00-05:00,15,123.75,in_store
+Loaded Waffle Fries,2026-08-25T18:40:00-05:00,14,115.50,online
+Buffalo Wings (8 pc),2026-08-25T11:150:00-05:00,11,143.00,in_store
+Buffalo Wings (8 pc),2026-08-25T18:31:00-05:00,10,130.00,online
+Street Corn Elote Cup,2026-08-25T11:35:00-05:00,5,32.50,in_store
+Street Corn Elote Cup,2026-08-25T18:159:00-05:00,9,58.50,in_store
+Kale Caesar Salad,2026-08-25T11:54:00-05:00,4,42.00,online
+Kale Caesar Salad,2026-08-25T18:17:00-05:00,5,52.50,in_store
+Matcha Latte,2026-08-25T11:156:00-05:00,9,51.75,in_store
+Matcha Latte,2026-08-25T18:79:00-05:00,9,51.75,doordash
+Horchata Cold Brew,2026-08-25T11:68:00-05:00,6,31.50,in_store
+Horchata Cold Brew,2026-08-25T18:43:00-05:00,6,31.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-25T11:105:00-05:00,11,41.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-25T18:11:00-05:00,10,37.50,doordash
+Crispy Chicken Sandwich,2026-08-26T11:71:00-05:00,19,256.50,doordash
+Crispy Chicken Sandwich,2026-08-26T18:136:00-05:00,27,364.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-26T11:17:00-05:00,10,142.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-26T18:59:00-05:00,14,199.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-26T11:107:00-05:00,10,117.50,in_store
+Buttermilk Fried Chicken Tenders,2026-08-26T18:111:00-05:00,12,141.00,in_store
+Classic Cheeseburger,2026-08-26T11:52:00-05:00,12,150.00,online
+Classic Cheeseburger,2026-08-26T18:90:00-05:00,16,200.00,in_store
+Smoked Brisket Sandwich,2026-08-26T11:12:00-05:00,6,96.00,in_store
+Smoked Brisket Sandwich,2026-08-26T18:56:00-05:00,9,144.00,in_store
+Loaded Waffle Fries,2026-08-26T11:06:00-05:00,11,90.75,in_store
+Loaded Waffle Fries,2026-08-26T18:06:00-05:00,14,115.50,in_store
+Buffalo Wings (8 pc),2026-08-26T11:52:00-05:00,10,130.00,in_store
+Buffalo Wings (8 pc),2026-08-26T18:53:00-05:00,12,156.00,in_store
+Street Corn Elote Cup,2026-08-26T11:82:00-05:00,7,45.50,doordash
+Street Corn Elote Cup,2026-08-26T18:148:00-05:00,10,65.00,doordash
+Kale Caesar Salad,2026-08-26T11:139:00-05:00,6,63.00,doordash
+Kale Caesar Salad,2026-08-26T18:142:00-05:00,7,73.50,in_store
+Matcha Latte,2026-08-26T11:150:00-05:00,10,57.50,in_store
+Matcha Latte,2026-08-26T18:28:00-05:00,9,51.75,doordash
+Horchata Cold Brew,2026-08-26T11:94:00-05:00,6,31.50,ubereats
+Horchata Cold Brew,2026-08-26T18:25:00-05:00,7,36.75,online
+Brown Butter Chocolate Chip Cookie,2026-08-26T11:163:00-05:00,13,48.75,online
+Brown Butter Chocolate Chip Cookie,2026-08-26T18:79:00-05:00,13,48.75,in_store
+Crispy Chicken Sandwich,2026-08-27T11:08:00-05:00,18,243.00,in_store
+Crispy Chicken Sandwich,2026-08-27T18:82:00-05:00,27,364.50,ubereats
+Nashville Hot Chicken Sandwich,2026-08-27T11:134:00-05:00,15,213.75,ubereats
+Nashville Hot Chicken Sandwich,2026-08-27T18:110:00-05:00,17,242.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-27T11:120:00-05:00,11,129.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-27T18:166:00-05:00,16,188.00,online
+Classic Cheeseburger,2026-08-27T11:82:00-05:00,15,187.50,doordash
+Classic Cheeseburger,2026-08-27T18:160:00-05:00,22,275.00,online
+Smoked Brisket Sandwich,2026-08-27T11:97:00-05:00,9,144.00,in_store
+Smoked Brisket Sandwich,2026-08-27T18:130:00-05:00,12,192.00,in_store
+Loaded Waffle Fries,2026-08-27T11:88:00-05:00,16,132.00,doordash
+Loaded Waffle Fries,2026-08-27T18:23:00-05:00,17,140.25,in_store
+Buffalo Wings (8 pc),2026-08-27T11:85:00-05:00,12,156.00,in_store
+Buffalo Wings (8 pc),2026-08-27T18:159:00-05:00,17,221.00,online
+Street Corn Elote Cup,2026-08-27T11:142:00-05:00,9,58.50,online
+Street Corn Elote Cup,2026-08-27T18:156:00-05:00,11,71.50,in_store
+Kale Caesar Salad,2026-08-27T11:78:00-05:00,6,63.00,ubereats
+Kale Caesar Salad,2026-08-27T18:103:00-05:00,7,73.50,online
+Matcha Latte,2026-08-27T11:28:00-05:00,8,46.00,online
+Matcha Latte,2026-08-27T18:26:00-05:00,10,57.50,ubereats
+Horchata Cold Brew,2026-08-27T11:95:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-08-27T18:108:00-05:00,9,47.25,online
+Brown Butter Chocolate Chip Cookie,2026-08-27T11:144:00-05:00,14,52.50,online
+Brown Butter Chocolate Chip Cookie,2026-08-27T18:151:00-05:00,18,67.50,doordash
+Crispy Chicken Sandwich,2026-08-28T11:135:00-05:00,32,432.00,online
+Crispy Chicken Sandwich,2026-08-28T18:03:00-05:00,28,378.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-28T11:160:00-05:00,21,299.25,in_store
+Nashville Hot Chicken Sandwich,2026-08-28T18:55:00-05:00,20,285.00,ubereats
+Buttermilk Fried Chicken Tenders,2026-08-28T11:120:00-05:00,15,176.25,in_store
+Buttermilk Fried Chicken Tenders,2026-08-28T18:111:00-05:00,18,211.50,in_store
+Classic Cheeseburger,2026-08-28T11:51:00-05:00,18,225.00,in_store
+Classic Cheeseburger,2026-08-28T18:55:00-05:00,22,275.00,in_store
+Smoked Brisket Sandwich,2026-08-28T11:148:00-05:00,13,208.00,ubereats
+Smoked Brisket Sandwich,2026-08-28T18:142:00-05:00,16,256.00,in_store
+Loaded Waffle Fries,2026-08-28T11:134:00-05:00,24,198.00,ubereats
+Loaded Waffle Fries,2026-08-28T18:153:00-05:00,30,247.50,in_store
+Buffalo Wings (8 pc),2026-08-28T11:157:00-05:00,18,234.00,in_store
+Buffalo Wings (8 pc),2026-08-28T18:05:00-05:00,15,195.00,in_store
+Street Corn Elote Cup,2026-08-28T11:112:00-05:00,11,71.50,in_store
+Street Corn Elote Cup,2026-08-28T18:142:00-05:00,14,91.00,in_store
+Kale Caesar Salad,2026-08-28T11:140:00-05:00,9,94.50,in_store
+Kale Caesar Salad,2026-08-28T18:106:00-05:00,10,105.00,in_store
+Matcha Latte,2026-08-28T11:111:00-05:00,13,74.75,in_store
+Matcha Latte,2026-08-28T18:93:00-05:00,16,92.00,doordash
+Horchata Cold Brew,2026-08-28T11:05:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-08-28T18:89:00-05:00,11,57.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-28T11:75:00-05:00,16,60.00,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-28T18:87:00-05:00,20,75.00,online
+Crispy Chicken Sandwich,2026-08-29T11:69:00-05:00,29,391.50,in_store
+Crispy Chicken Sandwich,2026-08-29T18:42:00-05:00,33,445.50,doordash
+Nashville Hot Chicken Sandwich,2026-08-29T11:73:00-05:00,18,256.50,ubereats
+Nashville Hot Chicken Sandwich,2026-08-29T18:29:00-05:00,19,270.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-29T11:20:00-05:00,12,141.00,in_store
+Buttermilk Fried Chicken Tenders,2026-08-29T18:06:00-05:00,14,164.50,in_store
+Classic Cheeseburger,2026-08-29T11:129:00-05:00,23,287.50,in_store
+Classic Cheeseburger,2026-08-29T18:44:00-05:00,22,275.00,in_store
+Smoked Brisket Sandwich,2026-08-29T11:87:00-05:00,12,192.00,in_store
+Smoked Brisket Sandwich,2026-08-29T18:163:00-05:00,17,272.00,doordash
+Loaded Waffle Fries,2026-08-29T11:167:00-05:00,27,222.75,in_store
+Loaded Waffle Fries,2026-08-29T18:26:00-05:00,23,189.75,in_store
+Buffalo Wings (8 pc),2026-08-29T11:45:00-05:00,15,195.00,doordash
+Buffalo Wings (8 pc),2026-08-29T18:32:00-05:00,17,221.00,in_store
+Street Corn Elote Cup,2026-08-29T11:167:00-05:00,13,84.50,online
+Street Corn Elote Cup,2026-08-29T18:106:00-05:00,13,84.50,in_store
+Kale Caesar Salad,2026-08-29T11:91:00-05:00,8,84.00,doordash
+Kale Caesar Salad,2026-08-29T18:162:00-05:00,11,115.50,in_store
+Matcha Latte,2026-08-29T11:142:00-05:00,15,86.25,in_store
+Matcha Latte,2026-08-29T18:34:00-05:00,14,80.50,doordash
+Horchata Cold Brew,2026-08-29T11:105:00-05:00,10,52.50,ubereats
+Horchata Cold Brew,2026-08-29T18:08:00-05:00,10,52.50,ubereats
+Brown Butter Chocolate Chip Cookie,2026-08-29T11:33:00-05:00,15,56.25,doordash
+Brown Butter Chocolate Chip Cookie,2026-08-29T18:01:00-05:00,16,60.00,online
+Crispy Chicken Sandwich,2026-08-30T11:50:00-05:00,19,256.50,ubereats
+Crispy Chicken Sandwich,2026-08-30T18:13:00-05:00,21,283.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-30T11:39:00-05:00,11,156.75,in_store
+Nashville Hot Chicken Sandwich,2026-08-30T18:06:00-05:00,12,171.00,in_store
+Buttermilk Fried Chicken Tenders,2026-08-30T11:06:00-05:00,8,94.00,ubereats
+Buttermilk Fried Chicken Tenders,2026-08-30T18:40:00-05:00,11,129.25,doordash
+Classic Cheeseburger,2026-08-30T11:53:00-05:00,13,162.50,in_store
+Classic Cheeseburger,2026-08-30T18:86:00-05:00,17,212.50,in_store
+Smoked Brisket Sandwich,2026-08-30T11:167:00-05:00,10,160.00,in_store
+Smoked Brisket Sandwich,2026-08-30T18:122:00-05:00,11,176.00,in_store
+Loaded Waffle Fries,2026-08-30T11:110:00-05:00,17,140.25,in_store
+Loaded Waffle Fries,2026-08-30T18:153:00-05:00,22,181.50,in_store
+Buffalo Wings (8 pc),2026-08-30T11:116:00-05:00,12,156.00,online
+Buffalo Wings (8 pc),2026-08-30T18:20:00-05:00,12,156.00,in_store
+Street Corn Elote Cup,2026-08-30T11:69:00-05:00,7,45.50,in_store
+Street Corn Elote Cup,2026-08-30T18:134:00-05:00,10,65.00,online
+Kale Caesar Salad,2026-08-30T11:159:00-05:00,7,73.50,in_store
+Kale Caesar Salad,2026-08-30T18:38:00-05:00,6,63.00,in_store
+Matcha Latte,2026-08-30T11:06:00-05:00,7,40.25,in_store
+Matcha Latte,2026-08-30T18:149:00-05:00,13,74.75,in_store
+Horchata Cold Brew,2026-08-30T11:146:00-05:00,8,42.00,in_store
+Horchata Cold Brew,2026-08-30T18:63:00-05:00,8,42.00,online
+Brown Butter Chocolate Chip Cookie,2026-08-30T11:133:00-05:00,13,48.75,online
+Brown Butter Chocolate Chip Cookie,2026-08-30T18:47:00-05:00,13,48.75,in_store
+Crispy Chicken Sandwich,2026-08-31T11:04:00-05:00,13,175.50,doordash
+Crispy Chicken Sandwich,2026-08-31T18:165:00-05:00,25,337.50,in_store
+Nashville Hot Chicken Sandwich,2026-08-31T11:138:00-05:00,12,171.00,in_store
+Nashville Hot Chicken Sandwich,2026-08-31T18:153:00-05:00,15,213.75,in_store
+Buttermilk Fried Chicken Tenders,2026-08-31T11:90:00-05:00,8,94.00,in_store
+Buttermilk Fried Chicken Tenders,2026-08-31T18:94:00-05:00,10,117.50,in_store
+Classic Cheeseburger,2026-08-31T11:30:00-05:00,10,125.00,in_store
+Classic Cheeseburger,2026-08-31T18:48:00-05:00,13,162.50,in_store
+Smoked Brisket Sandwich,2026-08-31T11:50:00-05:00,6,96.00,in_store
+Smoked Brisket Sandwich,2026-08-31T18:163:00-05:00,10,160.00,in_store
+Loaded Waffle Fries,2026-08-31T11:76:00-05:00,12,99.00,online
+Loaded Waffle Fries,2026-08-31T18:135:00-05:00,17,140.25,doordash
+Buffalo Wings (8 pc),2026-08-31T11:72:00-05:00,9,117.00,online
+Buffalo Wings (8 pc),2026-08-31T18:46:00-05:00,10,130.00,in_store
+Street Corn Elote Cup,2026-08-31T11:22:00-05:00,5,32.50,in_store
+Street Corn Elote Cup,2026-08-31T18:163:00-05:00,9,58.50,in_store
+Kale Caesar Salad,2026-08-31T11:152:00-05:00,5,52.50,online
+Kale Caesar Salad,2026-08-31T18:86:00-05:00,5,52.50,online
+Matcha Latte,2026-08-31T11:81:00-05:00,7,40.25,online
+Matcha Latte,2026-08-31T18:113:00-05:00,10,57.50,in_store
+Horchata Cold Brew,2026-08-31T11:106:00-05:00,6,31.50,online
+Horchata Cold Brew,2026-08-31T18:54:00-05:00,6,31.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-31T11:162:00-05:00,11,41.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-08-31T18:98:00-05:00,12,45.00,doordash
+Crispy Chicken Sandwich,2026-09-01T11:14:00-05:00,15,202.50,in_store
+Crispy Chicken Sandwich,2026-09-01T18:157:00-05:00,26,351.00,doordash
+Nashville Hot Chicken Sandwich,2026-09-01T11:51:00-05:00,10,142.50,online
+Nashville Hot Chicken Sandwich,2026-09-01T18:167:00-05:00,16,228.00,in_store
+Buttermilk Fried Chicken Tenders,2026-09-01T11:54:00-05:00,8,94.00,online
+Buttermilk Fried Chicken Tenders,2026-09-01T18:98:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-09-01T11:32:00-05:00,10,125.00,in_store
+Classic Cheeseburger,2026-09-01T18:151:00-05:00,17,212.50,doordash
+Smoked Brisket Sandwich,2026-09-01T11:34:00-05:00,6,96.00,doordash
+Smoked Brisket Sandwich,2026-09-01T18:28:00-05:00,7,112.00,in_store
+Loaded Waffle Fries,2026-09-01T11:07:00-05:00,10,82.50,in_store
+Loaded Waffle Fries,2026-09-01T18:25:00-05:00,14,115.50,online
+Buffalo Wings (8 pc),2026-09-01T11:83:00-05:00,10,130.00,doordash
+Buffalo Wings (8 pc),2026-09-01T18:128:00-05:00,13,169.00,in_store
+Street Corn Elote Cup,2026-09-01T11:36:00-05:00,5,32.50,in_store
+Street Corn Elote Cup,2026-09-01T18:84:00-05:00,8,52.00,in_store
+Kale Caesar Salad,2026-09-01T11:151:00-05:00,5,52.50,doordash
+Kale Caesar Salad,2026-09-01T18:02:00-05:00,4,42.00,online
+Matcha Latte,2026-09-01T11:149:00-05:00,9,51.75,doordash
+Matcha Latte,2026-09-01T18:145:00-05:00,11,63.25,ubereats
+Horchata Cold Brew,2026-09-01T11:139:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-09-01T18:66:00-05:00,7,36.75,ubereats
+Brown Butter Chocolate Chip Cookie,2026-09-01T11:61:00-05:00,9,33.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-01T18:16:00-05:00,10,37.50,in_store
+Crispy Chicken Sandwich,2026-09-02T11:48:00-05:00,18,243.00,in_store
+Crispy Chicken Sandwich,2026-09-02T18:112:00-05:00,25,337.50,online
+Nashville Hot Chicken Sandwich,2026-09-02T11:89:00-05:00,12,171.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-02T18:149:00-05:00,17,242.25,doordash
+Buttermilk Fried Chicken Tenders,2026-09-02T11:127:00-05:00,10,117.50,online
+Buttermilk Fried Chicken Tenders,2026-09-02T18:103:00-05:00,12,141.00,in_store
+Classic Cheeseburger,2026-09-02T11:35:00-05:00,11,137.50,in_store
+Classic Cheeseburger,2026-09-02T18:163:00-05:00,19,237.50,online
+Smoked Brisket Sandwich,2026-09-02T11:73:00-05:00,7,112.00,online
+Smoked Brisket Sandwich,2026-09-02T18:99:00-05:00,10,160.00,online
+Loaded Waffle Fries,2026-09-02T11:109:00-05:00,15,123.75,ubereats
+Loaded Waffle Fries,2026-09-02T18:70:00-05:00,17,140.25,ubereats
+Buffalo Wings (8 pc),2026-09-02T11:29:00-05:00,9,117.00,in_store
+Buffalo Wings (8 pc),2026-09-02T18:32:00-05:00,11,143.00,in_store
+Street Corn Elote Cup,2026-09-02T11:146:00-05:00,8,52.00,doordash
+Street Corn Elote Cup,2026-09-02T18:131:00-05:00,9,58.50,doordash
+Kale Caesar Salad,2026-09-02T11:35:00-05:00,4,42.00,doordash
+Kale Caesar Salad,2026-09-02T18:28:00-05:00,5,52.50,in_store
+Matcha Latte,2026-09-02T11:130:00-05:00,9,51.75,online
+Matcha Latte,2026-09-02T18:114:00-05:00,11,63.25,doordash
+Horchata Cold Brew,2026-09-02T11:97:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-09-02T18:149:00-05:00,9,47.25,online
+Brown Butter Chocolate Chip Cookie,2026-09-02T11:131:00-05:00,12,45.00,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-02T18:27:00-05:00,11,41.25,in_store
+Crispy Chicken Sandwich,2026-09-03T11:40:00-05:00,19,256.50,ubereats
+Crispy Chicken Sandwich,2026-09-03T18:152:00-05:00,32,432.00,doordash
+Nashville Hot Chicken Sandwich,2026-09-03T11:69:00-05:00,13,185.25,ubereats
+Nashville Hot Chicken Sandwich,2026-09-03T18:16:00-05:00,13,185.25,doordash
+Buttermilk Fried Chicken Tenders,2026-09-03T11:15:00-05:00,9,105.75,doordash
+Buttermilk Fried Chicken Tenders,2026-09-03T18:129:00-05:00,14,164.50,in_store
+Classic Cheeseburger,2026-09-03T11:86:00-05:00,15,187.50,in_store
+Classic Cheeseburger,2026-09-03T18:36:00-05:00,16,200.00,in_store
+Smoked Brisket Sandwich,2026-09-03T11:152:00-05:00,10,160.00,online
+Smoked Brisket Sandwich,2026-09-03T18:159:00-05:00,12,192.00,in_store
+Loaded Waffle Fries,2026-09-03T11:91:00-05:00,16,132.00,online
+Loaded Waffle Fries,2026-09-03T18:132:00-05:00,22,181.50,in_store
+Buffalo Wings (8 pc),2026-09-03T11:32:00-05:00,10,130.00,ubereats
+Buffalo Wings (8 pc),2026-09-03T18:27:00-05:00,12,156.00,doordash
+Street Corn Elote Cup,2026-09-03T11:126:00-05:00,8,52.00,in_store
+Street Corn Elote Cup,2026-09-03T18:111:00-05:00,10,65.00,in_store
+Kale Caesar Salad,2026-09-03T11:170:00-05:00,7,73.50,doordash
+Kale Caesar Salad,2026-09-03T18:97:00-05:00,7,73.50,ubereats
+Matcha Latte,2026-09-03T11:152:00-05:00,11,63.25,doordash
+Matcha Latte,2026-09-03T18:86:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-09-03T11:139:00-05:00,8,42.00,in_store
+Horchata Cold Brew,2026-09-03T18:148:00-05:00,10,52.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-03T11:54:00-05:00,11,41.25,doordash
+Brown Butter Chocolate Chip Cookie,2026-09-03T18:62:00-05:00,14,52.50,ubereats
+Crispy Chicken Sandwich,2026-09-04T11:35:00-05:00,25,337.50,in_store
+Crispy Chicken Sandwich,2026-09-04T18:119:00-05:00,38,513.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-04T11:12:00-05:00,14,199.50,ubereats
+Nashville Hot Chicken Sandwich,2026-09-04T18:14:00-05:00,17,242.25,doordash
+Buttermilk Fried Chicken Tenders,2026-09-04T11:47:00-05:00,12,141.00,online
+Buttermilk Fried Chicken Tenders,2026-09-04T18:33:00-05:00,14,164.50,doordash
+Classic Cheeseburger,2026-09-04T11:44:00-05:00,17,212.50,online
+Classic Cheeseburger,2026-09-04T18:42:00-05:00,21,262.50,in_store
+Smoked Brisket Sandwich,2026-09-04T11:06:00-05:00,9,144.00,in_store
+Smoked Brisket Sandwich,2026-09-04T18:157:00-05:00,16,256.00,doordash
+Loaded Waffle Fries,2026-09-04T11:132:00-05:00,24,198.00,in_store
+Loaded Waffle Fries,2026-09-04T18:111:00-05:00,28,231.00,in_store
+Buffalo Wings (8 pc),2026-09-04T11:87:00-05:00,16,208.00,doordash
+Buffalo Wings (8 pc),2026-09-04T18:25:00-05:00,16,208.00,in_store
+Street Corn Elote Cup,2026-09-04T11:104:00-05:00,10,65.00,ubereats
+Street Corn Elote Cup,2026-09-04T18:78:00-05:00,12,78.00,in_store
+Kale Caesar Salad,2026-09-04T11:106:00-05:00,8,84.00,online
+Kale Caesar Salad,2026-09-04T18:93:00-05:00,9,94.50,in_store
+Matcha Latte,2026-09-04T11:74:00-05:00,12,69.00,online
+Matcha Latte,2026-09-04T18:07:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-09-04T11:09:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-09-04T18:78:00-05:00,11,57.75,online
+Brown Butter Chocolate Chip Cookie,2026-09-04T11:165:00-05:00,19,71.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-04T18:133:00-05:00,22,82.50,online
+Crispy Chicken Sandwich,2026-09-05T11:86:00-05:00,30,405.00,in_store
+Crispy Chicken Sandwich,2026-09-05T18:115:00-05:00,40,540.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-05T11:118:00-05:00,20,285.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-05T18:138:00-05:00,25,356.25,in_store
+Buttermilk Fried Chicken Tenders,2026-09-05T11:112:00-05:00,15,176.25,in_store
+Buttermilk Fried Chicken Tenders,2026-09-05T18:15:00-05:00,14,164.50,in_store
+Classic Cheeseburger,2026-09-05T11:69:00-05:00,19,237.50,doordash
+Classic Cheeseburger,2026-09-05T18:63:00-05:00,23,287.50,in_store
+Smoked Brisket Sandwich,2026-09-05T11:130:00-05:00,13,208.00,in_store
+Smoked Brisket Sandwich,2026-09-05T18:27:00-05:00,12,192.00,doordash
+Loaded Waffle Fries,2026-09-05T11:121:00-05:00,24,198.00,online
+Loaded Waffle Fries,2026-09-05T18:138:00-05:00,31,255.75,online
+Buffalo Wings (8 pc),2026-09-05T11:130:00-05:00,18,234.00,online
+Buffalo Wings (8 pc),2026-09-05T18:163:00-05:00,24,312.00,online
+Street Corn Elote Cup,2026-09-05T11:33:00-05:00,9,58.50,in_store
+Street Corn Elote Cup,2026-09-05T18:86:00-05:00,13,84.50,in_store
+Kale Caesar Salad,2026-09-05T11:157:00-05:00,9,94.50,ubereats
+Kale Caesar Salad,2026-09-05T18:111:00-05:00,10,105.00,in_store
+Matcha Latte,2026-09-05T11:130:00-05:00,15,86.25,in_store
+Matcha Latte,2026-09-05T18:50:00-05:00,14,80.50,in_store
+Horchata Cold Brew,2026-09-05T11:151:00-05:00,11,57.75,doordash
+Horchata Cold Brew,2026-09-05T18:111:00-05:00,13,68.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-05T11:07:00-05:00,14,52.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-05T18:113:00-05:00,22,82.50,online
+Crispy Chicken Sandwich,2026-09-06T11:115:00-05:00,23,310.50,in_store
+Crispy Chicken Sandwich,2026-09-06T18:118:00-05:00,28,378.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-06T11:108:00-05:00,14,199.50,in_store
+Nashville Hot Chicken Sandwich,2026-09-06T18:155:00-05:00,19,270.75,in_store
+Buttermilk Fried Chicken Tenders,2026-09-06T11:63:00-05:00,10,117.50,online
+Buttermilk Fried Chicken Tenders,2026-09-06T18:157:00-05:00,15,176.25,in_store
+Classic Cheeseburger,2026-09-06T11:58:00-05:00,13,162.50,online
+Classic Cheeseburger,2026-09-06T18:148:00-05:00,20,250.00,in_store
+Smoked Brisket Sandwich,2026-09-06T11:42:00-05:00,7,112.00,online
+Smoked Brisket Sandwich,2026-09-06T18:16:00-05:00,8,128.00,in_store
+Loaded Waffle Fries,2026-09-06T11:152:00-05:00,18,148.50,in_store
+Loaded Waffle Fries,2026-09-06T18:74:00-05:00,19,156.75,online
+Buffalo Wings (8 pc),2026-09-06T11:99:00-05:00,12,156.00,online
+Buffalo Wings (8 pc),2026-09-06T18:89:00-05:00,14,182.00,doordash
+Street Corn Elote Cup,2026-09-06T11:22:00-05:00,6,39.00,ubereats
+Street Corn Elote Cup,2026-09-06T18:160:00-05:00,11,71.50,online
+Kale Caesar Salad,2026-09-06T11:168:00-05:00,7,73.50,in_store
+Kale Caesar Salad,2026-09-06T18:117:00-05:00,7,73.50,online
+Matcha Latte,2026-09-06T11:64:00-05:00,9,51.75,in_store
+Matcha Latte,2026-09-06T18:05:00-05:00,9,51.75,in_store
+Horchata Cold Brew,2026-09-06T11:100:00-05:00,7,36.75,online
+Horchata Cold Brew,2026-09-06T18:114:00-05:00,9,47.25,online
+Brown Butter Chocolate Chip Cookie,2026-09-06T11:90:00-05:00,12,45.00,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-06T18:150:00-05:00,17,63.75,doordash
+Crispy Chicken Sandwich,2026-09-07T11:115:00-05:00,18,243.00,online
+Crispy Chicken Sandwich,2026-09-07T18:136:00-05:00,24,324.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-07T11:116:00-05:00,11,156.75,online
+Nashville Hot Chicken Sandwich,2026-09-07T18:27:00-05:00,11,156.75,in_store
+Buttermilk Fried Chicken Tenders,2026-09-07T11:24:00-05:00,7,82.25,in_store
+Buttermilk Fried Chicken Tenders,2026-09-07T18:104:00-05:00,10,117.50,doordash
+Classic Cheeseburger,2026-09-07T11:132:00-05:00,13,162.50,online
+Classic Cheeseburger,2026-09-07T18:88:00-05:00,14,175.00,in_store
+Smoked Brisket Sandwich,2026-09-07T11:111:00-05:00,7,112.00,in_store
+Smoked Brisket Sandwich,2026-09-07T18:147:00-05:00,9,144.00,online
+Loaded Waffle Fries,2026-09-07T11:156:00-05:00,15,123.75,doordash
+Loaded Waffle Fries,2026-09-07T18:154:00-05:00,18,148.50,in_store
+Buffalo Wings (8 pc),2026-09-07T11:31:00-05:00,8,104.00,in_store
+Buffalo Wings (8 pc),2026-09-07T18:38:00-05:00,10,130.00,in_store
+Street Corn Elote Cup,2026-09-07T11:54:00-05:00,5,32.50,in_store
+Street Corn Elote Cup,2026-09-07T18:55:00-05:00,7,45.50,in_store
+Kale Caesar Salad,2026-09-07T11:139:00-05:00,5,52.50,in_store
+Kale Caesar Salad,2026-09-07T18:131:00-05:00,6,63.00,in_store
+Matcha Latte,2026-09-07T11:136:00-05:00,8,46.00,in_store
+Matcha Latte,2026-09-07T18:94:00-05:00,9,51.75,in_store
+Horchata Cold Brew,2026-09-07T11:161:00-05:00,7,36.75,in_store
+Horchata Cold Brew,2026-09-07T18:22:00-05:00,6,31.50,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-07T11:122:00-05:00,11,41.25,online
+Brown Butter Chocolate Chip Cookie,2026-09-07T18:25:00-05:00,10,37.50,doordash
+Crispy Chicken Sandwich,2026-09-08T11:167:00-05:00,22,297.00,in_store
+Crispy Chicken Sandwich,2026-09-08T18:134:00-05:00,24,324.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-08T11:96:00-05:00,11,156.75,online
+Nashville Hot Chicken Sandwich,2026-09-08T18:75:00-05:00,13,185.25,in_store
+Buttermilk Fried Chicken Tenders,2026-09-08T11:117:00-05:00,9,105.75,online
+Buttermilk Fried Chicken Tenders,2026-09-08T18:10:00-05:00,8,94.00,doordash
+Classic Cheeseburger,2026-09-08T11:61:00-05:00,11,137.50,online
+Classic Cheeseburger,2026-09-08T18:60:00-05:00,14,175.00,ubereats
+Smoked Brisket Sandwich,2026-09-08T11:07:00-05:00,6,96.00,online
+Smoked Brisket Sandwich,2026-09-08T18:140:00-05:00,10,160.00,in_store
+Loaded Waffle Fries,2026-09-08T11:23:00-05:00,11,90.75,online
+Loaded Waffle Fries,2026-09-08T18:64:00-05:00,15,123.75,in_store
+Buffalo Wings (8 pc),2026-09-08T11:78:00-05:00,9,117.00,in_store
+Buffalo Wings (8 pc),2026-09-08T18:72:00-05:00,11,143.00,in_store
+Street Corn Elote Cup,2026-09-08T11:133:00-05:00,7,45.50,in_store
+Street Corn Elote Cup,2026-09-08T18:163:00-05:00,9,58.50,in_store
+Kale Caesar Salad,2026-09-08T11:33:00-05:00,4,42.00,online
+Kale Caesar Salad,2026-09-08T18:41:00-05:00,5,52.50,in_store
+Matcha Latte,2026-09-08T11:142:00-05:00,9,51.75,in_store
+Matcha Latte,2026-09-08T18:47:00-05:00,9,51.75,in_store
+Horchata Cold Brew,2026-09-08T11:103:00-05:00,6,31.50,in_store
+Horchata Cold Brew,2026-09-08T18:93:00-05:00,7,36.75,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-08T11:19:00-05:00,8,30.00,doordash
+Brown Butter Chocolate Chip Cookie,2026-09-08T18:98:00-05:00,13,48.75,ubereats
+Crispy Chicken Sandwich,2026-09-09T11:114:00-05:00,21,283.50,online
+Crispy Chicken Sandwich,2026-09-09T18:109:00-05:00,25,337.50,in_store
+Nashville Hot Chicken Sandwich,2026-09-09T11:47:00-05:00,11,156.75,in_store
+Nashville Hot Chicken Sandwich,2026-09-09T18:51:00-05:00,13,185.25,in_store
+Buttermilk Fried Chicken Tenders,2026-09-09T11:96:00-05:00,10,117.50,in_store
+Buttermilk Fried Chicken Tenders,2026-09-09T18:137:00-05:00,13,152.75,online
+Classic Cheeseburger,2026-09-09T11:108:00-05:00,14,175.00,in_store
+Classic Cheeseburger,2026-09-09T18:03:00-05:00,13,162.50,in_store
+Smoked Brisket Sandwich,2026-09-09T11:153:00-05:00,9,144.00,doordash
+Smoked Brisket Sandwich,2026-09-09T18:78:00-05:00,9,144.00,in_store
+Loaded Waffle Fries,2026-09-09T11:09:00-05:00,12,99.00,in_store
+Loaded Waffle Fries,2026-09-09T18:95:00-05:00,18,148.50,online
+Buffalo Wings (8 pc),2026-09-09T11:30:00-05:00,9,117.00,in_store
+Buffalo Wings (8 pc),2026-09-09T18:50:00-05:00,12,156.00,in_store
+Street Corn Elote Cup,2026-09-09T11:79:00-05:00,7,45.50,online
+Street Corn Elote Cup,2026-09-09T18:07:00-05:00,7,45.50,doordash
+Kale Caesar Salad,2026-09-09T11:93:00-05:00,5,52.50,in_store
+Kale Caesar Salad,2026-09-09T18:84:00-05:00,6,63.00,ubereats
+Matcha Latte,2026-09-09T11:53:00-05:00,8,46.00,in_store
+Matcha Latte,2026-09-09T18:45:00-05:00,9,51.75,in_store
+Horchata Cold Brew,2026-09-09T11:83:00-05:00,6,31.50,online
+Horchata Cold Brew,2026-09-09T18:142:00-05:00,9,47.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-09T11:128:00-05:00,12,45.00,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-09T18:134:00-05:00,15,56.25,in_store
+Crispy Chicken Sandwich,2026-09-10T11:158:00-05:00,26,351.00,in_store
+Crispy Chicken Sandwich,2026-09-10T18:39:00-05:00,24,324.00,doordash
+Nashville Hot Chicken Sandwich,2026-09-10T11:99:00-05:00,14,199.50,in_store
+Nashville Hot Chicken Sandwich,2026-09-10T18:167:00-05:00,20,285.00,in_store
+Buttermilk Fried Chicken Tenders,2026-09-10T11:73:00-05:00,10,117.50,in_store
+Buttermilk Fried Chicken Tenders,2026-09-10T18:20:00-05:00,11,129.25,in_store
+Classic Cheeseburger,2026-09-10T11:102:00-05:00,15,187.50,in_store
+Classic Cheeseburger,2026-09-10T18:98:00-05:00,19,237.50,ubereats
+Smoked Brisket Sandwich,2026-09-10T11:109:00-05:00,9,144.00,online
+Smoked Brisket Sandwich,2026-09-10T18:99:00-05:00,11,176.00,in_store
+Loaded Waffle Fries,2026-09-10T11:139:00-05:00,18,148.50,doordash
+Loaded Waffle Fries,2026-09-10T18:52:00-05:00,18,148.50,in_store
+Buffalo Wings (8 pc),2026-09-10T11:55:00-05:00,11,143.00,ubereats
+Buffalo Wings (8 pc),2026-09-10T18:43:00-05:00,13,169.00,in_store
+Street Corn Elote Cup,2026-09-10T11:31:00-05:00,7,45.50,online
+Street Corn Elote Cup,2026-09-10T18:128:00-05:00,10,65.00,in_store
+Kale Caesar Salad,2026-09-10T11:152:00-05:00,7,73.50,ubereats
+Kale Caesar Salad,2026-09-10T18:84:00-05:00,7,73.50,in_store
+Matcha Latte,2026-09-10T11:01:00-05:00,7,40.25,in_store
+Matcha Latte,2026-09-10T18:112:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-09-10T11:46:00-05:00,6,31.50,in_store
+Horchata Cold Brew,2026-09-10T18:31:00-05:00,8,42.00,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-10T11:153:00-05:00,15,56.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-10T18:56:00-05:00,14,52.50,doordash
+Crispy Chicken Sandwich,2026-09-11T11:18:00-05:00,24,324.00,in_store
+Crispy Chicken Sandwich,2026-09-11T18:49:00-05:00,32,432.00,in_store
+Nashville Hot Chicken Sandwich,2026-09-11T11:47:00-05:00,16,228.00,doordash
+Nashville Hot Chicken Sandwich,2026-09-11T18:59:00-05:00,20,285.00,online
+Buttermilk Fried Chicken Tenders,2026-09-11T11:106:00-05:00,14,164.50,in_store
+Buttermilk Fried Chicken Tenders,2026-09-11T18:34:00-05:00,15,176.25,in_store
+Classic Cheeseburger,2026-09-11T11:17:00-05:00,16,200.00,in_store
+Classic Cheeseburger,2026-09-11T18:37:00-05:00,21,262.50,ubereats
+Smoked Brisket Sandwich,2026-09-11T11:155:00-05:00,13,208.00,in_store
+Smoked Brisket Sandwich,2026-09-11T18:12:00-05:00,11,176.00,in_store
+Loaded Waffle Fries,2026-09-11T11:168:00-05:00,26,214.50,in_store
+Loaded Waffle Fries,2026-09-11T18:42:00-05:00,23,189.75,in_store
+Buffalo Wings (8 pc),2026-09-11T11:112:00-05:00,17,221.00,online
+Buffalo Wings (8 pc),2026-09-11T18:41:00-05:00,17,221.00,in_store
+Street Corn Elote Cup,2026-09-11T11:168:00-05:00,12,78.00,doordash
+Street Corn Elote Cup,2026-09-11T18:135:00-05:00,14,91.00,in_store
+Kale Caesar Salad,2026-09-11T11:117:00-05:00,8,84.00,in_store
+Kale Caesar Salad,2026-09-11T18:141:00-05:00,10,105.00,doordash
+Matcha Latte,2026-09-11T11:130:00-05:00,14,80.50,ubereats
+Matcha Latte,2026-09-11T18:162:00-05:00,18,103.50,online
+Horchata Cold Brew,2026-09-11T11:72:00-05:00,9,47.25,online
+Horchata Cold Brew,2026-09-11T18:146:00-05:00,13,68.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-11T11:72:00-05:00,16,60.00,ubereats
+Brown Butter Chocolate Chip Cookie,2026-09-11T18:09:00-05:00,16,60.00,online
+Wingz,2026-09-11T18:12:00-05:00,2,26.00,online
+Matcha Ltte,2026-09-11T11:04:00-05:00,1,5.75,in_store
