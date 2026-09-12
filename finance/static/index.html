@@ -35,8 +35,15 @@
   .drop:hover, .drop.over { border-color: var(--accent); }
   .drop input { display: none; }
   .drop b { color: var(--accent); }
-  .samples { margin-top: .85rem; font-size: .85rem; color: var(--muted); }
-  .samples a { color: var(--muted); }
+  .hint { margin-top: .7rem; font-size: .85rem; color: var(--muted); }
+  .samples {
+    margin-top: .9rem; font-size: .86rem; color: var(--muted); text-align: center;
+  }
+  .samples a { color: var(--accent); }
+  .samples button {
+    font: inherit; color: var(--accent); background: none; border: 0;
+    padding: 0; cursor: pointer; text-decoration: underline;
+  }
 
   .err {
     margin-top: 1rem; padding: .85rem 1rem; border-radius: 8px;
@@ -92,12 +99,17 @@
   <label class="drop" id="drop">
     <input type="file" id="file" accept=".csv,text/csv">
     <div>Drop a P&amp;L CSV here or <b>choose a file</b></div>
-    <div class="samples">
-      Columns: <code>line_item, monthly_amount</code> &nbsp;·&nbsp;
-      try <a href="/sample.csv" download>a sample</a> or
-      <a href="/sample-distressed.csv" download>a struggling one</a>
-    </div>
+    <div class="hint">Columns: <code>line_item, monthly_amount</code></div>
   </label>
+
+  <!-- Outside the label on purpose: anything inside it activates the file
+       input on click, which swallows these links and opens the file picker. -->
+  <div class="samples">
+    No P&amp;L handy? Try
+    <a href="/sample.csv" download="sample-pnl.csv">a healthy restaurant</a> or
+    <a href="/sample-distressed.csv" download="sample-pnl-distressed.csv">a struggling one</a>
+    — or <button type="button" id="try-healthy">run the sample now</button>
+  </div>
 
   <div id="err" class="err hidden"></div>
   <div id="out" class="hidden"></div>
@@ -123,16 +135,29 @@ $("file").addEventListener("change", ev => {
   if (ev.target.files[0]) send(ev.target.files[0]);
 });
 
+// Saves a download/re-upload round trip when someone just wants to see output.
+$("try-healthy").addEventListener("click", async () => {
+  const text = await (await fetch("/sample.csv")).text();
+  analyzeText(text);
+});
+
 async function send(file) {
+  try {
+    analyzeText(await file.text());
+  } catch (e) {
+    fail("Could not read that file: " + e.message);
+  }
+}
+
+async function analyzeText(text) {
   $("err").classList.add("hidden");
   try {
-    const text = await file.text();
     const res = await fetch("/analyze", { method: "POST", body: text });
     const data = await res.json();
     if (!res.ok) return fail(data.error || "Something went wrong.");
     render(data);
   } catch (e) {
-    fail("Could not read that file: " + e.message);
+    fail("Could not reach the server: " + e.message);
   }
 }
 

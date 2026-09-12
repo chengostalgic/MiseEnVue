@@ -29,11 +29,22 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             return self._send(200, "text/html", (STATIC / "index.html").read_bytes())
-        if self.path == "/sample.csv":
-            return self._send(200, "text/csv", Path("data/in/pnl.csv").read_bytes())
-        if self.path == "/sample-distressed.csv":
+        samples = {
+            "/sample.csv": ("data/in/pnl.csv", "sample-pnl.csv"),
+            "/sample-distressed.csv": (
+                "data/in/pnl_distressed.csv",
+                "sample-pnl-distressed.csv",
+            ),
+        }
+        if self.path in samples:
+            src, filename = samples[self.path]
+            # Explicit attachment disposition: some browsers render text/csv
+            # inline and ignore the anchor's download attribute.
             return self._send(
-                200, "text/csv", Path("data/in/pnl_distressed.csv").read_bytes()
+                200,
+                "text/csv",
+                Path(src).read_bytes(),
+                extra={"Content-Disposition": f'attachment; filename="{filename}"'},
             )
         return self._send(404, "text/plain", b"not found")
 
@@ -59,10 +70,12 @@ class Handler(SimpleHTTPRequestHandler):
     def _json(self, code: int, payload: dict):
         self._send(code, "application/json", json.dumps(payload).encode())
 
-    def _send(self, code: int, ctype: str, body: bytes):
+    def _send(self, code: int, ctype: str, body: bytes, extra: dict | None = None):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
+        for key, value in (extra or {}).items():
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
 
