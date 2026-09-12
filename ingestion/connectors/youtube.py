@@ -5,14 +5,21 @@ Responsible Builder Policy in late 2025; new OAuth apps now need manual
 approval that does not arrive on a hackathon timeline. YouTube issues API
 keys instantly with no review, because this only reads public data.
 
-Three calls per run:
+DISCOVERY IS CHANNEL-FIRST, NOT SEARCH-FIRST.
 
-  search.list        find recent food videos matching seed queries   100 units
-  videos.list        view/like/comment counts for those videos         1 unit
-  commentThreads     top comments -- the audience voice                1 unit
+  playlistItems      recent uploads from curated channels               1 unit
+  videos.list        view/like/comment counts + language                1 unit
+  channels.list      channel country, for the origin gate               1 unit
+  commentThreads     top comments -- the audience voice                 1 unit
+  search.list        SUPPLEMENT only: dishes outside the roster       100 units
 
-Quota is 10,000 units/day, so search is the only call worth counting. Roughly
-100 searches a day at 50 results each is far more than a 7-day window needs.
+Quota is 10,000 units/day and search is the only call that meaningfully spends
+it. Pulling ~300 videos from 19 curated channels costs ~40 units; the same
+volume via keyword search cost ~2,400 and returned worse content, because
+search has no reliable origin filter.
+
+Search is isolated per query: it is the first thing to 429 when the budget runs
+down, and a failure there must not discard the channel results.
 
 Comments are not optional decoration. Titles and descriptions are creator
 marketing copy and skew promotional; the comments are where people say a dish
@@ -27,6 +34,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ingestion.connectors.base import Connector
+from ingestion.connectors.channels import fetch_channel_uploads
+from ingestion.virality import annotate as annotate_virality
 from ingestion.schema import Post
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -71,26 +80,10 @@ class YouTubeConnector(Connector):
         per_query = self.config.get("results_per_query", 25)
         comment_limit = self.config.get("comments_per_video", 20)
 
-        # Two query sets answering two different questions. National category
-        # searches find dishes rising anywhere, which is where being early
-        # comes from. Local searches are templated with the client's city and
-        # show what this market actually eats -- and what competitors already
-        # serve. Neither alone is enough: a dish trending nationally but absent
-        # locally might be an opening or might be a bad fit for the market, and
-        # only the local signal tells you which.
-        city = self.config.get("city", "")
-        region = self.config.get("region_name", "")
+        # National only. The earlier city/state tiers were dropped -- what the
+        # product needs is what is going viral across US food media, which a
+        # restaurant in any city can act on.
         queries = [(q, "national") for q in self.config.get("queries", [])]
-        if region:
-            queries += [
-                (t.format(region=region), "regional")
-                for t in self.config.get("regional_query_templates", [])
-            ]
-        if city:
-            queries += [
-                (t.format(city=city), "local")
-                for t in self.config.get("local_query_templates", [])
-            ]
 
         # Each query runs under BOTH orderings, because they select for
         # different failure modes:
@@ -111,43 +104,38 @@ class YouTubeConnector(Connector):
         orders = self.config.get("orders", ["relevance", "viewCount"])
 
         videos: dict[str, dict[str, Any]] = {}
-        for query, scope, order in [
-            (q, sc, o) for q, sc in queries for o in orders
-        ]:
-            found = requests.get(
-                f"{API}/search",
-                params={
-                    "key": key,
-                    "q": query,
-                    "part": "snippet",
-                    "type": "video",
-                    "publishedAfter": published_after,
-                    "maxResults": per_query,
-                    "relevanceLanguage": "en",
-                    "regionCode": self.config.get("region_code", "US"),
-                    "videoDuration": self.config.get("duration", "medium"),
-                    "order": order,
-                },
-                timeout=30,
+
+        # Curated channels first -- ~1 quota unit each against search's 100,
+        # and the origin question is already answered by the roster.
+        for video in fetch_channel_uploads(
+            requests, key,
+            self.config.get("channels", []),
+            self.config.get("channel_window_days", since_days),
+            self.config.get("channel_videos_each", 50),
+        ):
+            videos[video["id"]] = video
+        if videos:
+            print(f"  [{self.name}] {len(videos)} videos from curated channels")
+
+        # Search is a SUPPLEMENT and fails routinely -- it costs 100 quota
+        # units a call, so it is the first thing to 429 once the daily budget
+        # runs down. A failure here must not discard the channel results
+        # already collected above, which are the main path and cost almost
+        # nothing. Each query is therefore isolated.
+        search_failures = 0
+        for query, scope in queries:
+            for order in orders:
+                if not self._search_into(
+                    videos, requests, key, query, scope, order,
+                    published_after, per_query,
+                ):
+                    search_failures += 1
+
+        if search_failures:
+            print(
+                f"  [{self.name}] {search_failures} supplementary search(es) failed "
+                f"(usually quota); continuing with {len(videos)} videos"
             )
-            found.raise_for_status()
-            for item in found.json().get("items", []):
-                vid = item["id"]["videoId"]
-                snippet = item["snippet"]
-                videos[vid] = {
-                    "id": vid,
-                    "title": snippet["title"],
-                    "description": snippet.get("description", ""),
-                    "channel": snippet.get("channelTitle", ""),
-                    "channel_id": snippet.get("channelId", ""),
-                    "published_at": snippet["publishedAt"],
-                    "url": f"https://www.youtube.com/watch?v={vid}",
-                    "matched_query": query,
-                    # A video found by several query sets keeps the narrowest
-                    # scope -- local relevance is the scarcer, more
-                    # decision-relevant signal than regional or national.
-                    "scope": _narrowest(scope, videos.get(vid, {}).get("scope")),
-                }
 
         # Shorts come in through their own pass and are gated on engagement
         # rate below, after statistics land -- the gate needs like and comment
@@ -215,6 +203,15 @@ class YouTubeConnector(Connector):
             if before != len(videos):
                 print(f"  [{self.name}] language gate dropped {before - len(videos)} videos")
 
+        # Virality signals, computed against each channel's own baseline.
+        vcfg = self.config.get("virality", {})
+        if vcfg:
+            counts = annotate_virality(videos, vcfg)
+            print(
+                f"  [{self.name}] virality: {counts.get('viral',0)} viral "
+                f"({counts.get('breakout',0)} breakout, {counts.get('surging',0)} surging), "
+                f"{counts.get('trend_marker',0)} trend-marked titles"
+            )
         # Minimum-views floor, all videos. A 12-view upload is not evidence of
         # anything, and 75% of a relevance-ordered pull fell under 1,000.
         min_views = self.config.get("min_views", 0)
@@ -243,6 +240,56 @@ class YouTubeConnector(Connector):
             video["top_comments"] = self._comments(requests, key, vid, comment_limit)
 
         return list(videos.values())
+
+    def _search_into(
+        self, videos: dict, requests, key: str, query: str, scope: str,
+        order: str, published_after: str, per_query: int,
+    ) -> bool:
+        """Run one search and merge results into `videos`. False on failure.
+
+        Isolated per query because search is a supplement that fails routinely:
+        at 100 quota units a call it is the first thing to 429 once the daily
+        budget runs down, and a failure must not discard the channel results
+        already collected, which are the main path and cost almost nothing.
+        """
+        try:
+            resp = requests.get(
+                f"{API}/search",
+                params={
+                    "key": key,
+                    "q": query,
+                    "part": "snippet",
+                    "type": "video",
+                    "publishedAfter": published_after,
+                    "maxResults": per_query,
+                    "relevanceLanguage": "en",
+                    "regionCode": self.config.get("region_code", "US"),
+                    "videoDuration": self.config.get("duration", "medium"),
+                    "order": order,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+        except Exception:  # noqa: BLE001 - quota exhaustion is routine here
+            return False
+
+        for item in resp.json().get("items", []):
+            vid = item["id"]["videoId"]
+            if vid in videos:
+                continue  # already have it from a channel pull
+            snippet = item["snippet"]
+            videos[vid] = {
+                "id": vid,
+                "title": snippet["title"],
+                "description": snippet.get("description", ""),
+                "channel": snippet.get("channelTitle", ""),
+                "channel_id": snippet.get("channelId", ""),
+                "published_at": snippet["publishedAt"],
+                "url": f"https://www.youtube.com/watch?v={vid}",
+                "matched_query": query,
+                "scope": scope,
+            }
+        return True
 
     def _fetch_shorts(self, requests, key, published_after, queries) -> dict[str, dict]:
         """Second pass for Shorts, gated on engagement rate rather than views.
@@ -297,7 +344,15 @@ class YouTubeConnector(Connector):
         1 quota unit each -- effectively free. Channels with no declared
         country are kept and left for the extraction relevance gate.
         """
-        chan_ids = {v.get("channel_id") for v in videos.values() if v.get("channel_id")}
+        # Curated-roster videos are exempt: the roster already answered the
+        # origin question, and a channel's declared country can disagree with
+        # its content (Mashed is registered GB and publishes US food coverage).
+        # The gate exists for search-discovered videos, where nothing else
+        # establishes origin.
+        gated = {
+            vid: v for vid, v in videos.items() if not v.get("from_channel")
+        }
+        chan_ids = {v.get("channel_id") for v in gated.values() if v.get("channel_id")}
         if not chan_ids:
             return
 
@@ -316,7 +371,7 @@ class YouTubeConnector(Connector):
 
         allowed_set = {c.upper() for c in allowed}
         dropped = [
-            vid for vid, v in videos.items()
+            vid for vid, v in gated.items()
             if (c := country_of.get(v.get("channel_id"))) and c.upper() not in allowed_set
         ]
         for vid in dropped:
@@ -390,6 +445,10 @@ class YouTubeConnector(Connector):
                     media_type="short" if r.get("is_short") else "video",
                     location=r.get("channel"),
                     scope=r.get("scope") or "national",
+                    breakout_ratio=r.get("breakout_ratio"),
+                    views_per_day=r.get("views_per_day"),
+                    is_viral=bool(r.get("is_viral")),
+                    trend_marker=bool(r.get("trend_marker")),
                 )
             )
         return posts

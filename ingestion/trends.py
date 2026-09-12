@@ -62,8 +62,8 @@ def fetch_velocity(
 
     cfg = config.get("google_trends", {})
     loc = config.get("location", {})
-    geo_local = loc.get("trends_geo", "")
-    geo_region = loc.get("trends_geo_region", "")
+    geo_local = ""
+    geo_region = ""
     timeframe = cfg.get("timeframe", "now 7-d")
 
     cached = _load_cache() if offline else None
