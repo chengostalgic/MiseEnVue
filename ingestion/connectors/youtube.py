@@ -92,8 +92,28 @@ class YouTubeConnector(Connector):
                 for t in self.config.get("local_query_templates", [])
             ]
 
+        # Each query runs under BOTH orderings, because they select for
+        # different failure modes:
+        #
+        #   relevance  ranks on keyword match, so it favours keyword-stuffed
+        #              titles from tiny channels ("Dubai Viral Qishta Recipe |
+        #              5 Minutes Trending Arabic Dessert"). Good topical fit,
+        #              systematically biased AGAINST big creators, who write
+        #              natural titles that match less literally.
+        #   viewCount  ranks on actual audience, which is what "trending" means
+        #              -- but pulls in engagement bait, which the language and
+        #              engagement gates downstream remove.
+        #
+        # A relevance-only pull returned a median of 124 views and nothing over
+        # 1M. The dish with the largest real audience in that pull (a 241k-view
+        # chicken au poivre Short) was buried under an 11-video cluster with
+        # 11,400 views between them.
+        orders = self.config.get("orders", ["relevance", "viewCount"])
+
         videos: dict[str, dict[str, Any]] = {}
-        for query, scope in queries:
+        for query, scope, order in [
+            (q, sc, o) for q, sc in queries for o in orders
+        ]:
             found = requests.get(
                 f"{API}/search",
                 params={
@@ -105,15 +125,8 @@ class YouTubeConnector(Connector):
                     "maxResults": per_query,
                     "relevanceLanguage": "en",
                     "regionCode": self.config.get("region_code", "US"),
-                    # Shorts are where the tag spam lives -- generic queries sorted
-                    # by view count return engagement bait with #viral #recipe
-                    # attached and no dish in them. Excluding short videos filters
-                    # nearly all of it. Verified against live results.
                     "videoDuration": self.config.get("duration", "medium"),
-                    # Relevance, not viewCount, for the same reason: the highest
-                    # view counts belong to huge general channels, not to whoever
-                    # is actually cooking the trending dish.
-                    "order": self.config.get("order", "relevance"),
+                    "order": order,
                 },
                 timeout=30,
             )
@@ -191,6 +204,18 @@ class YouTubeConnector(Connector):
             }
             if before != len(videos):
                 print(f"  [{self.name}] language gate dropped {before - len(videos)} videos")
+
+        # Minimum-views floor, all videos. A 12-view upload is not evidence of
+        # anything, and 75% of a relevance-ordered pull fell under 1,000.
+        min_views = self.config.get("min_views", 0)
+        if min_views:
+            before = len(videos)
+            videos = {
+                vid: v for vid, v in videos.items()
+                if v.get("view_count", 0) >= min_views
+            }
+            if before != len(videos):
+                print(f"  [{self.name}] view floor dropped {before - len(videos)} videos")
 
         # Apply the Shorts engagement gate now that statistics are attached.
         # Long-form videos are never gated -- they already survived the

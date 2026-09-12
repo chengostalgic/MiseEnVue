@@ -33,13 +33,19 @@ youtube:
   #     appearing across several creators is the trend signal we want.
   #   - Abstract queries ("food trends 2026", "new restaurant dish") return
   #     industry commentary, expo announcements, and travel guides. No dishes.
+  # NOTE: these deliberately avoid the words "viral" and "trending". Those
+  # words match TITLES CLAIMING virality, not videos that achieved it -- a pull
+  # using "trending dessert recipe" returned 11 channels whose titles all said
+  # "Viral"/"Trending" and which had ~11,400 views between them. Let the view
+  # counts decide what is hot; the query only decides the topic.
   queries:
-    - viral chicken recipe
-    - viral pasta dish
-    - trending dessert recipe
-    - viral beef recipe
-    - viral seafood recipe
-    - trending appetizer recipe
+    - chicken recipe
+    - pasta recipe
+    - dessert recipe
+    - beef recipe
+    - seafood recipe
+    - appetizer recipe
+    - restaurant style recipe
   # Local queries, templated with location.city. These return restaurant
   # reviews and local food-scene coverage rather than recipe videos -- a
   # different signal from the national set, and the one that says whether this
@@ -68,7 +74,12 @@ youtube:
   # "medium" excludes Shorts from the main pass, which is where hashtag spam
   # concentrates. Shorts come back through the quality-gated pass below.
   duration: medium
-  order: relevance
+  # Both orderings run for every query. relevance ranks on keyword match and is
+  # biased against big creators (natural titles match less literally);
+  # viewCount ranks on actual audience but admits bait, which the language and
+  # engagement gates remove. Running only relevance produced a pull with a
+  # median of 124 views and nothing above 1M.
+  orders: [relevance, viewCount]
 
   # regionCode and relevanceLanguage only RANK results -- they do not filter by
   # origin. A live pull returned a large amount of South Asian home cooking
@@ -91,12 +102,19 @@ youtube:
   # thing, which is why the main pass excludes Shorts entirely.
   # ---------------------------------------------------------------------------
   include_shorts: true
+  # Shorts carry most of the reach: 7 of the top 10 videos by views in a live
+  # pull were Shorts, including the 241k-view chicken au poivre that the
+  # long-form-only ranking buried.
   shorts_results_per_query: 15
   # Typical genuine like rate is 4-8% of views; bait sits well below.
   shorts_min_like_rate: 0.030
   # Comments prove an audience engaged enough to talk, and are the only source
   # of sentiment -- a Short with none is useless to us regardless of views.
   shorts_min_comments: 25
+
+  # A video nobody watched is not evidence of a trend. Applies to every video,
+  # not just Shorts -- 75% of a relevance-only pull was under 1,000 views.
+  min_views: 1000
 
 google_trends:
   # Terms are seeded from the dish names extraction finds, not hardcoded.
@@ -158,10 +176,16 @@ output:
   min_mentions: 2
 
 scoring:
-  # Task #6 applies these. The volume-only placeholder ignores them.
+  # reach dominates on purpose. It measures DEMAND -- how many people actually
+  # watched. volume measures SUPPLY -- how many creators posted -- and is
+  # weighted low because content farms manufacture supply: a live pull found 11
+  # channels all posting the same "Dubai Viral Qishta" video for ~11,400 total
+  # views, while one chicken au poivre Short pulled 241,000 on its own. Ranking
+  # on volume put the qishta cluster first, which was backwards.
   weights:
-    volume: 0.35
-    velocity: 0.35
-    breadth: 0.20
+    reach: 0.40
+    velocity: 0.25
+    volume: 0.15
+    breadth: 0.10
     recency: 0.10
-  recency_halflife_days: 3
+  recency_halflife_days: 5

@@ -2,7 +2,11 @@
 
 trend_score combines four components, weighted from config.yaml:
 
-  volume    how many posts mention the dish, relative to the top dish
+  reach     total audience the dish reached -- log-scaled views summed across
+            its posts. This is the dominant component and it measures DEMAND.
+  volume    how many posts mention the dish, relative to the top dish. Measures
+            SUPPLY, so it is weighted low: eleven small channels copying each
+            other's SEO produces high volume and almost no audience.
   velocity  search trajectory from Google Trends -- the only component that
             knows whether a trend is arriving or leaving
   breadth   how many distinct (source, scope) pairs it appears in
@@ -63,10 +67,11 @@ def score_all(
 
     peak_volume = max(len(c.posts) for c in clusters)
     peak_breadth = max(len(_source_scopes(c)) for c in clusters) or 1
+    peak_reach = max(_total_views(c.posts) for c in clusters) or 1
 
     dishes = [
-        _to_dish(c, window_days, peak_volume, peak_breadth, weights, scoring,
-                 velocities.get(c.name))
+        _to_dish(c, window_days, peak_volume, peak_breadth, peak_reach, weights,
+                 scoring, velocities.get(c.name))
         for c in clusters
     ]
     dishes.sort(key=lambda d: d.trend_score, reverse=True)
@@ -78,6 +83,7 @@ def _to_dish(
     window_days: int,
     peak_volume: int,
     peak_breadth: int,
+    peak_reach: int,
     weights: dict,
     scoring: dict,
     velocity: Velocity | None,
@@ -85,6 +91,7 @@ def _to_dish(
     posts = cluster.posts
 
     components: dict[str, float] = {
+        "reach": _reach(posts, peak_reach),
         "volume": len(posts) / peak_volume if peak_volume else 0.0,
         "breadth": len(_source_scopes(cluster)) / peak_breadth,
         "recency": _recency(posts, scoring.get("recency_halflife_days", 3)),
@@ -132,6 +139,25 @@ def _velocity_component(v: Velocity) -> float:
         # nobody was searching for beat one with genuine momentum.
         component = 0.5 + (component - 0.5) * 0.5
     return component
+
+
+def _total_views(posts: list) -> int:
+    return sum(p.engagement or 0 for p in posts)
+
+
+def _reach(posts: list, peak_reach: int) -> float:
+    """Total audience, log-scaled against the top dish.
+
+    Log rather than linear because view counts span five orders of magnitude
+    in a single pull (median 124, max 937k). Linear scaling would give every
+    dish but the single biggest a reach near zero, collapsing the component
+    into a one-hot vector. Log keeps the ordering while leaving the rest of
+    the field distinguishable.
+    """
+    total = _total_views(posts)
+    if total <= 0 or peak_reach <= 0:
+        return 0.0
+    return min(1.0, math.log10(1 + total) / math.log10(1 + peak_reach))
 
 
 def _recency(posts: list, halflife_days: float) -> float:
