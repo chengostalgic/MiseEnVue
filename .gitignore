@@ -1,3 +1,14 @@
+# Cached raw source pulls — large, regenerable, and often API-ToS-sensitive.
+# NOTE: data/out/ and data/fixtures/ are deliberately NOT ignored. trends.json is
+# the Part 1 -> Part 2 contract and fixtures are the offline demo safety net.
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
 # Logs
 logs
 *.log
@@ -7,6 +18,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node / Next
 node_modules
 .next
 dist

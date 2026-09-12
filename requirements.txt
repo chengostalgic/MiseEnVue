@@ -1,0 +1,5 @@
+google-api-python-client>=2.0
+requests>=2.31
+pytrends>=4.9
+PyYAML>=6.0
+anthropic>=0.40

@@ -1,0 +1,207 @@
+# Pipeline configuration.
+#
+# Everything tunable lives here so nothing needs editing in Python at 2am
+# during the demo.
+
+# ---------------------------------------------------------------------------
+# CLIENT LOCATION -- change these three values to re-point the whole pipeline
+# at a different restaurant's market.
+#
+# trends_geo is a Google Trends DMA code and is the strongest local signal we
+# have. Verified: US-TX-618 returns "dripped birria katy" and "blk mkt birria"
+# -- suburb-level results, not national data with a filter on it.
+# Find other codes at https://github.com/pat310/google-trends-api (DMA list),
+# e.g. Austin US-TX-635, Dallas US-TX-623, NYC US-NY-501, LA US-CA-803.
+# ---------------------------------------------------------------------------
+location:
+  city: Houston
+  region_name: Texas
+  region_code: US
+  # Three geographic tiers, narrowest first. A metro DMA is often TOO narrow --
+  # a dish can have real regional momentum and no measurable DMA search volume
+  # at all (verified: "qishta" returns nothing at US-TX-618 but is real).
+  # The pipeline falls back outward: metro -> state -> national.
+  trends_geo: US-TX-618
+  trends_geo_region: US-TX
+
+youtube:
+  # search.list costs 100 quota units per query against a 10,000/day budget, so
+  # this list is the main thing controlling burn rate. Everything else is ~1 unit.
+  #
+  # Queries are category-scoped on purpose, verified against live results:
+  #   - "viral <category> recipe" returns actual dishes, and the same dish
+  #     appearing across several creators is the trend signal we want.
+  #   - Abstract queries ("food trends 2026", "new restaurant dish") return
+  #     industry commentary, expo announcements, and travel guides. No dishes.
+  # NOTE: these deliberately avoid the words "viral" and "trending". Those
+  # words match TITLES CLAIMING virality, not videos that achieved it -- a pull
+  # using "trending dessert recipe" returned 11 channels whose titles all said
+  # "Viral"/"Trending" and which had ~11,400 views between them. Let the view
+  # counts decide what is hot; the query only decides the topic.
+  queries:
+    - chicken recipe
+    - pasta recipe
+    - dessert recipe
+    - beef recipe
+    - seafood recipe
+    - appetizer recipe
+    - restaurant style recipe
+  # Local queries, templated with location.city. These return restaurant
+  # reviews and local food-scene coverage rather than recipe videos -- a
+  # different signal from the national set, and the one that says whether this
+  # market will actually turn up for a dish.
+  #
+  # Note: YouTube's location + locationRadius parameters were tested and are
+  # not worth using. They only match videos carrying explicit geotags, which
+  # is a small and unrepresentative slice, and the results mixed genuinely
+  # local content with generic food videos that happened to be tagged. Putting
+  # the city name in the query returned markedly better local results.
+  local_query_templates:
+    - "{city} best new restaurant"
+    - "{city} food trend must try"
+    - "{city} viral restaurant dish"
+
+  # Regional queries sit between city and national. A metro alone is a thin
+  # slice of content; the surrounding state catches food-scene coverage that
+  # is still relevant to this market but never says the city's name.
+  regional_query_templates:
+    - "{region} food trend"
+    - "best new restaurants {region}"
+
+  results_per_query: 50
+  # Comments carry the sentiment signal; titles and descriptions are marketing.
+  comments_per_video: 20
+  # "medium" excludes Shorts from the main pass, which is where hashtag spam
+  # concentrates. Shorts come back through the quality-gated pass below.
+  duration: medium
+  # Both orderings run for every query. relevance ranks on keyword match and is
+  # biased against big creators (natural titles match less literally);
+  # viewCount ranks on actual audience but admits bait, which the language and
+  # engagement gates remove. Running only relevance produced a pull with a
+  # median of 124 views and nothing above 1M.
+  orders: [relevance, viewCount]
+
+  # regionCode and relevanceLanguage only RANK results -- they do not filter by
+  # origin. A live pull returned a large amount of South Asian home cooking
+  # with English titles, which is real content but not servable in a US
+  # restaurant. defaultAudioLanguage is the only mechanical origin signal
+  # YouTube gives. It is often unset, and an unset value passes through to the
+  # extraction relevance gate rather than being dropped, since dropping on
+  # missing metadata would discard a lot of legitimate US content.
+  # Channel country is the strongest mechanical origin signal YouTube gives.
+  # Declared audio language is NOT reliable on its own -- an Indian
+  # village-cooking channel with 12.9M views declares "en-US". Channel country
+  # is set by the owner on the channel and is accurate where present.
+  # It is unset on ~60% of channels; those pass through to the extraction
+  # relevance gate rather than being dropped, since dropping on missing
+  # metadata would take most of the legitimate US content with it.
+  allowed_channel_countries: [US]
+
+  # Kept as a secondary filter only: it does catch honestly-declared non-English
+  # audio (one pull dropped 299 videos on hi/ur/ta), but cannot be trusted
+  # alone for the reason above.
+  allowed_audio_languages: [en]
+
+  # ---------------------------------------------------------------------------
+  # SHORTS PASS
+  # Shorts are where food trends actually break, but also where engagement bait
+  # lives -- a first pass at order=viewCount returned Hindi-language vlogs with
+  # #viral #recipe tagged on and no dish in them.
+  #
+  # The filter is the ENGAGEMENT RATE, not the view count. Bait accumulates
+  # views without earning likes or comments; genuine food content converts at a
+  # much higher rate. Filtering on raw views selects for exactly the wrong
+  # thing, which is why the main pass excludes Shorts entirely.
+  # ---------------------------------------------------------------------------
+  include_shorts: true
+  # Shorts carry most of the reach: 7 of the top 10 videos by views in a live
+  # pull were Shorts, including the 241k-view chicken au poivre that the
+  # long-form-only ranking buried.
+  shorts_results_per_query: 15
+  # Typical genuine like rate is 4-8% of views; bait sits well below.
+  shorts_min_like_rate: 0.030
+  # Comments prove an audience engaged enough to talk, and are the only source
+  # of sentiment -- a Short with none is useless to us regardless of views.
+  shorts_min_comments: 25
+
+  # A video nobody watched is not evidence of a trend. Applies to every video,
+  # not just Shorts -- 75% of a relevance-only pull was under 1,000 views.
+  min_views: 1000
+
+google_trends:
+  # Terms are seeded from the dish names extraction finds, not hardcoded.
+  # Queried twice per term -- once at location.trends_geo for local velocity,
+  # once nationally for the broader trajectory. The gap between them is the
+  # interesting part: rising nationally but flat locally means the trend has
+  # not arrived here yet, which is either the opportunity or the warning.
+  timeframe: now 7-d
+  # Percent change (second half of window vs first) that flips momentum.
+  rising_threshold_pct: 15
+  fading_threshold_pct: -15
+  # Google rate-limits pytrends hard; a failed batch degrades to no velocity
+  # for those dishes rather than failing the run.
+  max_retries: 3
+  retry_delay_seconds: 3
+  # pytrends is unofficial and Google throttles it hard. Once 429s start they
+  # usually continue for the session, so stop trying rather than burning
+  # minutes on retries that will not succeed.
+  give_up_after_429s: 3
+  # Rising local queries are campaign material for Part 3, not a ranking input.
+  # One extra request per dish -- turn off if rate limits bite.
+  fetch_rising: true
+
+extraction:
+  # Clustering is high-volume classification; synthesis is short summarization
+  # over evidence that has already been selected. Neither needs a frontier
+  # model, and clustering is where nearly all the tokens go -- Haiku is roughly
+  # 5x cheaper per token than Opus and skips thinking tokens entirely.
+  #
+  # NOTE: Haiku 4.5 rejects adaptive thinking and the effort parameter with a
+  # 400. extract.py builds request params per-model, so setting either of these
+  # to an Opus/Sonnet id re-enables them automatically.
+  cluster_model: claude-haiku-4-5
+  reason_model: claude-haiku-4-5
+  # Cap posts reaching the model. A wide pull can return ~1000 videos, which is
+  # ~80 clustering calls for little gain -- the tail is low-engagement noise.
+  # Sampled per scope, not globally: local posts pull 20-900 views against
+  # national's hundreds of thousands, so a global top-N cut would delete the
+  # local tier outright.
+  max_posts: 300
+  scope_floors:
+    local: 60
+    regional: 60
+  # Posts per clustering call. Larger batches see more context at once (better
+  # clustering) but each call gets slower and the running dish list grows.
+  batch_size: 25
+  effort: medium
+  # why_trending synthesis is one call per dish; a dish with a single mention
+  # will not survive ranking anyway.
+  explain_top_n: 20
+  # Synthesis calls are independent. Run sequentially this was the slowest
+  # stage in the pipeline -- ~20 calls at 8s each.
+  synthesis_workers: 8
+
+output:
+  # Small enough to eyeball for quality before presenting, which is the only
+  # QA process a 2-day build affords.
+  max_dishes: 20
+  # A dish mentioned once is not a trend, it is one video. Without this floor
+  # singletons dominate the ranking purely by arriving: in a 180-post run,
+  # 14 of the top 20 had a single mention and pushed a genuine 3-creator
+  # cluster down to rank 12. Trends are defined by independent repetition.
+  min_mentions: 2
+
+scoring:
+  # reach dominates on purpose. It measures DEMAND -- how many people actually
+  # watched. volume measures SUPPLY -- how many creators posted -- and is
+  # weighted low because content farms manufacture supply: a live pull found 11
+  # channels all posting the same "Dubai Viral Qishta" video for ~11,400 total
+  # views, while one chicken au poivre Short pulled 241,000 on its own. Ranking
+  # on volume put the qishta cluster first, which was backwards.
+  weights:
+    reach: 0.40
+    velocity: 0.25
+    volume: 0.15
+    breadth: 0.10
+    recency: 0.10
+  recency_halflife_days: 5

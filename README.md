@@ -4,6 +4,8 @@
 backend/     Supabase schema, seed, RLS
 frontend/    The Next.js app (auth + opportunities + research + kitchen)
 agent/       Gemini client, prompts, CLI
+ingestion/   YouTube + Google Trends scrape and ranking
+finance/     P&L baseline and budget allocation
 data/out     Pipeline artifacts (not backend, not frontend)
 ```
 
