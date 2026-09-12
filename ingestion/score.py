@@ -2,6 +2,10 @@
 
 trend_score combines four components, weighted from config.yaml:
 
+  virality  how much of the dish's coverage actually broke out -- mean
+            breakout ratio against channel baselines, plus whether creators
+            framed it as trend coverage. This is what separates a trend from
+            a recipe two channels happened to post in the same fortnight.
   reach     total audience the dish reached -- log-scaled views summed across
             its posts. This is the dominant component and it measures DEMAND.
   volume    how many posts mention the dish, relative to the top dish. Measures
@@ -96,6 +100,7 @@ def _to_dish(
     posts = cluster.posts
 
     components: dict[str, float] = {
+        "virality": _virality(posts),
         "reach": _reach(posts, peak_reach),
         "volume": len(posts) / peak_volume if peak_volume else 0.0,
         "breadth": len(_source_scopes(cluster)) / peak_breadth,
@@ -199,6 +204,29 @@ def _own_velocity(cluster: DishCluster, peak_per_day: int) -> float | None:
 
 def _total_views(posts: list) -> int:
     return sum(p.engagement or 0 for p in posts)
+
+
+def _virality(posts: list) -> float:
+    """How much of this dish's coverage genuinely broke out, 0-1.
+
+    Two parts, because they answer different questions. Breakout ratio says
+    the AUDIENCE responded beyond what the channel normally draws. Trend
+    markers say the CREATOR was covering a trend rather than posting a recipe.
+    A dish with both is the Dubai-chocolate shape; a dish with neither is two
+    channels coincidentally posting risotto.
+
+    Breakout is capped at 4x before scaling -- one runaway video should lift a
+    dish clearly without letting a single outlier saturate the component.
+    """
+    if not posts:
+        return 0.0
+
+    ratios = [p.breakout_ratio for p in posts if p.breakout_ratio is not None]
+    breakout = (
+        min(1.0, (sum(ratios) / len(ratios)) / 4.0) if ratios else 0.0
+    )
+    marked = sum(1 for p in posts if p.trend_marker) / len(posts)
+    return 0.65 * breakout + 0.35 * marked
 
 
 def _reach(posts: list, peak_reach: int) -> float:

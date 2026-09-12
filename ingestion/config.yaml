@@ -279,18 +279,27 @@ output:
   min_mentions: 2
 
 scoring:
-  # reach dominates on purpose. It measures DEMAND -- how many people actually
+  # virality is what separates a trend from a recipe. Two food-media channels
+  # both posting a mushroom risotto video clusters exactly like a real trend
+  # does -- same mention count, same reach band -- but neither video broke out
+  # against its channel or was framed as trend coverage. Scoring on it rather
+  # than filtering on it keeps the list long enough to be useful while pushing
+  # the coincidences down: a hard viral_only gate left only 84 of 596 posts,
+  # which is too few to cluster.
+  #
+  # reach measures DEMAND -- how many people actually
   # watched. volume measures SUPPLY -- how many creators posted -- and is
   # weighted low because content farms manufacture supply: a live pull found 11
   # channels all posting the same "Dubai Viral Qishta" video for ~11,400 total
   # views, while one chicken au poivre Short pulled 241,000 on its own. Ranking
   # on volume put the qishta cluster first, which was backwards.
   weights:
-    reach: 0.40
-    velocity: 0.25
-    volume: 0.15
-    breadth: 0.10
-    recency: 0.10
+    reach: 0.32
+    virality: 0.25
+    velocity: 0.18
+    volume: 0.10
+    breadth: 0.08
+    recency: 0.07
   recency_halflife_days: 5
   # Momentum thresholds on mean breakout ratio, used when Google Trends is
   # unreachable (it rate-limits per IP at ~8-10 sessions/hour). A dish whose

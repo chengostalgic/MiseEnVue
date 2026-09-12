@@ -95,6 +95,16 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     posts = within_window(dedupe(posts), effective_window)
     if effective_window != since_days:
         print(f"  [window] keeping {effective_window}d (channel pulls reach back further)")
+    # viral_only is applied here, not in the connector. The connector's
+    # version only ran on live fetches -- --offline replays the cache straight
+    # into parse() and skipped it, so the same corpus produced different
+    # results depending on the flag. Filtering post-parse makes the two paths
+    # agree, and it is a policy decision rather than a fetch concern anyway.
+    if config.get("youtube", {}).get("virality", {}).get("viral_only", False):
+        before = len(posts)
+        posts = [p for p in posts if p.is_viral]
+        print(f"  [viral_only] {len(posts)}/{before} posts cleared the virality bar")
+
     posts = normalize(posts)
     print(f"\n{len(posts)} posts after dedupe + window filter")
 

@@ -212,11 +212,6 @@ class YouTubeConnector(Connector):
                 f"({counts.get('breakout',0)} breakout, {counts.get('surging',0)} surging), "
                 f"{counts.get('trend_marker',0)} trend-marked titles"
             )
-            if vcfg.get("viral_only", False):
-                before = len(videos)
-                videos = {k: v for k, v in videos.items() if v.get("is_viral")}
-                print(f"  [{self.name}] viral_only kept {len(videos)}/{before}")
-
         # Minimum-views floor, all videos. A 12-view upload is not evidence of
         # anything, and 75% of a relevance-ordered pull fell under 1,000.
         min_views = self.config.get("min_views", 0)
