@@ -103,8 +103,20 @@ Engagement is normalized per-source into a 0–1 percentile within that source's
 so a Reddit upvote count and a TikTok view count are comparable.
 
 **3. Extract & cluster** — the interesting part.
+
+The unit of extraction is a **dish** — something an owner could put on a menu and a
+campaign could be built around. This is a hard filter, not a preference. Ingredient
+trends ("chili crisp is everywhere"), technique trends, and format trends are real
+signals but are not outputs: nobody drives foot traffic with Lao Gan Ma. They get
+resolved into the dish that carries them, and recorded as a *driver* in
+`why_trending` — which is where they're actually useful, since "this ingredient is
+having a moment" is a strong campaign angle for Part 3. If a trend can't be resolved
+to a nameable dish, it is dropped.
+
 - Run an LLM extraction pass over batched posts to pull dish mentions and the
-  stated/implied reason for interest.
+  stated/implied reason for interest. The prompt states the dish-level constraint
+  explicitly and instructs the model to return nothing rather than emit a bare
+  ingredient or technique.
 - Cluster surface forms into one dish entity ("hot honey wings" / "chili crisp
   wings" → one dish, the rest become `aliases`). Start with embedding similarity +
   a threshold; a manual alias override file handles the cases it gets wrong.
