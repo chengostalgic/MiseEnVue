@@ -21,14 +21,27 @@ export async function generateGeminiText(
     body.tools = [{ googleSearch: {} }];
   }
 
-  const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+  const isBearer = apiKey.startsWith("AQ.") || apiKey.startsWith("ya29.");
+  const url = isBearer ? GEMINI_URL : `${GEMINI_URL}?key=${apiKey}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (isBearer) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini request failed (${response.status}): ${await response.text()}`);
+    const errorBody = await response.text();
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `Gemini authentication failed (${response.status}). Ensure GEMINI_API_KEY in .env.local is a valid Google AI Studio API key. Details: ${errorBody}`
+      );
+    }
+    throw new Error(`Gemini request failed (${response.status}): ${errorBody}`);
   }
 
   const data = await response.json();
