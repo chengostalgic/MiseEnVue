@@ -1,6 +1,9 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../../backend/supabase/functions/_shared/db.types";
+
+export type { Database };
 
 function getSupabaseUrl() {
   return process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,9 +17,9 @@ export function isSupabaseConfigured() {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
 
-let client: SupabaseClient | undefined;
+let client: SupabaseClient<Database> | undefined;
 
-export function getSupabaseClient() {
+export function getSupabaseClient(): SupabaseClient<Database> {
   const supabaseUrl = getSupabaseUrl();
   const supabaseKey = getSupabaseKey();
 
@@ -26,6 +29,6 @@ export function getSupabaseClient() {
     );
   }
 
-  client ??= createClient(supabaseUrl, supabaseKey);
+  client ??= createClient<Database>(supabaseUrl, supabaseKey);
   return client;
 }
