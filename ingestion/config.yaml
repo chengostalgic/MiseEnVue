@@ -1,0 +1,65 @@
+# Pipeline configuration.
+#
+# Everything tunable lives here so nothing needs editing in Python at 2am
+# during the demo.
+
+reddit:
+  subreddits:
+    - food
+    - FoodPorn
+    - recipes
+    - Cooking
+    - KitchenConfidential
+    - restaurantowners
+  # Swap for the demo city. Local subs are where location-specific trends show up.
+  local_subreddits:
+    - houston
+    - houstonfood
+  sort: hot
+  limit_per_sub: 100
+
+google_trends:
+  # Task #6. Terms are seeded from the dish names extraction finds, not hardcoded.
+  geo: US
+  timeframe: now 7-d
+
+output:
+  # Small enough to eyeball for quality before presenting, which is the only
+  # QA process a 2-day build affords.
+  max_dishes: 20
+
+scoring:
+  # Task #6 applies these. The volume-only placeholder ignores them.
+  weights:
+    volume: 0.35
+    velocity: 0.35
+    breadth: 0.20
+    recency: 0.10
+  recency_halflife_days: 3
+
+# ---------------------------------------------------------------------------
+# PLACEHOLDER -- delete when LLM extraction lands (task #5).
+# The keyword matcher can only find dishes named here, which is exactly the
+# limitation the real extraction pass removes.
+# ---------------------------------------------------------------------------
+placeholder_dishes:
+  - id: chili-crisp-hot-honey-wings
+    name: hot honey wings
+    aliases: ["chili crisp wings", "hot honey chicken"]
+    cuisine_tags: ["american", "bar-food"]
+  - id: birria-grilled-cheese
+    name: birria grilled cheese
+    aliases: ["birria melt", "quesabirria"]
+    cuisine_tags: ["mexican", "sandwich"]
+  - id: cucumber-salad
+    name: cucumber salad
+    aliases: ["smashed cucumber", "smashed cucumbers"]
+    cuisine_tags: ["chinese", "side"]
+  - id: gochujang-caramel-cookies
+    name: gochujang cookies
+    aliases: ["gochujang caramel"]
+    cuisine_tags: ["dessert", "korean-fusion"]
+  - id: ube-cheesecake
+    name: ube cheesecake
+    aliases: ["ube basque", "purple yam cheesecake"]
+    cuisine_tags: ["filipino", "dessert"]

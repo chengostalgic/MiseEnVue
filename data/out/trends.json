@@ -1,6 +1,7 @@
 {
   "_meta": {
     "fixture": true,
+    "hand_written": true,
     "note": "HAND-WRITTEN SAMPLE DATA. Defines the Part 1 -> Part 2 contract so downstream work is not blocked on the pipeline. The real pipeline overwrites this same path. URLs here are synthetic placeholders and will 404 -- real evidence URLs arrive with the Reddit connector.",
     "schema_version": 1
   },
