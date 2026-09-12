@@ -1,0 +1,16 @@
+{
+  "name": "@miseenvue/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "pipeline": "tsx cli.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,16 @@
+ID,Transaction Name,Timestamp,Category,Type,Amount,Status
+tx-1,"Baldor Specialty Foods (Organic Produce & Microgreens)","Today, 09:42","Kitchen COGS",expense,-482.5,In progress
+tx-2,"US Foods Direct (Prime Ribeye & Dairy Restock)","Yesterday, 14:10","Food Inventory",expense,-1240,Completed
+tx-3,"Toast POS Daily Settlement (Dinner Rush)","Yesterday, 23:59","POS Revenue",income,3842.5,Completed
+tx-4,"Southern Glazer's Wine & Spirits (Pinot & Bar Restock)","Oct 24, 11:20","Cellar Restock",expense,-680,Completed
+tx-5,"Ecolab Commercial Dishwasher & Chemical Lease","Oct 22, 08:30","BOH Sanitation",expense,-215,Completed
+tx-6,"Cintas Linen & Chef Uniform Laundry","Oct 20, 10:15","Linen & Floor",expense,-165.4,Completed
+
+--- FINANCIAL SUMMARY ---
+Current Treasury Balance,12680.42
+Food & Ingredients COGS,604.36
+Wine & Spirits Float,296.65
+Front-of-House Labor,206.48
+Ad Spend & Promos,182.44
+Uncovered MILP Profit,0.00
+Active Automated Campaigns,0
