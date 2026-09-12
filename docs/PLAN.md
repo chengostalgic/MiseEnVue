@@ -388,7 +388,15 @@ biases. `text` (title + description) identifies the dish but is written by someo
 promoting it; `comments` is the audience talking back. Extraction reads the first for
 identity and the second for sentiment.
 
-**3. Extract & cluster** — the interesting part.
+**3. Extract & cluster** — the interesting part. Two passes, both using Claude
+with structured outputs (schema enforced server-side, so a malformed response is
+not a failure mode to handle mid-demo):
+
+1. **Cluster** — batches of posts → dish assignments, carrying the running dish
+   list forward.
+2. **Synthesize** — per dish → `why_trending`, grounded only in that dish's own
+   posts and comments.
+
 
 The unit of extraction is a **dish** — something an owner could put on a menu and a
 campaign could be built around. This is a hard filter, not a preference. Ingredient
@@ -404,11 +412,13 @@ to a nameable dish, it is dropped.
   explicitly and instructs the model to return nothing rather than emit a bare
   ingredient or technique.
 - Cluster surface forms into one dish entity ("hot honey wings" / "chili crisp
-  wings" → one dish, the rest become `aliases`). Do this **inside the same LLM
-  call** by passing the dish list found so far and asking the model to either match
-  an existing entry or start a new one. No embeddings, no vector store, no
-  similarity threshold to tune — at a few hundred posts the model handles it, and
-  the alternative is an afternoon spent on infrastructure that a prompt replaces.
+  wings" → one dish, the rest become `aliases`). Each batch receives the dish list
+  found so far and either matches an existing entry or coins a new one. No
+  embeddings, no vector store, no similarity threshold to tune — at a few hundred
+  posts the model handles it, and the alternative is an afternoon spent on
+  infrastructure that a prompt replaces. Model-supplied ids are slug-normalized on
+  the way in, so `Chicken-Au-Poivre` in one batch cannot split from
+  `chicken-au-poivre` in another.
 - Synthesize `why_trending` from the clustered evidence, not from model priors —
   the summary must be grounded in the posts actually collected.
 

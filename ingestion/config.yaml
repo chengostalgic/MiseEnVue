@@ -64,6 +64,16 @@ google_trends:
   # not arrived here yet, which is either the opportunity or the warning.
   timeframe: now 7-d
 
+extraction:
+  model: claude-opus-5
+  # Posts per clustering call. Larger batches see more context at once (better
+  # clustering) but each call gets slower and the running dish list grows.
+  batch_size: 12
+  effort: medium
+  # why_trending synthesis is one call per dish; a dish with a single mention
+  # will not survive ranking anyway.
+  explain_top_n: 20
+
 output:
   # Small enough to eyeball for quality before presenting, which is the only
   # QA process a 2-day build affords.
@@ -77,30 +87,3 @@ scoring:
     breadth: 0.20
     recency: 0.10
   recency_halflife_days: 3
-
-# ---------------------------------------------------------------------------
-# PLACEHOLDER -- delete when LLM extraction lands (task #5).
-# The keyword matcher can only find dishes named here, which is exactly the
-# limitation the real extraction pass removes.
-# ---------------------------------------------------------------------------
-placeholder_dishes:
-  - id: chili-crisp-hot-honey-wings
-    name: hot honey wings
-    aliases: ["chili crisp wings", "hot honey chicken"]
-    cuisine_tags: ["american", "bar-food"]
-  - id: birria-grilled-cheese
-    name: birria grilled cheese
-    aliases: ["birria melt", "quesabirria"]
-    cuisine_tags: ["mexican", "sandwich"]
-  - id: cucumber-salad
-    name: cucumber salad
-    aliases: ["smashed cucumber", "smashed cucumbers"]
-    cuisine_tags: ["chinese", "side"]
-  - id: gochujang-caramel-cookies
-    name: gochujang cookies
-    aliases: ["gochujang caramel"]
-    cuisine_tags: ["dessert", "korean-fusion"]
-  - id: ube-cheesecake
-    name: ube cheesecake
-    aliases: ["ube basque", "purple yam cheesecake"]
-    cuisine_tags: ["filipino", "dessert"]
