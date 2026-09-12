@@ -257,7 +257,6 @@ def _metrics(
         total_engagement=sum(p.engagement or 0 for p in posts),
         sentiment={k: round(v / total, 2) for k, v in counts.items()},
         negative_theme=cluster.negative_theme,
-        local_mention_count=sum(1 for p in posts if p.scope == "local"),
     )
 
 

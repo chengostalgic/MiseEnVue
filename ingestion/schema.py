@@ -92,12 +92,6 @@ class Metrics:
     total_engagement: int
     sentiment: dict[str, float]
     negative_theme: str = ""
-    # How much of the conversation is in the client's own market. A dish
-    # trending nationally with zero local mentions is either an early opening
-    # or a poor fit for local taste, and the owner is far better placed to
-    # judge which than the pipeline is -- so surface the number, don't bury it
-    # in the score.
-    local_mention_count: int = 0
 
 
 @dataclass

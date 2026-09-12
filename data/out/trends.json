@@ -2,7 +2,7 @@
   "_meta": {
     "fixture": true,
     "hand_written": true,
-    "note": "HAND-WRITTEN SAMPLE DATA. Defines the Part 1 -> Part 2 contract so downstream work is not blocked on the pipeline. The real pipeline overwrites this same path. URLs here are synthetic placeholders and will 404 -- real evidence URLs arrive with the YouTube connector. Evidence excerpts are video titles or viewer comments; sentiment comes from comments, not creator descriptions. Metrics include local_mention_count -- how much of the conversation is in the client's own market (config: location.city).",
+    "note": "HAND-WRITTEN SAMPLE DATA. Defines the Part 1 -> Part 2 contract so downstream work is not blocked on the pipeline. The real pipeline overwrites this same path. URLs here are synthetic placeholders and will 404 -- real evidence URLs arrive with the YouTube connector. Evidence excerpts are video titles or viewer comments; sentiment comes from comments, not creator descriptions.",
     "schema_version": 1
   },
   "generated_at": "2026-09-12T14:30:00Z",
@@ -44,8 +44,7 @@
           "negative": 0.08,
           "neutral": 0.11
         },
-        "negative_theme": "Cloyingly sweet when the honey is overdone; a few call it a played-out trend.",
-        "local_mention_count": 11
+        "negative_theme": "Cloyingly sweet when the honey is overdone; a few call it a played-out trend."
       },
       "why_trending": {
         "summary": "Chili crisp has crossed over from a niche condiment into mainstream bar food, and wings are the cheapest vehicle for it. Short-form video does the rest -- the glaze photographs well and the pull-apart shot is reliably satisfying.",
@@ -134,8 +133,7 @@
           "negative": 0.05,
           "neutral": 0.09
         },
-        "negative_theme": "Purists object to calling it birria; some report it goes greasy fast.",
-        "local_mention_count": 24
+        "negative_theme": "Purists object to calling it birria; some report it goes greasy fast."
       },
       "why_trending": {
         "summary": "The birria wave has moved past tacos into other formats, and grilled cheese is the most legible one for non-Mexican menus. The consomme dip is the shareable moment -- it is effectively a built-in video hook.",
@@ -202,8 +200,7 @@
           "negative": 0.14,
           "neutral": 0.12
         },
-        "negative_theme": "Widely seen as overpriced for what it is; several complain about watery execution.",
-        "local_mention_count": 6
+        "negative_theme": "Widely seen as overpriced for what it is; several complain about watery execution."
       },
       "why_trending": {
         "summary": "Very high mention volume driven by a viral short-form recipe format, but sentiment is softer than the raw numbers suggest -- a meaningful slice of the conversation is people objecting to restaurant pricing on a cheap ingredient.",
@@ -276,8 +273,7 @@
           "negative": 0.19,
           "neutral": 0.12
         },
-        "negative_theme": "Polarizing -- a real contingent finds sweet-plus-fermented-chili actively unpleasant.",
-        "local_mention_count": 0
+        "negative_theme": "Polarizing -- a real contingent finds sweet-plus-fermented-chili actively unpleasant."
       },
       "why_trending": {
         "summary": "A genuinely divisive dish, which is part of why it travels. The argument in the comments is the engagement engine; people who love it evangelize and people who hate it say so loudly.",
@@ -335,8 +331,7 @@
           "negative": 0.33,
           "neutral": 0.15
         },
-        "negative_theme": "Strong saturation backlash -- widely described as overexposed and overpriced for the portion.",
-        "local_mention_count": 19
+        "negative_theme": "Strong saturation backlash -- widely described as overexposed and overpriced for the portion."
       },
       "why_trending": {
         "summary": "Still the highest raw mention volume in this window, but the trajectory is down and sentiment has turned noticeably sour. This is a late-stage trend: the volume is real, the opportunity is mostly gone, and a third of the conversation is now backlash.",
@@ -401,8 +396,7 @@
           "negative": 0.09,
           "neutral": 0.13
         },
-        "negative_theme": "Some report the numbing sensation is off-putting to first-timers without warning on the menu.",
-        "local_mention_count": 0
+        "negative_theme": "Some report the numbing sensation is off-putting to first-timers without warning on the menu."
       },
       "why_trending": {
         "summary": "Early-stage and YouTube-only -- no search signal yet, which is exactly what a trend looks like before it breaks. Lower confidence than the volume leaders but the highest upside if the restaurant moves first.",
@@ -460,8 +454,7 @@
           "negative": 0.13,
           "neutral": 0.16
         },
-        "negative_theme": "Perceived as an overpriced brunch staple; 'it's toast' appears repeatedly.",
-        "local_mention_count": 8
+        "negative_theme": "Perceived as an overpriced brunch staple; 'it's toast' appears repeatedly."
       },
       "why_trending": {
         "summary": "Not rising, but durable -- this has held steady for months rather than spiking. Low risk and low ceiling: a safe brunch addition that will not generate its own press.",
@@ -520,8 +513,7 @@
           "negative": 0.18,
           "neutral": 0.16
         },
-        "negative_theme": "Resistance to paying restaurant markup on a product that is visibly from a tin.",
-        "local_mention_count": 3
+        "negative_theme": "Resistance to paying restaurant markup on a product that is visibly from a tin."
       },
       "why_trending": {
         "summary": "Holding steady rather than growing. The economics are excellent and prep is near zero, but the central objection -- customers can see it came from a tin -- is a real constraint on pricing.",
@@ -571,8 +563,7 @@
           "negative": 0.24,
           "neutral": 0.18
         },
-        "negative_theme": "Repeated complaints that cutting them is dangerous and the yield is poor.",
-        "local_mention_count": 2
+        "negative_theme": "Repeated complaints that cutting them is dangerous and the yield is poor."
       },
       "why_trending": {
         "summary": "Past its peak and declining. Included for completeness -- the operational objection (cutting raw corn cobs lengthwise is genuinely hazardous) shows up often enough that it should factor into any feasibility decision downstream.",
@@ -629,8 +620,7 @@
           "negative": 0.04,
           "neutral": 0.08
         },
-        "negative_theme": "Very few complaints; occasional note that ube extract tastes artificial versus real ube.",
-        "local_mention_count": 5
+        "negative_theme": "Very few complaints; occasional note that ube extract tastes artificial versus real ube."
       },
       "why_trending": {
         "summary": "Low volume but the highest sentiment in this set -- almost nobody who mentions it dislikes it. A small, loyal signal rather than a broad one, which suits a restaurant with an existing dessert program more than one chasing reach.",
@@ -652,9 +642,5 @@
         }
       ]
     }
-  ],
-  "market": {
-    "city": "Houston",
-    "trends_geo": "US-TX-618"
-  }
+  ]
 }

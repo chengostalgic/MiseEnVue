@@ -80,26 +80,10 @@ class YouTubeConnector(Connector):
         per_query = self.config.get("results_per_query", 25)
         comment_limit = self.config.get("comments_per_video", 20)
 
-        # Two query sets answering two different questions. National category
-        # searches find dishes rising anywhere, which is where being early
-        # comes from. Local searches are templated with the client's city and
-        # show what this market actually eats -- and what competitors already
-        # serve. Neither alone is enough: a dish trending nationally but absent
-        # locally might be an opening or might be a bad fit for the market, and
-        # only the local signal tells you which.
-        city = self.config.get("city", "")
-        region = self.config.get("region_name", "")
+        # National only. The earlier city/state tiers were dropped -- what the
+        # product needs is what is going viral across US food media, which a
+        # restaurant in any city can act on.
         queries = [(q, "national") for q in self.config.get("queries", [])]
-        if region:
-            queries += [
-                (t.format(region=region), "regional")
-                for t in self.config.get("regional_query_templates", [])
-            ]
-        if city:
-            queries += [
-                (t.format(city=city), "local")
-                for t in self.config.get("local_query_templates", [])
-            ]
 
         # Each query runs under BOTH orderings, because they select for
         # different failure modes:

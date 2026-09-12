@@ -3,26 +3,14 @@
 # Everything tunable lives here so nothing needs editing in Python at 2am
 # during the demo.
 
-# ---------------------------------------------------------------------------
-# CLIENT LOCATION -- change these three values to re-point the whole pipeline
-# at a different restaurant's market.
-#
-# trends_geo is a Google Trends DMA code and is the strongest local signal we
-# have. Verified: US-TX-618 returns "dripped birria katy" and "blk mkt birria"
-# -- suburb-level results, not national data with a filter on it.
-# Find other codes at https://github.com/pat310/google-trends-api (DMA list),
-# e.g. Austin US-TX-635, Dallas US-TX-623, NYC US-NY-501, LA US-CA-803.
-# ---------------------------------------------------------------------------
+# National-only. An earlier version carried three geographic tiers (metro DMA,
+# state, national) with city-templated queries and DMA-level Trends lookups.
+# It was dropped: metro search volume is frequently zero even for real trends,
+# the local YouTube content that exists is tiny channels, and the signal the
+# product actually needs is what is going viral nationally -- a dish blowing up
+# across US food media is a dish a restaurant in any city can act on.
 location:
-  city: Houston
-  region_name: Texas
   region_code: US
-  # Three geographic tiers, narrowest first. A metro DMA is often TOO narrow --
-  # a dish can have real regional momentum and no measurable DMA search volume
-  # at all (verified: "qishta" returns nothing at US-TX-618 but is real).
-  # The pipeline falls back outward: metro -> state -> national.
-  trends_geo: US-TX-618
-  trends_geo_region: US-TX
 
 youtube:
   # search.list costs 100 quota units per query against a 10,000/day budget, so
@@ -118,18 +106,9 @@ youtube:
   # not worth using. They only match videos carrying explicit geotags, which
   # is a small and unrepresentative slice, and the results mixed genuinely
   # local content with generic food videos that happened to be tagged. Putting
-  # the city name in the query returned markedly better local results.
-  local_query_templates:
-    - "{city} best new restaurant"
-    - "{city} food trend must try"
-    - "{city} viral restaurant dish"
 
   # Regional queries sit between city and national. A metro alone is a thin
   # slice of content; the surrounding state catches food-scene coverage that
-  # is still relevant to this market but never says the city's name.
-  regional_query_templates:
-    - "{region} food trend"
-    - "best new restaurants {region}"
 
   results_per_query: 50
   # Comments carry the sentiment signal; titles and descriptions are marketing.
@@ -235,11 +214,10 @@ youtube:
       - obsessed
 
 google_trends:
-  # Terms are seeded from the dish names extraction finds, not hardcoded.
-  # Queried twice per term -- once at location.trends_geo for local velocity,
-  # once nationally for the broader trajectory. The gap between them is the
-  # interesting part: rising nationally but flat locally means the trend has
-  # not arrived here yet, which is either the opportunity or the warning.
+  # Optional enrichment only -- Google rate-limits per IP at ~8-10 sessions an
+  # hour and blocks outright under load. Momentum comes from video velocity
+  # (see ingestion/score.py); a reachable Trends reading refines it. National
+  # only.
   timeframe: now 7-d
   # Percent change (second half of window vs first) that flips momentum.
   rising_threshold_pct: 15
