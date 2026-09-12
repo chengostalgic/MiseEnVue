@@ -79,12 +79,20 @@ def fetch_velocity(
 
     results: dict[str, Velocity] = {t: Velocity(term=t) for t in terms}
     pytrends = TrendReq(hl="en-US", tz=360)
+    # pytrends is an unofficial client and Google throttles it hard. Once it
+    # starts returning 429s it generally keeps doing so for the rest of the
+    # session, so a shared circuit breaker stops us burning minutes on retries
+    # that will not succeed. Velocity is optional -- dishes still rank on reach
+    # and volume without it.
+    state = {"tripped": False}
 
     for start in range(0, len(terms), BATCH_SIZE):
         batch = terms[start : start + BATCH_SIZE]
-        national = _series(pytrends, batch, timeframe, "US", cfg)
-        regional = _series(pytrends, batch, timeframe, geo_region, cfg) if geo_region else {}
-        local = _series(pytrends, batch, timeframe, geo_local, cfg) if geo_local else {}
+        if state["tripped"]:
+            break
+        national = _series(pytrends, batch, timeframe, "US", cfg, state)
+        regional = _series(pytrends, batch, timeframe, geo_region, cfg, state) if geo_region else {}
+        local = _series(pytrends, batch, timeframe, geo_local, cfg, state) if geo_local else {}
 
         for term in batch:
             v = results[term]
@@ -101,15 +109,18 @@ def fetch_velocity(
     # Rising local queries are discovery, not scoring -- they surface what this
     # specific market is searching for around the dish, which is campaign
     # material for Part 3 rather than a ranking input.
-    if geo_local and cfg.get("fetch_rising", True):
+    if geo_local and cfg.get("fetch_rising", True) and not state["tripped"]:
         _attach_rising(pytrends, results, timeframe, geo_local, cfg)
 
-    _write_cache(results)
+    # Only cache a pull that actually produced something -- caching an
+    # all-empty result would poison every subsequent --offline run.
+    if any(v.computable for v in results.values()):
+        _write_cache(results)
     return results
 
 
 def _series(
-    pytrends, batch: list[str], timeframe: str, geo: str, cfg: dict
+    pytrends, batch: list[str], timeframe: str, geo: str, cfg: dict, state: dict
 ) -> dict[str, list[float]]:
     """interest_over_time for one batch, with backoff.
 
@@ -128,6 +139,16 @@ def _series(
                 term: frame[term].tolist() for term in batch if term in frame.columns
             }
         except Exception as exc:  # noqa: BLE001 - rate limits are the common case
+            if "TooManyRequests" in type(exc).__name__ or "429" in str(exc):
+                state["rate_limited"] = state.get("rate_limited", 0) + 1
+                if state["rate_limited"] >= cfg.get("give_up_after_429s", 3):
+                    state["tripped"] = True
+                    print(
+                        "  [trends] rate limited by Google; skipping velocity for "
+                        "the rest of this run. Dishes still rank on reach and "
+                        "volume. Re-run later or use --offline to replay a good pull."
+                    )
+                    return {}
             if attempt == cfg.get("max_retries", 3) - 1:
                 print(f"  [trends] batch failed for geo={geo or 'US'} ({type(exc).__name__})")
                 return {}

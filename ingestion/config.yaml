@@ -142,6 +142,10 @@ google_trends:
   # for those dishes rather than failing the run.
   max_retries: 3
   retry_delay_seconds: 3
+  # pytrends is unofficial and Google throttles it hard. Once 429s start they
+  # usually continue for the session, so stop trying rather than burning
+  # minutes on retries that will not succeed.
+  give_up_after_429s: 3
   # Rising local queries are campaign material for Part 3, not a ranking input.
   # One extra request per dish -- turn off if rate limits bite.
   fetch_rising: true
