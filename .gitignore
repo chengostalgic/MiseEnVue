@@ -1,0 +1,42 @@
+# Cached raw source pulls — large, regenerable, and often API-ToS-sensitive.
+# NOTE: data/out/ and data/fixtures/ are deliberately NOT ignored. trends.json is
+# the Part 1 -> Part 2 contract and fixtures are the offline demo safety net.
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node / Next
+node_modules
+.next
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.*
+!.env.example
