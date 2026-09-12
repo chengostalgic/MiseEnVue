@@ -48,6 +48,16 @@ export default function Home() {
       });
   }, [session]);
 
+  if (!isSupabaseConfigured()) {
+    return (
+      <ProductShell
+        session={null}
+        restaurantName="Demo kitchen"
+        restaurantCity={null}
+      />
+    );
+  }
+
   if (checking) {
     return (
       <main className="page-shell">

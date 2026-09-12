@@ -15,7 +15,9 @@ export type ScrapedDish = {
   trend_score: number;
   momentum: string;
   metrics?: {
+    window_days?: number;
     mention_count?: number;
+    by_source?: Record<string, number>;
     total_engagement?: number;
     local_mention_count?: number;
     sentiment?: { positive?: number; negative?: number; neutral?: number };
@@ -30,7 +32,7 @@ export type ScrapedDish = {
 };
 
 export type TrendsContract = {
-  _meta?: { fixture?: boolean; hand_written?: boolean };
+  _meta?: { fixture?: boolean; hand_written?: boolean; schema_version?: number; note?: string };
   generated_at?: string;
   window?: { days?: number; start?: string; end?: string };
   sources_used?: string[];

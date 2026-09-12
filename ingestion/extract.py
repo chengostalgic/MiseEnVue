@@ -222,42 +222,18 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
 
 
 def _select(posts: list[Post], cfg: dict) -> list[Post]:
-    """Cap how many posts reach the model, sampling within each scope.
+    """Cap how many posts reach the model, keeping the most-engaged.
 
-    A wide pull can return a thousand videos, which is ~80 clustering calls --
-    slow and expensive for little gain, since the tail is mostly low-engagement
-    noise. Taking the globally top-N by engagement would be wrong though: local
-    posts pull 20-900 views against national's hundreds of thousands, so a
-    global cut would delete the local tier entirely. Quota is allocated per
-    scope instead, and each scope keeps its own most-engaged posts.
+    The cap is normally set above the expected corpus size so nothing is
+    dropped; it exists as a guard against a runaway pull turning into a
+    hundred clustering calls.
     """
     cap = cfg.get("max_posts", 300)
     if len(posts) <= cap:
         return posts
 
-    by_scope: dict[str, list[Post]] = {}
-    for p in posts:
-        by_scope.setdefault(p.scope, []).append(p)
-
-    # Reserve a floor for the narrow tiers, then give national the remainder.
-    floors = cfg.get("scope_floors", {"local": 60, "regional": 60})
-    selected: list[Post] = []
-    for scope, group in by_scope.items():
-        group.sort(key=lambda p: p.engagement_pct or 0, reverse=True)
-        if scope in floors:
-            selected += group[: floors[scope]]
-
-    remaining = cap - len(selected)
-    national = sorted(
-        by_scope.get("national", []), key=lambda p: p.engagement_pct or 0, reverse=True
-    )
-    selected += national[: max(0, remaining)]
-
-    kept = {}
-    for p in selected:
-        kept.setdefault(p.scope, 0)
-        kept[p.scope] += 1
-    print(f"  [extract] {len(posts)} posts -> {len(selected)} sampled {kept}")
+    selected = sorted(posts, key=lambda p: p.engagement_pct or 0, reverse=True)[:cap]
+    print(f"  [extract] {len(posts)} posts -> {len(selected)} sampled by engagement")
     return selected
 
 

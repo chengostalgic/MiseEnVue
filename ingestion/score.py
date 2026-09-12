@@ -2,13 +2,18 @@
 
 trend_score combines four components, weighted from config.yaml:
 
+  virality  how much of the dish's coverage actually broke out -- mean
+            breakout ratio against channel baselines, plus whether creators
+            framed it as trend coverage. This is what separates a trend from
+            a recipe two channels happened to post in the same fortnight.
   reach     total audience the dish reached -- log-scaled views summed across
             its posts. This is the dominant component and it measures DEMAND.
   volume    how many posts mention the dish, relative to the top dish. Measures
             SUPPLY, so it is weighted low: eleven small channels copying each
             other's SEO produces high volume and almost no audience.
-  velocity  search trajectory from Google Trends -- the only component that
-            knows whether a trend is arriving or leaving
+  velocity  audience trajectory. Derived from the dish's own videos --
+            breakout against channel baselines and views/day -- with Google
+            Trends used only as optional enrichment when it is reachable.
   breadth   how many distinct (source, scope) pairs it appears in
   recency   exponential decay on post age
 
@@ -68,10 +73,13 @@ def score_all(
     peak_volume = max(len(c.posts) for c in clusters)
     peak_breadth = max(len(_source_scopes(c)) for c in clusters) or 1
     peak_reach = max(_total_views(c.posts) for c in clusters) or 1
+    peak_views_per_day = max(
+        (max((p.views_per_day or 0) for p in c.posts) for c in clusters), default=0
+    ) or 1
 
     dishes = [
-        _to_dish(c, window_days, peak_volume, peak_breadth, peak_reach, weights,
-                 scoring, velocities.get(c.name))
+        _to_dish(c, window_days, peak_volume, peak_breadth, peak_reach,
+                 peak_views_per_day, weights, scoring, velocities.get(c.name))
         for c in clusters
     ]
     dishes.sort(key=lambda d: d.trend_score, reverse=True)
@@ -84,6 +92,7 @@ def _to_dish(
     peak_volume: int,
     peak_breadth: int,
     peak_reach: int,
+    peak_views_per_day: int,
     weights: dict,
     scoring: dict,
     velocity: Velocity | None,
@@ -91,6 +100,7 @@ def _to_dish(
     posts = cluster.posts
 
     components: dict[str, float] = {
+        "virality": _virality(posts),
         "reach": _reach(posts, peak_reach),
         "volume": len(posts) / peak_volume if peak_volume else 0.0,
         "breadth": len(_source_scopes(cluster)) / peak_breadth,
@@ -98,6 +108,12 @@ def _to_dish(
     }
     if velocity is not None and velocity.computable:
         components["velocity"] = _velocity_component(velocity)
+    else:
+        # Fall back to the dish's own audience trajectory. Same quantity Trends
+        # was approximating, measured on data we already hold.
+        own = _own_velocity(cluster, peak_views_per_day)
+        if own is not None:
+            components["velocity"] = own
 
     # Renormalize over the components we actually have, so a dish missing
     # Trends data is not silently penalized against one that has it.
@@ -111,11 +127,43 @@ def _to_dish(
         aliases=cluster.aliases,
         cuisine_tags=cluster.cuisine_tags,
         trend_score=round(100.0 * score, 1),
-        momentum=velocity.momentum if velocity else "steady",
+        momentum=_momentum(cluster, velocity, scoring),
         metrics=_metrics(cluster, window_days, velocity),
         why_trending=cluster.why_trending,
         evidence=_pick_evidence(cluster, velocity),
     )
+
+
+def _momentum(cluster: DishCluster, velocity: Velocity | None, scoring: dict) -> str:
+    """Is this dish arriving or leaving?
+
+    Derived from the dish's own videos rather than Google Trends. Trends is
+    rate-limited per IP (roughly 8-10 sessions an hour) and was blocking
+    outright during development, so depending on it for a headline field made
+    the demo hostage to an endpoint we do not control.
+
+    The video data measures the same thing more directly anyway: breakout ratio
+    is a video's views against its channel's own median, so a dish whose videos
+    consistently outperform their channels is one the audience is seeking out
+    rather than one that rode a big subscriber base. Google search volume was
+    always a proxy for that.
+
+    A reachable Trends reading still wins when it exists -- it is independent
+    evidence, and independent evidence beats inference.
+    """
+    if velocity is not None and velocity.computable:
+        return velocity.momentum
+
+    ratios = [p.breakout_ratio for p in cluster.posts if p.breakout_ratio is not None]
+    if not ratios:
+        return "steady"
+
+    mean_ratio = sum(ratios) / len(ratios)
+    if mean_ratio >= scoring.get("rising_breakout", 1.8):
+        return "rising"
+    if mean_ratio <= scoring.get("fading_breakout", 0.7):
+        return "fading"
+    return "steady"
 
 
 def _velocity_component(v: Velocity) -> float:
@@ -141,8 +189,44 @@ def _velocity_component(v: Velocity) -> float:
     return component
 
 
+def _own_velocity(cluster: DishCluster, peak_per_day: int) -> float | None:
+    """Velocity from the dish's own videos, normalized 0-1.
+
+    Peak views/day across the dish's videos, scaled against the fastest-moving
+    dish in the run. A dish whose best video is pulling 200k views/day is
+    surging regardless of what Google search says.
+    """
+    rates = [p.views_per_day or 0 for p in cluster.posts]
+    if not any(rates):
+        return None
+    return min(1.0, max(rates) / peak_per_day)
+
+
 def _total_views(posts: list) -> int:
     return sum(p.engagement or 0 for p in posts)
+
+
+def _virality(posts: list) -> float:
+    """How much of this dish's coverage genuinely broke out, 0-1.
+
+    Two parts, because they answer different questions. Breakout ratio says
+    the AUDIENCE responded beyond what the channel normally draws. Trend
+    markers say the CREATOR was covering a trend rather than posting a recipe.
+    A dish with both is the Dubai-chocolate shape; a dish with neither is two
+    channels coincidentally posting risotto.
+
+    Breakout is capped at 4x before scaling -- one runaway video should lift a
+    dish clearly without letting a single outlier saturate the component.
+    """
+    if not posts:
+        return 0.0
+
+    ratios = [p.breakout_ratio for p in posts if p.breakout_ratio is not None]
+    breakout = (
+        min(1.0, (sum(ratios) / len(ratios)) / 4.0) if ratios else 0.0
+    )
+    marked = sum(1 for p in posts if p.trend_marker) / len(posts)
+    return 0.65 * breakout + 0.35 * marked
 
 
 def _reach(posts: list, peak_reach: int) -> float:
@@ -201,7 +285,6 @@ def _metrics(
         total_engagement=sum(p.engagement or 0 for p in posts),
         sentiment={k: round(v / total, 2) for k, v in counts.items()},
         negative_theme=cluster.negative_theme,
-        local_mention_count=sum(1 for p in posts if p.scope == "local"),
     )
 
 

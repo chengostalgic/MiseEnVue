@@ -58,9 +58,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const query = body.query || "Crispy Smash Falafel";
-  const apiKey = body.apiKey;
   const repoDishes = readTrendsContract()?.dishes ?? [];
+  const query = body.query || repoDishes[0]?.name || "trending dish";
+  const apiKey = body.apiKey;
 
   try {
     const realtimeData = await fetchLiveSocialTrends(query, apiKey);

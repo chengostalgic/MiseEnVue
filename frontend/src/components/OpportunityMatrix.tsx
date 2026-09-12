@@ -12,6 +12,7 @@ import {
 import { startOpportunityRun, updateOpportunityStatus } from "@/lib/activation";
 import type { BudgetContract, ScrapedDish } from "@/lib/contractTypes";
 import { money } from "@/lib/format";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   fetchRestaurantOpportunities,
   inboxGroup,
@@ -146,7 +147,12 @@ export default function OpportunityMatrix({
         current.map((row) => (row.id === opp.id ? { ...row, status: "viewed" } : row)),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not mark as viewed");
+      setOpportunities((current) =>
+        current.map((row) => (row.id === opp.id ? { ...row, status: "viewed" } : row)),
+      );
+      if (isSupabaseConfigured()) {
+        setError(err instanceof Error ? err.message : "Could not mark as viewed");
+      }
     }
   }
 
@@ -156,9 +162,19 @@ export default function OpportunityMatrix({
     setError(null);
     try {
       await updateOpportunityStatus(selectedOpp.id, "rejected");
-      const rows = await load();
-      setFilter("passed");
-      setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
+      if (isSupabaseConfigured()) {
+        const rows = await load();
+        setFilter("passed");
+        setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
+      } else {
+        setOpportunities((current) =>
+          current.map((row) =>
+            row.id === selectedOpp.id ? { ...row, status: "rejected" } : row,
+          ),
+        );
+        setFilter("passed");
+        setSelectedId(selectedOpp.id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not pass this opportunity");
     } finally {
@@ -172,9 +188,19 @@ export default function OpportunityMatrix({
     setError(null);
     try {
       await startOpportunityRun(selectedOpp);
-      const rows = await load();
-      setFilter("running");
-      setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
+      if (isSupabaseConfigured()) {
+        const rows = await load();
+        setFilter("running");
+        setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
+      } else {
+        setOpportunities((current) =>
+          current.map((row) =>
+            row.id === selectedOpp.id ? { ...row, status: "testing" } : row,
+          ),
+        );
+        setFilter("running");
+        setSelectedId(selectedOpp.id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start this run");
     } finally {
@@ -403,9 +429,9 @@ export default function OpportunityMatrix({
                   {selectedOpp.evidence.length === 0 && (
                     <p className="text-xs text-neutral-500">No stored evidence for this pairing.</p>
                   )}
-                  {selectedOpp.evidence.map((item) => (
+                  {selectedOpp.evidence.map((item, index) => (
                     <div
-                      key={`${item.evidence_type}-${item.source}`}
+                      key={`${item.evidence_type}-${item.source}-${item.display_value ?? ""}-${index}`}
                       className="flex items-start justify-between gap-3 text-xs"
                     >
                       <span className="text-neutral-400">{item.description}</span>
@@ -447,9 +473,9 @@ export default function OpportunityMatrix({
                   </div>
                   {selectedOpp.run.assets.length > 0 && (
                     <div className="space-y-2">
-                      {selectedOpp.run.assets.map((asset) => (
+                      {selectedOpp.run.assets.map((asset, index) => (
                         <div
-                          key={`${asset.channel}-${asset.variant_label}`}
+                          key={`${asset.channel}-${asset.variant_label}-${index}`}
                           className="p-3 rounded-lg bg-neutral-950 border border-neutral-800"
                         >
                           <div className="text-[10px] uppercase tracking-wider text-cyan-400">

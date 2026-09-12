@@ -13,8 +13,22 @@ function getSupabaseKey() {
   return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 }
 
+function isPlaceholder(value: string) {
+  return /replace-with|your-publishable|changeme/i.test(value);
+}
+
 export function isSupabaseConfigured() {
-  return Boolean(getSupabaseUrl() && getSupabaseKey());
+  const url = getSupabaseUrl();
+  const key = getSupabaseKey();
+  if (!url || !key || isPlaceholder(url) || isPlaceholder(key)) return false;
+
+  if (typeof window !== "undefined") {
+    const appIsLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    const supabaseIsLocal = /127\.0\.0\.1|localhost/.test(url);
+    if (supabaseIsLocal && !appIsLocal) return false;
+  }
+
+  return true;
 }
 
 let client: SupabaseClient<Database> | undefined;

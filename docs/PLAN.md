@@ -302,7 +302,7 @@ without touching downstream code.
 | Source | Access path | Notes |
 |---|---|---|
 | YouTube | Data API v3, API key | **Primary.** Instant self-service key, no approval. Titles give dish names, comments give sentiment, view counts give volume. |
-| Google Trends | `pytrends` | Velocity per term — the rising/fading signal. No auth. |
+| Google Trends | `pytrends` | **Optional enrichment only.** Rate-limited per IP (~8–10 sessions/hour) and blocked outright during development. Velocity now comes from the videos themselves. |
 | YouTube Shorts | Same API, second pass gated on engagement rate | Shorts are where trends break first — and where engagement bait lives. See below. |
 | TikTok | hashtag / creative-center scrape | **Stretch.** No open API; scrapers break without warning. |
 | Instagram | hashtag pull | **Cut unless everything else is done.** Most restricted of the four. |
