@@ -10,6 +10,9 @@
 --   * A second restaurant owned by a second user. Tenant isolation is the one
 --     bug class that matters more than any other, and it cannot be tested with
 --     one tenant. supabase/tests/03_rls.test.sql depends on this fixture.
+--   * A third restaurant (Night Owl Noodles) that only filled a 3-minute brief:
+--     menu + thin inventory, no sales, null-dollar opportunities. Ember and
+--     Sunrise row counts stay the same so existing RLS assertions still pass.
 --   * Layer 4 and 5 rows (opportunities, evidence, a campaign, an experiment).
 --     At runtime these are written by job-generate-opportunities, which does not
 --     exist yet; seeding them is what lets the read paths, the views, and the
@@ -28,7 +31,8 @@ set search_path = public, extensions;
 -- Deleting the restaurants cascades through every tenant-owned table.
 delete from restaurants where id in (
   'a0000000-0000-0000-0000-000000000001',
-  'b0000000-0000-0000-0000-000000000001'
+  'b0000000-0000-0000-0000-000000000001',
+  'd0000000-0000-0000-0000-000000000001'
 );
 
 -- Global tables are not owned by a tenant, so they are cleared explicitly.
@@ -52,7 +56,8 @@ begin
   for r in
     select * from (values
       ('a', 'owner@miseenvue.test',  '11111111-1111-1111-1111-111111111111'::uuid, 'Dana Reyes'),
-      ('b', 'owner2@miseenvue.test', '22222222-2222-2222-2222-222222222222'::uuid, 'Luis Ortega')
+      ('b', 'owner2@miseenvue.test', '22222222-2222-2222-2222-222222222222'::uuid, 'Luis Ortega'),
+      ('c', 'owner3@miseenvue.test', '33333333-3333-3333-3333-333333333333'::uuid, 'Mina Cho')
     ) as t(key, email, fallback_id, full_name)
   loop
     select id into v_id from auth.users where email = r.email;
@@ -114,6 +119,13 @@ values
     'Sunrise Taqueria',
     'Second tenant. Exists so tenant isolation is testable, not to be a full demo.',
     'Mexican', 'Austin', 'TX', 'America/Chicago'
+  ),
+  (
+    'd0000000-0000-0000-0000-000000000001',
+    (select user_id from seed_owner where key = 'c'),
+    'Night Owl Noodles',
+    'Late-night counter noodles in Logan Square. Brief-only tenant: menu and a thin inventory count, no sales history.',
+    'Noodles', 'Chicago', 'IL', 'America/Chicago'
   );
 
 -- ===========================================================================
@@ -172,6 +184,15 @@ values
     'succeeded', 3, 3, 0, '[]',
     (select user_id from seed_owner where key = 'b'),
     now() - interval '30 days', now() - interval '30 days'
+  ),
+  (
+    'd0000000-0000-0000-0000-000000000101',
+    'd0000000-0000-0000-0000-000000000001',
+    'menu',
+    'd0000000-0000-0000-0000-000000000001/menu/1757000500000-menu.csv',
+    'succeeded', 8, 8, 0, '[]',
+    (select user_id from seed_owner where key = 'c'),
+    now() - interval '1 day', now() - interval '1 day'
   );
 
 -- ===========================================================================
@@ -196,7 +217,16 @@ values
 
   ('b0000000-0000-0000-0000-000000000201', 'b0000000-0000-0000-0000-000000000001', 'Barbacoa Taco',                     'Slow-braised beef cheek, onion, cilantro.',                  'Tacos',      '{taco,beef,barbacoa}',                               3.95, 1.20),
   ('b0000000-0000-0000-0000-000000000202', 'b0000000-0000-0000-0000-000000000001', 'Breakfast Migas Taco',              'Egg, tortilla chips, cheese, salsa roja.',                   'Tacos',      '{taco,breakfast,egg,migas}',                         3.50, 0.95),
-  ('b0000000-0000-0000-0000-000000000203', 'b0000000-0000-0000-0000-000000000001', 'Agua Fresca',                       'Rotating fruit, house-made daily.',                          'Drinks',     '{drink,"agua fresca",fruit}',                        3.25, 0.55);
+  ('b0000000-0000-0000-0000-000000000203', 'b0000000-0000-0000-0000-000000000001', 'Agua Fresca',                       'Rotating fruit, house-made daily.',                          'Drinks',     '{drink,"agua fresca",fruit}',                        3.25, 0.55),
+
+  ('d0000000-0000-0000-0000-000000000201', 'd0000000-0000-0000-0000-000000000001', 'Chili Oil Noodles',                 'Hand-cut wheat noodles, chili oil, garlic, scallion.',       'Bowls',      '{noodles,chili,spicy,"chili oil"}',                  14.50, 4.20),
+  ('d0000000-0000-0000-0000-000000000202', 'd0000000-0000-0000-0000-000000000001', 'Pho Bo',                            'Beef brisket pho, herbs, lime.',                             'Bowls',      '{pho,beef,broth,noodles}',                           13.75, 3.80),
+  ('d0000000-0000-0000-0000-000000000203', 'd0000000-0000-0000-0000-000000000001', 'Crispy Rice Bowl',                  'Soy egg, cucumber, chili oil drizzle.',                      'Bowls',      '{rice,crispy,bowl,"chili oil"}',                     12.50, 3.40),
+  ('d0000000-0000-0000-0000-000000000204', 'd0000000-0000-0000-0000-000000000001', 'Garlic Green Beans',                'Wok-blistered beans, fried garlic.',                         'Sides',      '{beans,garlic,side,vegetable}',                       6.50, 1.40),
+  ('d0000000-0000-0000-0000-000000000205', 'd0000000-0000-0000-0000-000000000001', 'Pork Bao',                          'Steamed bun, braised pork, pickle.',                         'Snacks',     '{bao,pork,bun,snack}',                                7.25, 2.10),
+  ('d0000000-0000-0000-0000-000000000206', 'd0000000-0000-0000-0000-000000000001', 'Iced Coffee',                       'House cold brew, condensed milk optional.',                  'Drinks',     '{coffee,iced,drink}',                                 4.50, 0.85),
+  ('d0000000-0000-0000-0000-000000000207', 'd0000000-0000-0000-0000-000000000001', 'Lime Soda',                         'Lime, soda, simple syrup.',                                  'Drinks',     '{soda,lime,drink}',                                   3.75, 0.55),
+  ('d0000000-0000-0000-0000-000000000208', 'd0000000-0000-0000-0000-000000000001', 'Sesame Cucumber',                   'Smashed cucumber, sesame, chili salt.',                      'Sides',      '{cucumber,sesame,side}',                              5.50, 1.10);
 
 -- ===========================================================================
 -- 5. Layer 2 — ingredients (the catalog, not stock on hand)
@@ -229,7 +259,14 @@ values
   ('a0000000-0000-0000-0000-000000000320', 'a0000000-0000-0000-0000-000000000001', 'chocolate chips',      'lb',   5.6000),
 
   ('b0000000-0000-0000-0000-000000000301', 'b0000000-0000-0000-0000-000000000001', 'beef cheek',           'lb',   6.8000),
-  ('b0000000-0000-0000-0000-000000000302', 'b0000000-0000-0000-0000-000000000001', 'corn tortilla',        'each', 0.1200);
+  ('b0000000-0000-0000-0000-000000000302', 'b0000000-0000-0000-0000-000000000001', 'corn tortilla',        'each', 0.1200),
+
+  ('d0000000-0000-0000-0000-000000000301', 'd0000000-0000-0000-0000-000000000001', 'wheat noodles',        'lb',   1.8500),
+  ('d0000000-0000-0000-0000-000000000302', 'd0000000-0000-0000-0000-000000000001', 'rice noodles',         'lb',   1.6000),
+  ('d0000000-0000-0000-0000-000000000303', 'd0000000-0000-0000-0000-000000000001', 'chili oil',            'lb',   6.5000),
+  ('d0000000-0000-0000-0000-000000000304', 'd0000000-0000-0000-0000-000000000001', 'beef brisket',         'lb',   8.4000),
+  ('d0000000-0000-0000-0000-000000000305', 'd0000000-0000-0000-0000-000000000001', 'jasmine rice',         'lb',   1.1000),
+  ('d0000000-0000-0000-0000-000000000306', 'd0000000-0000-0000-0000-000000000001', 'coffee beans',         'lb',   9.2000);
 
 -- ===========================================================================
 -- 6. Layer 2 — menu_item_ingredients (drives operational_fit)
@@ -281,7 +318,15 @@ values
   ('a0000000-0000-0000-0000-000000000212', 'a0000000-0000-0000-0000-000000000307', 0.0900),
 
   ('b0000000-0000-0000-0000-000000000201', 'b0000000-0000-0000-0000-000000000301', 0.2000),
-  ('b0000000-0000-0000-0000-000000000201', 'b0000000-0000-0000-0000-000000000302', 2.0000);
+  ('b0000000-0000-0000-0000-000000000201', 'b0000000-0000-0000-0000-000000000302', 2.0000),
+
+  ('d0000000-0000-0000-0000-000000000201', 'd0000000-0000-0000-0000-000000000301', 0.4000),
+  ('d0000000-0000-0000-0000-000000000201', 'd0000000-0000-0000-0000-000000000303', 0.0400),
+  ('d0000000-0000-0000-0000-000000000202', 'd0000000-0000-0000-0000-000000000302', 0.3500),
+  ('d0000000-0000-0000-0000-000000000202', 'd0000000-0000-0000-0000-000000000304', 0.2500),
+  ('d0000000-0000-0000-0000-000000000203', 'd0000000-0000-0000-0000-000000000305', 0.3000),
+  ('d0000000-0000-0000-0000-000000000203', 'd0000000-0000-0000-0000-000000000303', 0.0200),
+  ('d0000000-0000-0000-0000-000000000206', 'd0000000-0000-0000-0000-000000000306', 0.0300);
 
 -- ===========================================================================
 -- 7. Layer 2 — inventory_counts (append-only)
@@ -336,6 +381,15 @@ values (
   14.0000, 'lb',
   now() - interval '3 days'
 );
+
+insert into inventory_counts (restaurant_id, ingredient_id, quantity_on_hand, unit, counted_at)
+values
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000301', 22.0000, 'lb', now() - interval '1 day'),
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000302', 18.0000, 'lb', now() - interval '1 day'),
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000303',  0.4000, 'lb', now() - interval '1 day'),
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000304', 14.0000, 'lb', now() - interval '1 day'),
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000305', 40.0000, 'lb', now() - interval '1 day'),
+  ('d0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000306',  8.0000, 'lb', now() - interval '1 day');
 
 -- ===========================================================================
 -- 8. Layer 2 — sales: 90 local days, two dayparts, weekday/weekend variation
@@ -659,6 +713,44 @@ insert into opportunities (
   'Quesabirria Taco', 5.25, 1.65,
   'Your barbacoa braise is most of the way to birria already.', 'new'
 );
+
+-- Night Owl: brief-only. Matching dishes exist, but there is no sales
+-- history, so incremental dollars stay null. Do not invent a baseline.
+insert into opportunities (
+  id, restaurant_id, trend_id, menu_item_id,
+  trend_score, local_relevance_score, menu_fit_score, operational_fit_score, profitability_score, overall_score,
+  suggested_name, suggested_price, estimated_cost,
+  estimated_incremental_revenue, estimated_incremental_profit,
+  recommendation, missing_ingredients, status, created_at
+) values
+  (
+    'd0000000-0000-0000-0000-000000000401',
+    'd0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000002',
+    'd0000000-0000-0000-0000-000000000201',
+    78.00, 55.00, 91.00, 70.00, 68.00, 73.45,
+    'Chili Crisp Noodles', 15.50, 4.45,
+    null, null,
+    'You already run chili oil noodles. A chili crisp finish is a small menu change, but chili oil is almost gone and you do not stock chili crisp. No sales history yet, so treat this as a weekend test, not a dollar forecast.',
+    '{"chili crisp"}', 'new', now() - interval '1 day'
+  ),
+  (
+    'd0000000-0000-0000-0000-000000000402',
+    'd0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000003',
+    null,
+    82.00, 55.00, 28.00, 50.00, 50.00, 54.35,
+    'Iced Matcha', 6.00, null,
+    null, null,
+    'Matcha is moving, but nothing on your board is close. You sell iced coffee. Do not add this until you decide it is worth a new SKU.',
+    '{"matcha powder","oat milk"}', 'new', now() - interval '1 day'
+  );
+
+insert into opportunity_evidence (opportunity_id, evidence_type, source, value, display_value, description)
+values
+  ('d0000000-0000-0000-0000-000000000401', 'menu_similarity',    'Keyword Match',        0.9100, '0.91',      'Strong match with your Chili Oil Noodles'),
+  ('d0000000-0000-0000-0000-000000000401', 'ingredient_overlap', 'Restaurant Inventory', 0.7000, 'almost out','Chili oil is at 0.4 lb — restock before a special'),
+  ('d0000000-0000-0000-0000-000000000402', 'menu_similarity',    'Keyword Match',        0.2800, '0.28',      'Weak match: iced coffee is not matcha');
 
 insert into opportunity_evidence (opportunity_id, evidence_type, source, value, display_value, description)
 values

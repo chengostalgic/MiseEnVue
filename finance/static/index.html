@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiseEnVue — Marketing Allocation</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #fff; --ink: #1a1a18; --muted: #6b6b64;
+    --line: #e5e4df; --accent: #b4471f; --good: #2f7d50; --warn: #a8730f;
+    --crit: #b03030;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --panel: #1f1f1c; --ink: #ececE6; --muted: #9a9a92;
+      --line: #32322d; --accent: #e0714a; --good: #61b483; --warn: #d9a445;
+      --crit: #e0716b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.25rem 4rem; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 1.75rem; font-size: .92rem; }
+
+  .drop {
+    display: block;  /* label is inline by default, which breaks the border box */
+    border: 1.5px dashed var(--line); border-radius: 10px; padding: 2rem 1.5rem;
+    text-align: center; background: var(--panel); cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); }
+  .drop input { display: none; }
+  .drop b { color: var(--accent); }
+  .hint { margin-top: .7rem; font-size: .85rem; color: var(--muted); }
+  .samples {
+    margin-top: .9rem; font-size: .86rem; color: var(--muted); text-align: center;
+  }
+  .samples a { color: var(--accent); }
+  .samples button {
+    font: inherit; color: var(--accent); background: none; border: 0;
+    padding: 0; cursor: pointer; text-decoration: underline;
+  }
+
+  .err {
+    margin-top: 1rem; padding: .85rem 1rem; border-radius: 8px;
+    border: 1px solid var(--crit); color: var(--crit); background: var(--panel);
+    font-size: .9rem;
+  }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.25rem 1.4rem; margin-top: 1.1rem;
+  }
+  .card h2 {
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--muted); margin: 0 0 .9rem; font-weight: 600;
+  }
+
+  .headline { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; }
+  .big { font-size: 2.6rem; font-weight: 650; letter-spacing: -.02em; }
+  .band {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+    padding: .28rem .6rem; border-radius: 99px; border: 1px solid currentColor;
+    font-weight: 600;
+  }
+  .band.healthy, .band.stable { color: var(--good); }
+  .band.tight { color: var(--warn); }
+  .band.distressed { color: var(--crit); }
+  .bound { color: var(--muted); font-size: .88rem; margin-top: .55rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  td { padding: .42rem 0; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .status { font-size: .76rem; font-weight: 600; text-transform: uppercase; }
+  .status.good { color: var(--good); }
+  .status.low  { color: var(--muted); }
+  .status.warning  { color: var(--warn); }
+  .status.critical { color: var(--crit); }
+
+  ul.why { margin: 0; padding-left: 1.1rem; }
+  ul.why li { margin-bottom: .6rem; }
+  ul.why li:last-child { margin-bottom: 0; }
+
+  .note { font-size: .84rem; color: var(--muted); margin-top: .8rem; }
+  .hidden { display: none; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Marketing allocation</h1>
+  <p class="sub">Upload a P&amp;L. Get what you can afford to spend this month, and why.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".csv,text/csv">
+    <div>Drop a P&amp;L CSV here or <b>choose a file</b></div>
+    <div class="hint">Columns: <code>line_item, monthly_amount</code></div>
+  </label>
+
+  <!-- Outside the label on purpose: anything inside it activates the file
+       input on click, which swallows these links and opens the file picker. -->
+  <div class="samples">
+    No P&amp;L handy? Try
+    <a href="/sample.csv" download="sample-pnl.csv">a healthy restaurant</a> or
+    <a href="/sample-distressed.csv" download="sample-pnl-distressed.csv">a struggling one</a>
+    — or <button type="button" id="try-healthy">run the sample now</button>
+  </div>
+
+  <div id="err" class="err hidden"></div>
+  <div id="out" class="hidden"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const usd = (n) => "$" + Math.round(n).toLocaleString();
+const pct = (n, d = 1) => (n * 100).toFixed(d) + "%";
+const esc = (s) => String(s).replace(/[&<>"]/g, c => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const drop = $("drop");
+["dragenter", "dragover"].forEach(e =>
+  drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(e =>
+  drop.addEventListener(e, () => drop.classList.remove("over")));
+drop.addEventListener("drop", ev => {
+  ev.preventDefault();
+  if (ev.dataTransfer.files[0]) send(ev.dataTransfer.files[0]);
+});
+$("file").addEventListener("change", ev => {
+  if (ev.target.files[0]) send(ev.target.files[0]);
+});
+
+// Saves a download/re-upload round trip when someone just wants to see output.
+$("try-healthy").addEventListener("click", async () => {
+  const text = await (await fetch("/sample.csv")).text();
+  analyzeText(text);
+});
+
+async function send(file) {
+  try {
+    analyzeText(await file.text());
+  } catch (e) {
+    fail("Could not read that file: " + e.message);
+  }
+}
+
+async function analyzeText(text) {
+  $("err").classList.add("hidden");
+  try {
+    const res = await fetch("/analyze", { method: "POST", body: text });
+    const data = await res.json();
+    if (!res.ok) return fail(data.error || "Something went wrong.");
+    render(data);
+  } catch (e) {
+    fail("Could not reach the server: " + e.message);
+  }
+}
+
+function fail(msg) {
+  $("out").classList.add("hidden");
+  $("err").textContent = msg;
+  $("err").classList.remove("hidden");
+}
+
+// "0.47x change" is a confusing way to say "spend less". Multiples read well
+// going up and badly going down, so each direction gets its own phrasing.
+function spendChange(cs) {
+  if (cs.direction === "hold") return "about right";
+  if (cs.direction === "increase") return (cs.multiple ? cs.multiple + "x " : "") + "increase";
+  return "cut " + usd(Math.abs(cs.delta));
+}
+
+function render(d) {
+  const a = d.allocation, tb = a.total_budget, cs = a.current_spend, be = a.breakeven;
+
+  // Say which ceiling bound the number -- "limited by profit" and "limited by
+  // benchmark" are different conversations for the owner.
+  const boundBy = {
+    earnings: `${pct(tb.reinvestment_share, 0)} of ${usd(tb.profit_before_marketing)} earned before marketing — leaving ${usd(tb.profit_before_marketing - tb.amount)} in profit.`,
+    benchmark: `Capped at ${pct(tb.pct_of_revenue)} of revenue for an independent this size; earnings could support ${usd(tb.earnings_ceiling)}.`,
+    floor: `Minimum maintenance level — earnings do not support a real budget.`
+  }[tb.binding_constraint];
+
+  let html = `
+  <div class="card">
+    <h2>Monthly allocation</h2>
+    <div class="headline">
+      <span class="big">${usd(tb.amount)}</span>
+      <span class="band ${esc(d.health.band)}">${esc(d.health.band)}</span>
+      <span style="color:var(--muted)">${pct(tb.pct_of_revenue)} of revenue</span>
+    </div>
+    <div class="bound">${boundBy}</div>
+  </div>
+
+  <div class="card">
+    <h2>How that number is derived</h2>
+    <table>
+      <tr><td>Net profit</td><td class="num">${usd(d.summary.net_profit)}</td></tr>
+      <tr><td>+ marketing you already spend</td><td class="num">${usd(cs.current_monthly)}</td></tr>
+      <tr><td><b>= earnings before marketing</b></td>
+          <td class="num"><b>${usd(tb.profit_before_marketing)}</b></td></tr>
+      <tr><td>× reinvestment share (${esc(d.health.band)})</td>
+          <td class="num">${pct(tb.reinvestment_share, 0)}</td></tr>
+      <tr><td><b>= budget</b></td><td class="num"><b>${usd(tb.earnings_ceiling)}</b></td></tr>
+      <tr><td>revenue cap (sanity check)</td><td class="num">${usd(tb.benchmark_ceiling)}</td></tr>
+    </table>
+    <p class="note">Marketing is added back before taking a share, because net profit
+    already has marketing subtracted — taking a cut of it would double-count.</p>
+  </div>
+
+  <div class="card">
+    <h2>Where it goes</h2>
+    <table>${Object.entries(a.split).map(([k, v]) => `
+      <tr><td>${esc(k.replace(/_/g, " "))}</td><td class="num">${usd(v)}</td></tr>`).join("")}
+    </table>
+  </div>`;
+
+  if (be.computable) {
+    html += `
+    <div class="card">
+      <h2>What it has to earn back</h2>
+      <table>
+        <tr><td>Contribution margin</td><td class="num">${pct(be.contribution_margin_pct)}</td></tr>
+        <tr><td>Incremental revenue to break even</td><td class="num">${usd(be.incremental_revenue_needed)}</td></tr>
+        ${be.incremental_covers_per_day ? `
+        <tr><td>Extra covers per day @ ${usd(be.avg_check)} check</td>
+            <td class="num">${be.incremental_covers_per_day}</td></tr>` : ""}
+      </table>
+      <p class="note">This is the bar the spend has to clear, not a prediction that it will.</p>
+    </div>`;
+  }
+
+  html += `
+  <div class="card">
+    <h2>Your numbers vs. industry</h2>
+    <div class="scroll"><table>
+      <tr><td>Revenue</td><td class="num">${usd(d.summary.revenue)}</td><td></td></tr>
+      <tr><td>Net profit</td><td class="num">${usd(d.summary.net_profit)}</td>
+          <td class="num">${pct(d.ratios.net_margin_pct)}</td></tr>
+      ${d.benchmarks.map(b => `
+      <tr>
+        <td>${esc(b.metric.replace(/_pct$/, "").replace(/_/g, " "))}</td>
+        <td class="num">${pct(b.value)}</td>
+        <td class="num"><span class="status ${esc(b.status)}">${esc(b.status)}</span>
+          <span style="color:var(--muted)"> target ${pct(b.target_low, 0)}–${pct(b.target_high, 0)}</span></td>
+      </tr>`).join("")}
+      <tr><td>Currently spending on marketing</td>
+          <td class="num">${usd(cs.current_monthly)}</td>
+          <td class="num" style="color:var(--muted)">${spendChange(cs)}</td></tr>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h2>Why</h2>
+    <ul class="why">${d.rationale.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+  </div>`;
+
+  if (d.unclassified.length) {
+    html += `
+    <div class="card">
+      <h2>Not counted</h2>
+      <table>${d.unclassified.map(u => `
+        <tr><td>${esc(u.line_item)}</td><td class="num">${usd(u.amount)}</td></tr>`).join("")}
+      </table>
+      <p class="note">These lines could not be categorized and are excluded from every
+      ratio above. Check them before relying on this figure.</p>
+    </div>`;
+  }
+
+  $("out").innerHTML = html;
+  $("out").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
