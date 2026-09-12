@@ -83,7 +83,19 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
         print("\nNo posts from any source. Nothing to write.", file=sys.stderr)
         return 1
 
-    posts = within_window(dedupe(posts), since_days)
+    # Channel pulls deliberately reach further back than --since: channels
+    # publish weekly, so a 14-day window caps out at ~6 videos each, and
+    # looking further back costs no extra quota on that path. Filtering to
+    # --since afterwards would undo that -- it discarded 128 of 316 videos
+    # before this was caught. The effective window is the widest any connector
+    # was asked for.
+    effective_window = max(
+        since_days,
+        config.get("youtube", {}).get("channel_window_days", since_days),
+    )
+    posts = within_window(dedupe(posts), effective_window)
+    if effective_window != since_days:
+        print(f"  [window] keeping {effective_window}d (channel pulls reach back further)")
     posts = normalize(posts)
     print(f"\n{len(posts)} posts after dedupe + window filter")
 

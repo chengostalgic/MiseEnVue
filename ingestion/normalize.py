@@ -42,6 +42,10 @@ def within_window(posts: list[Post], since_days: int) -> list[Post]:
 
     Connectors are asked for a window but not all of them honor it precisely,
     so this is enforced here rather than trusted upstream.
+
+    Callers must pass the WIDEST window any connector was asked for, not the
+    --since value. Channel pulls deliberately reach further back, and filtering
+    to --since here silently discards them.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=since_days)
     return [p for p in posts if p.created_at >= cutoff]
