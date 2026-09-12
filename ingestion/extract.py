@@ -13,7 +13,8 @@ The real version batches posts through an LLM that:
   2. clusters surface forms by receiving the dish list found so far and
      matching-or-creating, which is why there is no embedding store here,
   3. writes why_trending grounded in the posts actually collected,
-  4. labels each post's sentiment and names the negative theme.
+  4. labels sentiment from post.comments -- not post.text, which on YouTube is
+     the creator's own marketing copy -- and names the negative theme.
 
 Keep the DishCluster shape when replacing this; score.py depends on it.
 """
@@ -77,7 +78,13 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
             if any(term in lowered for term in terms):
                 cluster = clusters[seed["id"]]
                 cluster.posts.append(post)
-                cluster.sentiments[post.id] = _guess_sentiment(lowered)
+                # Dish identity comes from the title, sentiment from the
+                # comments. A creator never captions their own video negatively,
+                # so reading post.text for sentiment would return ~100% positive
+                # on every dish.
+                cluster.sentiments[post.id] = _guess_sentiment(
+                    " ".join(post.comments).lower() if post.comments else lowered
+                )
                 break  # one dish per post keeps mention_count honest
 
     return [c for c in clusters.values() if c.posts]

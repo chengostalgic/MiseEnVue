@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml
 
-from ingestion.connectors.reddit import RedditConnector
+from ingestion.connectors.youtube import YouTubeConnector
 from ingestion.extract import extract
 from ingestion.normalize import dedupe, normalize, within_window
 from ingestion.schema import build_output
@@ -28,7 +28,7 @@ CONFIG_PATH = Path("ingestion/config.yaml")
 OUT_PATH = Path("data/out/trends.json")
 
 # Add connectors here as they land. Order is display order only.
-CONNECTORS = [RedditConnector]
+CONNECTORS = [YouTubeConnector]
 
 
 def _is_hand_written(path: Path) -> bool:

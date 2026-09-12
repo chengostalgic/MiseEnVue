@@ -1,8 +1,8 @@
 """Cross-source normalization.
 
-Connectors return Posts with source-native engagement numbers. A Reddit score
-of 4000 and a TikTok view count of 4000 mean completely different things, so
-scoring never touches the raw number -- it uses the percentile within that
+Connectors return Posts with source-native engagement numbers. A YouTube view
+count of 4000 and a TikTok like count of 4000 mean completely different things,
+so scoring never touches the raw number -- it uses the percentile within that
 source's own pull, which is comparable.
 """
 
@@ -42,7 +42,7 @@ def within_window(posts: list[Post], since_days: int) -> list[Post]:
 def dedupe(posts: list[Post]) -> list[Post]:
     """Drop repeats of the same (source, id).
 
-    Overlapping subreddit queries return the same post more than once, and an
+    Overlapping search queries return the same video more than once, and an
     uncounted duplicate inflates mention_count -- the one number an owner is
     most likely to check.
     """

@@ -32,9 +32,15 @@ SCHEMA_VERSION = 1
 class Post:
     """One post from one source, after normalization.
 
-    `engagement` is the raw source-native number (upvotes, views) and is not
+    `engagement` is the raw source-native number (views, upvotes) and is not
     comparable across sources. `engagement_pct` is its percentile within its
     own source's pull, which is. Scoring uses the percentile.
+
+    `text` and `comments` carry different signals and extraction reads them
+    differently. On YouTube `text` is the title and description -- creator
+    marketing copy, good for identifying the dish, useless for sentiment.
+    `comments` is the audience talking back, which is where sentiment and
+    negative_theme actually come from.
     """
 
     source: str
@@ -43,6 +49,7 @@ class Post:
     text: str
     created_at: datetime
     engagement: int | None = None
+    comments: list[str] = field(default_factory=list)
     media_type: str | None = None
     location: str | None = None
     engagement_pct: float | None = None

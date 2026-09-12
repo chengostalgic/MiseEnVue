@@ -7,8 +7,8 @@ concrete menu and marketing decisions. The flow is a loop:
 
 **social media → restaurant → social media**
 
-1. **Trend ingestion (Part 1)** — pull signals from Reddit, Instagram, TikTok, and
-   Google Trends. Produce a ranked list of trending dishes, each annotated with
+1. **Trend ingestion (Part 1)** — pull signals from YouTube, Google Trends, and
+   (if time allows) TikTok. Produce a ranked list of trending dishes, each annotated with
    *why* it is trending.
 2. **Fit analysis (Part 2)** — the owner uploads an inventory CSV and their current
    menu. The system scores which trending dishes the restaurant can realistically
@@ -49,7 +49,7 @@ detail behind this shape.
       "metrics": {
         "window_days": 7,
         "mention_count": 342,
-        "by_source": { "reddit": 310, "google_trends": 32 },
+        "by_source": { "youtube": 310, "google_trends": 32 },
         "total_engagement": 48200,
         "sentiment": { "positive": 0.81, "negative": 0.08, "neutral": 0.11 },
         "negative_theme": "Cloyingly sweet when the honey is overdone."
@@ -61,7 +61,7 @@ detail behind this shape.
       },
       "evidence": [
         {
-          "source": "reddit",
+          "source": "youtube",
           "url": "...",
           "excerpt": "...",
           "engagement": 4200,
@@ -115,25 +115,53 @@ without touching downstream code.
 
 | Source | Access path | Notes |
 |---|---|---|
-| Reddit | official API via PRAW | Easiest real data. Target r/food, r/FoodPorn, r/recipes, r/KitchenConfidential, plus local city subs. |
-| Google Trends | `pytrends` | Gives momentum/velocity per search term — best signal for "is this rising or dying". |
+| YouTube | Data API v3, API key | **Primary.** Instant self-service key, no approval. Titles give dish names, comments give sentiment, view counts give volume. |
+| Google Trends | `pytrends` | Velocity per term — the rising/fading signal. No auth. |
 | TikTok | hashtag / creative-center scrape | **Stretch.** No open API; scrapers break without warning. |
 | Instagram | hashtag pull | **Cut unless everything else is done.** Most restricted of the four. |
+| ~~Reddit~~ | ~~PRAW~~ | **Not available.** See below. |
 
-Reddit + Google Trends are the plan. They pair well — Reddit gives dish names and
-the qualitative "why," Google Trends gives the rising/fading signal Reddit can't.
-Together they cover the demo. TikTok and Instagram are a scraping rabbit hole with
-no bounded time cost, which is exactly the wrong shape of task for a two-day build;
-the connector interface is there so they can be added later, not so they must be.
+**Why not Reddit.** It was the original primary and is no longer obtainable. Under
+the Responsible Builder Policy announced in late 2025, Reddit closed self-service
+API registration — new OAuth apps require manual approval through a ticket form
+with an unpredictable turnaround. Verified separately: unauthenticated JSON
+endpoints (`/r/*/hot.json`, both `www` and `old`) now return 403 regardless of user
+agent, so there is no no-auth path either. Nothing here is a workaround away; the
+access simply is not available on a two-day timeline.
+
+**Why YouTube replaces it well.** Three API calls cover the whole job: `search.list`
+finds recent food videos, `videos.list` returns view/like/comment counts, and
+`commentThreads.list` returns the comments. That last one matters most —
+titles and descriptions are creator marketing copy and skew promotional, so reading
+them for sentiment would report every dish at ~100% positive. The comments are where
+someone says a dish looks dry or that they are sick of seeing it, which is where
+`sentiment` and `negative_theme` actually come from. Quota is 10,000 units/day and
+only `search.list` is expensive at 100 units, so roughly 100 searches a day at 50
+results each — far more than a 7-day window needs.
+
+**What is lost.** Reddit had an industry voice that YouTube does not:
+r/KitchenConfidential is where a line cook says corn ribs are a prep hazard. That
+operational perspective is gone, and YouTube comments are consumer-side only.
+**What is gained:** view counts are a harder volume signal than upvotes, and food
+video virality tends to lead restaurant demand rather than follow it.
+
+YouTube + Google Trends is the plan. TikTok and Instagram are a scraping rabbit hole
+with no bounded time cost, which is the wrong shape of task for a two-day build; the
+connector interface is there so they can be added later, not so they must be.
 
 Every connector writes its raw pull to `data/raw/<source>/<timestamp>.json`. Nothing
 re-hits a network API during development — the pipeline is replayable offline from
 cache, which matters both for rate limits and for a stable demo.
 
 **2. Normalize** — map each source's payload into a single `Post` record:
-`{source, id, url, text, created_at, engagement, media_type, location?}`.
+`{source, id, url, text, created_at, engagement, comments[], media_type, location?}`.
 Engagement is normalized per-source into a 0–1 percentile within that source's pull,
-so a Reddit upvote count and a TikTok view count are comparable.
+so a YouTube view count and a TikTok like count are comparable.
+
+`text` and `comments` are deliberately separate fields because they carry opposite
+biases. `text` (title + description) identifies the dish but is written by someone
+promoting it; `comments` is the audience talking back. Extraction reads the first for
+identity and the second for sentiment.
 
 **3. Extract & cluster** — the interesting part.
 
@@ -173,12 +201,12 @@ buried in code. `momentum` is derived from velocity alone: `rising` / `steady` /
 
 ```
 ingestion/
-  connectors/       reddit.py, google_trends.py, tiktok.py, instagram.py, base.py
+  connectors/       youtube.py, google_trends.py, tiktok.py, base.py
   normalize.py
   extract.py        LLM extraction + clustering
   score.py
   pipeline.py       CLI entrypoint: run all stages, write trends.json
-  config.yaml       subreddits, keywords, scoring weights
+  config.yaml       search queries, scoring weights
 data/
   raw/              cached source pulls (gitignored)
   fixtures/         small frozen pulls, committed — the offline demo safety net
@@ -198,8 +226,9 @@ weekend and the swap to live data is a one-line path change.
 
 Then, in order:
 
-1. **Reddit connector + caching** (~3h). One real source beats four stubs. Cache
+1. **YouTube connector + caching** (~3h). One real source beats four stubs. Cache
    every pull to disk from the start — retrofitting it later is worse than it sounds.
+   Pull comments alongside videos; they are the only sentiment signal available.
 2. **Normalize + volume-only scorer** (~2h). The pipeline now produces real output
    end to end, even if the ranking is dumb. End-to-end early is worth more than any
    single stage being good.
@@ -210,7 +239,7 @@ Then, in order:
    leaderboard.
 5. **Stretch only:** TikTok. Instagram if the laws of physics change.
 
-**Ship after step 4.** Reddit + Google Trends + good extraction is a complete demo.
+**Ship after step 4.** YouTube + Google Trends + good extraction is a complete demo.
 Day 2 afternoon is for the demo script, edge cases, and the handoff to Part 2 — not
 for a fifth connector.
 
@@ -221,7 +250,7 @@ for a fifth connector.
 - **Cache-first is non-negotiable.** Not for elegance — a rate limit or dead wifi
   during judging is the single most likely way this demo dies. `--offline` replays
   the last good pull and must work from the first commit.
-- **Config over code.** Subreddits, keywords, and scoring weights in `config.yaml`
+- **Config over code.** Search queries and scoring weights in `config.yaml`
   so tuning during the demo doesn't mean editing Python at 2am.
 - **Cap output at ~15–20 dishes.** Small enough to eyeball for quality before
   presenting, which is the only QA process there's time for.
@@ -236,12 +265,21 @@ for a fifth connector.
   flag, and a known-good `trends.json` committed before judging.
 - **Scope creep into TikTok/Instagram.** Scraping has unbounded time cost.
   Mitigation: they are stretch goals, and the plan explicitly ships without them.
+- **YouTube quota exhaustion.** 10,000 units/day, and `search.list` costs 100 per
+  query. A tight edit-run loop on five queries burns the budget faster than it
+  looks, and the quota resets on Pacific midnight, not on a rolling window.
+  Mitigation: develop against `--offline` by default and reserve live pulls for
+  when the output actually needs refreshing.
+- **Sentiment skew.** YouTube comments are consumer-side and generally warmer than
+  Reddit's. Expect `negative_theme` to be thinner than the sample data suggests,
+  and do not treat a high positive percentage as validation on its own.
 
 ### Done when
 
 - `python -m ingestion.pipeline` writes a valid `data/out/trends.json` from live
-  Reddit + Google Trends data.
+  YouTube + Google Trends data.
 - Every dish carries at least one real evidence item with a working URL.
+- Sentiment is derived from real viewer comments, not creator descriptions.
 - The same command runs offline from cached fixtures.
 - Part 2 can consume `trends.json` without asking Part 1 for anything else.
 
