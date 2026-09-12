@@ -52,7 +52,8 @@ detail behind this shape.
         "by_source": { "youtube": 310, "google_trends": 32 },
         "total_engagement": 48200,
         "sentiment": { "positive": 0.81, "negative": 0.08, "neutral": 0.11 },
-        "negative_theme": "Cloyingly sweet when the honey is overdone."
+        "negative_theme": "Cloyingly sweet when the honey is overdone.",
+        "local_mention_count": 11
       },
       "why_trending": {
         "summary": "Short-form video driven; chili crisp crossover into bar food.",
@@ -129,6 +130,44 @@ endpoints (`/r/*/hot.json`, both `www` and `old`) now return 403 regardless of u
 agent, so there is no no-auth path either. Nothing here is a workaround away; the
 access simply is not available on a two-day timeline.
 
+### Local relevance
+
+A trend is only useful to this restaurant if it means something in *this* market,
+so every source is queried at two scopes and the results are kept distinct.
+
+| Scope | How | What it answers |
+|---|---|---|
+| National | Category queries: "viral chicken recipe" | What is rising anywhere — where being early comes from |
+| Local | Same API, city templated in: "{city} best new restaurant" | What this market actually turns up for, and what competitors already serve |
+| Local (search) | Google Trends DMA code, e.g. `US-TX-618` | True metro-level search velocity |
+
+Point the whole pipeline at a different restaurant by editing three values under
+`location` in `config.yaml`: `city`, `region_code`, `trends_geo`.
+
+**Google Trends DMA codes are the strongest local signal available.** Verified:
+querying "birria" at `US-TX-618` returns *"dripped birria katy"* and *"blk mkt
+birria"* — suburb-level results, not national data with a filter over it.
+
+**YouTube's `location` + `locationRadius` parameters were tested and rejected.**
+They only match videos carrying explicit geotags, which is a small and
+unrepresentative slice, and results mixed genuinely local content with generic food
+videos that happened to be tagged. Putting the city name in the query returned
+markedly better local results and costs nothing extra.
+
+**Two consequences worth knowing:**
+
+*Local and national content differ by four orders of magnitude in engagement.*
+Houston restaurant reviews pull 20–900 views; national recipe videos pull hundreds
+of thousands. Percentile-normalizing them in one pool puts every local video in the
+bottom percentile and silently deletes the local signal. `normalize()` therefore
+groups by `(source, scope)`, not source alone — a 900-view Houston review is a
+strong local result and scores like one.
+
+*The national/local gap is itself the insight.* `metrics.local_mention_count` is
+surfaced rather than folded into `trend_score`, because a dish trending nationally
+with zero local mentions is either an early opening or a poor fit for local taste —
+and the owner is far better placed than the pipeline to judge which.
+
 **Why YouTube replaces it well.** Three API calls cover the whole job: `search.list`
 finds recent food videos, `videos.list` returns view/like/comment counts, and
 `commentThreads.list` returns the comments. That last one matters most —
@@ -154,7 +193,8 @@ re-hits a network API during development — the pipeline is replayable offline 
 cache, which matters both for rate limits and for a stable demo.
 
 **2. Normalize** — map each source's payload into a single `Post` record:
-`{source, id, url, text, created_at, engagement, comments[], media_type, location?}`.
+`{source, id, url, text, created_at, engagement, comments[], scope, media_type,
+location?}`.
 Engagement is normalized per-source into a 0–1 percentile within that source's pull,
 so a YouTube view count and a TikTok like count are comparable.
 
@@ -266,7 +306,8 @@ for a fifth connector.
 - **Scope creep into TikTok/Instagram.** Scraping has unbounded time cost.
   Mitigation: they are stretch goals, and the plan explicitly ships without them.
 - **YouTube quota exhaustion.** 10,000 units/day, and `search.list` costs 100 per
-  query. A tight edit-run loop on five queries burns the budget faster than it
+  query. Nine queries (six national + three local) is ~900 units per run, so
+  roughly eleven live runs a day. A tight edit-run loop on five queries burns the budget faster than it
   looks, and the quota resets on Pacific midnight, not on a rolling window.
   Mitigation: develop against `--offline` by default and reserve live pulls for
   when the output actually needs refreshing.

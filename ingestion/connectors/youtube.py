@@ -49,12 +49,26 @@ class YouTubeConnector(Connector):
             datetime.now(timezone.utc) - timedelta(days=since_days)
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        queries = self.config.get("queries", [])
         per_query = self.config.get("results_per_query", 25)
         comment_limit = self.config.get("comments_per_video", 20)
 
+        # Two query sets answering two different questions. National category
+        # searches find dishes rising anywhere, which is where being early
+        # comes from. Local searches are templated with the client's city and
+        # show what this market actually eats -- and what competitors already
+        # serve. Neither alone is enough: a dish trending nationally but absent
+        # locally might be an opening or might be a bad fit for the market, and
+        # only the local signal tells you which.
+        city = self.config.get("city", "")
+        queries = [(q, "national") for q in self.config.get("queries", [])]
+        if city:
+            queries += [
+                (t.format(city=city), "local")
+                for t in self.config.get("local_query_templates", [])
+            ]
+
         videos: dict[str, dict[str, Any]] = {}
-        for query in queries:
+        for query, scope in queries:
             found = requests.get(
                 f"{API}/search",
                 params={
@@ -65,7 +79,7 @@ class YouTubeConnector(Connector):
                     "publishedAfter": published_after,
                     "maxResults": per_query,
                     "relevanceLanguage": "en",
-                    "regionCode": self.config.get("region", "US"),
+                    "regionCode": self.config.get("region_code", "US"),
                     # Shorts are where the tag spam lives -- generic queries sorted
                     # by view count return engagement bait with #viral #recipe
                     # attached and no dish in them. Excluding short videos filters
@@ -90,6 +104,9 @@ class YouTubeConnector(Connector):
                     "published_at": snippet["publishedAt"],
                     "url": f"https://www.youtube.com/watch?v={vid}",
                     "matched_query": query,
+                    # A video found by both query sets counts as local -- local
+                    # relevance is the scarcer, more decision-relevant signal.
+                    "scope": "local" if scope == "local" else videos.get(vid, {}).get("scope", "national"),
                 }
 
         if not videos:
@@ -168,6 +185,7 @@ class YouTubeConnector(Connector):
                     comments=r.get("top_comments", []),
                     media_type="video",
                     location=r.get("channel"),
+                    scope=r.get("scope", "national"),
                 )
             )
         return posts

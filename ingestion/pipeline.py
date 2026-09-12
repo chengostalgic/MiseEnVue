@@ -63,12 +63,15 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     load_env()
     config = yaml.safe_load(CONFIG_PATH.read_text())
 
-    print(f"Window: {since_days}d | offline: {offline}")
+    loc = config.get("location", {})
+    print(f"Window: {since_days}d | offline: {offline} | market: {loc.get('city', '-')}")
 
     posts = []
     sources_used = []
     for cls in CONNECTORS:
-        connector = cls(config.get(cls.name, {}))
+        # Location is global config, not per-connector, but connectors need it.
+        cfg = {**config.get(cls.name, {}), **config.get("location", {})}
+        connector = cls(cfg)
         fetched = connector.fetch(since_days, offline=offline)
         if fetched:
             sources_used.append(cls.name)

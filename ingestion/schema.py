@@ -53,6 +53,10 @@ class Post:
     media_type: str | None = None
     location: str | None = None
     engagement_pct: float | None = None
+    # "national" = broad category search, catches emerging dishes early.
+    # "local" = tied to the client's city, reflects what this market wants.
+    # A dish appearing in both is the strongest signal in the pipeline.
+    scope: Literal["national", "local"] = "national"
 
 
 # --------------------------------------------------------------------------
@@ -78,6 +82,12 @@ class Metrics:
     total_engagement: int
     sentiment: dict[str, float]
     negative_theme: str = ""
+    # How much of the conversation is in the client's own market. A dish
+    # trending nationally with zero local mentions is either an early opening
+    # or a poor fit for local taste, and the owner is far better placed to
+    # judge which than the pipeline is -- so surface the number, don't bury it
+    # in the score.
+    local_mention_count: int = 0
 
 
 @dataclass

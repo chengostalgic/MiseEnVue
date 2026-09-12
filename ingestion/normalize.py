@@ -14,16 +14,24 @@ from ingestion.schema import Post
 
 
 def normalize(posts: list[Post]) -> list[Post]:
-    """Attach engagement_pct, grouped by source."""
-    by_source: dict[str, list[Post]] = {}
-    for p in posts:
-        by_source.setdefault(p.source, []).append(p)
+    """Attach engagement_pct, grouped by (source, scope).
 
-    for source_posts in by_source.values():
-        ranked = sorted(source_posts, key=lambda p: p.engagement or 0)
+    Scope matters as much as source here. Local restaurant reviews pull view
+    counts in the tens or hundreds; national recipe videos pull hundreds of
+    thousands. Ranking them in one pool puts every local video in the bottom
+    percentile and silently deletes the local signal -- the exact signal a
+    restaurant owner cares most about. A 900-view Houston review is a strong
+    local result and should score like one.
+    """
+    groups: dict[tuple[str, str], list[Post]] = {}
+    for p in posts:
+        groups.setdefault((p.source, p.scope), []).append(p)
+
+    for group in groups.values():
+        ranked = sorted(group, key=lambda p: p.engagement or 0)
         n = len(ranked)
         for i, post in enumerate(ranked):
-            # Single-post sources get 1.0 rather than a divide-by-zero.
+            # Single-post groups get 1.0 rather than a divide-by-zero.
             post.engagement_pct = (i + 1) / n if n > 1 else 1.0
 
     return posts

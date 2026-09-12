@@ -51,6 +51,7 @@ def _to_dish(cluster: DishCluster, window_days: int, peak: int) -> Dish:
         total_engagement=sum(p.engagement or 0 for p in posts),
         sentiment={k: round(v / total, 2) for k, v in counts.items()},
         negative_theme=cluster.negative_theme,
+        local_mention_count=sum(1 for p in posts if p.scope == "local"),
     )
 
     return Dish(
