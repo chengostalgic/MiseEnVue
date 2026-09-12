@@ -1,0 +1,24 @@
+{
+  "restaurant": "Night Owl Noodles",
+  "owner": "Mina Cho",
+  "email": "owner3@miseenvue.test",
+  "password": "password123",
+  "city": "Chicago",
+  "state": "IL",
+  "timezone": "America/Chicago",
+  "cuisine": "Noodles",
+  "food_cost_percent": null,
+  "food_cost_note": "I don't know",
+  "running_out": ["chili oil"],
+  "dishes": [
+    { "name": "Chili Oil Noodles", "price": 14.5, "weekly_units_guess": 40 },
+    { "name": "Pho Bo", "price": 13.75, "weekly_units_guess": 55 },
+    { "name": "Crispy Rice Bowl", "price": 12.5, "weekly_units_guess": 30 },
+    { "name": "Garlic Green Beans", "price": 6.5, "weekly_units_guess": 22 },
+    { "name": "Pork Bao", "price": 7.25, "weekly_units_guess": 28 },
+    { "name": "Iced Coffee", "price": 4.5, "weekly_units_guess": 45 },
+    { "name": "Lime Soda", "price": 3.75, "weekly_units_guess": 18 },
+    { "name": "Sesame Cucumber", "price": 5.5, "weekly_units_guess": 16 }
+  ],
+  "notes": "Weekly guesses stay here. Do not write them as sales rows until a POS export exists."
+}
