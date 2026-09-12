@@ -51,7 +51,6 @@ detail behind this shape.
         "drivers": ["visual sizzle shots", "cheap ingredient swap on existing wings"],
         "audience": "18-34, casual dining"
       },
-      "core_ingredients": ["chicken wings", "chili crisp", "honey"],
       "evidence": [
         {
           "source": "reddit",
@@ -66,7 +65,10 @@ detail behind this shape.
 }
 ```
 
-`core_ingredients` exists specifically so Part 2 can match against the inventory CSV.
+Part 1 stops at "what is trending and why." It does not reason about ingredients,
+cost, or feasibility — those are Part 2's concerns, derivable from `name` and
+`aliases` without needing anything else from here.
+
 `evidence` is never dropped — the owner must be able to see the receipts behind a
 recommendation.
 
@@ -101,8 +103,8 @@ Engagement is normalized per-source into a 0–1 percentile within that source's
 so a Reddit upvote count and a TikTok view count are comparable.
 
 **3. Extract & cluster** — the interesting part.
-- Run an LLM extraction pass over batched posts to pull dish mentions, their
-  ingredients, and the stated/implied reason for interest.
+- Run an LLM extraction pass over batched posts to pull dish mentions and the
+  stated/implied reason for interest.
 - Cluster surface forms into one dish entity ("hot honey wings" / "chili crisp
   wings" → one dish, the rest become `aliases`). Start with embedding similarity +
   a threshold; a manual alias override file handles the cases it gets wrong.
@@ -175,8 +177,10 @@ Trends, and the connector interface means the other two slot in without rework.
 
 ## Interfaces to Parts 2 and 3
 
-- **Part 1 → Part 2:** `data/out/trends.json`. Part 2 matches `core_ingredients`
-  against the uploaded inventory CSV and `name`/`aliases` against the current menu.
+- **Part 1 → Part 2:** `data/out/trends.json`, and nothing else. Part 2 matches
+  `name`/`aliases` against the uploaded menu, and derives whatever ingredient or
+  cost model it needs for the inventory CSV on its own side — so the ingredient
+  vocabulary stays internal to Part 2 rather than becoming a cross-branch contract.
 - **Part 2 → Part 3:** the owner's selected dish, carrying its `why_trending` and
   `evidence` forward — the campaign copy should be built from the same reasons the
   dish surfaced in the first place.
