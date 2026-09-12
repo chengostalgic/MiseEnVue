@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,17 @@ from ingestion.schema import Post
 
 RAW_DIR = Path("data/raw")
 FIXTURE_DIR = Path("data/fixtures")
+
+# HTTP libraries put the full request URL in their exception text, and for a
+# key-in-querystring API that means the credential lands in logs, task output,
+# and anything that scrapes them. Redact before printing.
+_SECRET_PARAM = re.compile(
+    r"([?&](?:key|api_key|apikey|access_token|token)=)[^&\s]+", re.IGNORECASE
+)
+
+
+def _redact(value: object) -> str:
+    return _SECRET_PARAM.sub(r"\1REDACTED", str(value))
 
 
 class Connector(ABC):
@@ -63,7 +75,7 @@ class Connector(ABC):
         try:
             raw = self.fetch_raw(since_days)
         except Exception as exc:
-            print(f"  [{self.name}] fetch failed ({exc}); falling back to cache")
+            print(f"  [{self.name}] fetch failed ({_redact(exc)}); falling back to cache")
             raw = self._load_cached()
             if raw is None:
                 return []
