@@ -48,4 +48,4 @@ Reports write to `data/reports/`. The CLI reads `data/out/trends.json` for `--co
 
 ## Deploy
 
-Keep the Vercel **Root Directory** at the repo root (leave it empty), not `frontend/`. The root `package.json` lists `next` so Vercel can detect the framework; workspaces still install `frontend` and `agent`. The build command must stay `npm run build` (or the `vercel.json` command) — a bare `next build` at the repo root will not find the app.
+Keep the Vercel **Root Directory** at the repo root (leave it empty), not `frontend/`. The root `package.json` lists `next` so Vercel can detect the framework; workspaces still install `frontend` and `agent`. Tailwind’s Linux native binaries are declared as optional deps so `next build` can compile CSS on Vercel. The build command must stay `npm run build` (or the `vercel.json` command) — a bare `next build` at the repo root will not find the app.
