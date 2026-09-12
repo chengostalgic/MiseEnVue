@@ -1,0 +1,646 @@
+{
+  "_meta": {
+    "fixture": true,
+    "hand_written": true,
+    "note": "HAND-WRITTEN SAMPLE DATA. Defines the Part 1 -> Part 2 contract so downstream work is not blocked on the pipeline. The real pipeline overwrites this same path. URLs here are synthetic placeholders and will 404 -- real evidence URLs arrive with the YouTube connector. Evidence excerpts are video titles or viewer comments; sentiment comes from comments, not creator descriptions.",
+    "schema_version": 1
+  },
+  "generated_at": "2026-09-12T14:30:00Z",
+  "window": {
+    "days": 7,
+    "start": "2026-09-05T00:00:00Z",
+    "end": "2026-09-12T00:00:00Z"
+  },
+  "sources_used": [
+    "youtube",
+    "google_trends"
+  ],
+  "dishes": [
+    {
+      "id": "chili-crisp-hot-honey-wings",
+      "name": "Chili crisp hot honey wings",
+      "aliases": [
+        "hot honey wings",
+        "chili crisp wings",
+        "sweet heat wings"
+      ],
+      "cuisine_tags": [
+        "american",
+        "bar-food",
+        "asian-fusion"
+      ],
+      "trend_score": 94.2,
+      "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 342,
+        "by_source": {
+          "youtube": 310,
+          "google_trends": 32
+        },
+        "total_engagement": 48200,
+        "sentiment": {
+          "positive": 0.81,
+          "negative": 0.08,
+          "neutral": 0.11
+        },
+        "negative_theme": "Cloyingly sweet when the honey is overdone; a few call it a played-out trend."
+      },
+      "why_trending": {
+        "summary": "Chili crisp has crossed over from a niche condiment into mainstream bar food, and wings are the cheapest vehicle for it. Short-form video does the rest -- the glaze photographs well and the pull-apart shot is reliably satisfying.",
+        "drivers": [
+          "Chili crisp is having a broad cultural moment beyond this one dish",
+          "Requires no new equipment -- it is a sauce swap on an existing fryer item",
+          "High visual payoff in short-form video"
+        ],
+        "audience": "18-34, casual dining and late-night"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example1",
+          "excerpt": "Made chili crisp hot honey wings for the third weekend in a row. My roommates have stopped asking for anything else.",
+          "engagement": 4200,
+          "sentiment": "positive",
+          "observed_at": "2026-09-10T18:22:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example2",
+          "excerpt": "We put chili crisp wings on as a special and they outsold the regular buffalo three to one. They're staying.",
+          "engagement": 2810,
+          "sentiment": "positive",
+          "observed_at": "2026-09-09T02:10:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example3",
+          "excerpt": "Honestly getting tired of seeing hot honey on literally everything.",
+          "engagement": 640,
+          "sentiment": "negative",
+          "observed_at": "2026-09-08T21:45:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example4",
+          "excerpt": "The trick is cutting the honey with rice vinegar so it doesn't go syrupy.",
+          "engagement": 1900,
+          "sentiment": "positive",
+          "observed_at": "2026-09-11T14:03:00Z"
+        },
+        {
+          "source": "google_trends",
+          "url": "https://trends.google.com/trends/explore?q=hot%20honey%20wings",
+          "excerpt": "Search interest for 'hot honey wings' up 61% vs prior 7-day window.",
+          "engagement": null,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-12T09:00:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example5",
+          "excerpt": "Chili crisp is the single best value-add ingredient I've bought this year.",
+          "engagement": 3350,
+          "sentiment": "positive",
+          "observed_at": "2026-09-07T16:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "birria-grilled-cheese",
+      "name": "Birria grilled cheese",
+      "aliases": [
+        "birria melt",
+        "quesabirria grilled cheese"
+      ],
+      "cuisine_tags": [
+        "mexican",
+        "comfort",
+        "sandwich"
+      ],
+      "trend_score": 88.6,
+      "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 271,
+        "by_source": {
+          "youtube": 248,
+          "google_trends": 23
+        },
+        "total_engagement": 39400,
+        "sentiment": {
+          "positive": 0.86,
+          "negative": 0.05,
+          "neutral": 0.09
+        },
+        "negative_theme": "Purists object to calling it birria; some report it goes greasy fast."
+      },
+      "why_trending": {
+        "summary": "The birria wave has moved past tacos into other formats, and grilled cheese is the most legible one for non-Mexican menus. The consomme dip is the shareable moment -- it is effectively a built-in video hook.",
+        "drivers": [
+          "Format extension of an already-proven trend rather than a cold start",
+          "The dip shot is inherently shareable",
+          "Reads as familiar comfort food to a broad audience"
+        ],
+        "audience": "21-40, weekend and comfort-food occasions"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example6",
+          "excerpt": "Birria grilled cheese with the consomme on the side might be the best sandwich I've had this year.",
+          "engagement": 7800,
+          "sentiment": "positive",
+          "observed_at": "2026-09-11T20:15:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example7",
+          "excerpt": "Calling it birria is a stretch but I'm not going to pretend it isn't delicious.",
+          "engagement": 1240,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-09T11:50:00Z"
+        },
+        {
+          "source": "google_trends",
+          "url": "https://trends.google.com/trends/explore?q=birria%20grilled%20cheese",
+          "excerpt": "Search interest up 44% vs prior 7-day window; sustained growth over 6 weeks.",
+          "engagement": null,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-12T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "cucumber-salad",
+      "name": "Smashed cucumber salad",
+      "aliases": [
+        "cucumber salad",
+        "smashed cucumbers",
+        "din tai fung cucumbers"
+      ],
+      "cuisine_tags": [
+        "chinese",
+        "salad",
+        "side",
+        "vegetarian"
+      ],
+      "trend_score": 82.1,
+      "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 512,
+        "by_source": {
+          "youtube": 468,
+          "google_trends": 44
+        },
+        "total_engagement": 61300,
+        "sentiment": {
+          "positive": 0.74,
+          "negative": 0.14,
+          "neutral": 0.12
+        },
+        "negative_theme": "Widely seen as overpriced for what it is; several complain about watery execution."
+      },
+      "why_trending": {
+        "summary": "Very high mention volume driven by a viral short-form recipe format, but sentiment is softer than the raw numbers suggest -- a meaningful slice of the conversation is people objecting to restaurant pricing on a cheap ingredient.",
+        "drivers": [
+          "Extremely low food cost and no cooking equipment required",
+          "Viral recipe format with a satisfying smash step",
+          "Rides the broader interest in lighter, vegetable-forward sides"
+        ],
+        "audience": "18-35, health-conscious and value-conscious"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example8",
+          "excerpt": "Smashed cucumber salad has replaced every other side dish in my rotation.",
+          "engagement": 9100,
+          "sentiment": "positive",
+          "observed_at": "2026-09-10T13:20:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example9",
+          "excerpt": "Charging $14 for cucumbers is how you lose a regular. I don't care how good the chili oil is.",
+          "engagement": 3400,
+          "sentiment": "negative",
+          "observed_at": "2026-09-08T19:05:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example10",
+          "excerpt": "Salt them and let them drain first or you end up with soup.",
+          "engagement": 2200,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-07T09:40:00Z"
+        },
+        {
+          "source": "google_trends",
+          "url": "https://trends.google.com/trends/explore?q=smashed%20cucumber%20salad",
+          "excerpt": "Search interest up 38% vs prior 7-day window.",
+          "engagement": null,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-12T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "gochujang-caramel-cookies",
+      "name": "Gochujang caramel cookies",
+      "aliases": [
+        "gochujang cookies",
+        "spicy caramel cookies"
+      ],
+      "cuisine_tags": [
+        "dessert",
+        "korean-fusion",
+        "bakery"
+      ],
+      "trend_score": 76.8,
+      "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 143,
+        "by_source": {
+          "youtube": 131,
+          "google_trends": 12
+        },
+        "total_engagement": 18700,
+        "sentiment": {
+          "positive": 0.69,
+          "negative": 0.19,
+          "neutral": 0.12
+        },
+        "negative_theme": "Polarizing -- a real contingent finds sweet-plus-fermented-chili actively unpleasant."
+      },
+      "why_trending": {
+        "summary": "A genuinely divisive dish, which is part of why it travels. The argument in the comments is the engagement engine; people who love it evangelize and people who hate it say so loudly.",
+        "drivers": [
+          "Novelty and controversy drive comment volume",
+          "Sits in the broader swicy dessert category",
+          "Low barrier for a kitchen that already bakes"
+        ],
+        "audience": "22-38, adventurous eaters and dessert-forward"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example11",
+          "excerpt": "Gochujang caramel cookies sound wrong and taste incredible. The heat shows up at the very end.",
+          "engagement": 5600,
+          "sentiment": "positive",
+          "observed_at": "2026-09-11T17:00:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example12",
+          "excerpt": "I do not want my dessert to be fermented and spicy. This is a step too far.",
+          "engagement": 2100,
+          "sentiment": "negative",
+          "observed_at": "2026-09-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "pistachio-kunafa-chocolate-bar",
+      "name": "Pistachio kunafa chocolate bar",
+      "aliases": [
+        "dubai chocolate",
+        "kunafa chocolate",
+        "pistachio knafeh bar"
+      ],
+      "cuisine_tags": [
+        "dessert",
+        "middle-eastern",
+        "confection"
+      ],
+      "trend_score": 71.4,
+      "momentum": "fading",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 688,
+        "by_source": {
+          "youtube": 602,
+          "google_trends": 86
+        },
+        "total_engagement": 94500,
+        "sentiment": {
+          "positive": 0.52,
+          "negative": 0.33,
+          "neutral": 0.15
+        },
+        "negative_theme": "Strong saturation backlash -- widely described as overexposed and overpriced for the portion."
+      },
+      "why_trending": {
+        "summary": "Still the highest raw mention volume in this window, but the trajectory is down and sentiment has turned noticeably sour. This is a late-stage trend: the volume is real, the opportunity is mostly gone, and a third of the conversation is now backlash.",
+        "drivers": [
+          "Long tail of an enormous prior viral peak",
+          "Backlash and saturation commentary now a large share of mentions",
+          "Specialty ingredients make it expensive to execute well"
+        ],
+        "audience": "18-30, dessert and novelty seekers"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example13",
+          "excerpt": "If I see one more dubai chocolate bar I'm going to lose it. It was good six months ago.",
+          "engagement": 8800,
+          "sentiment": "negative",
+          "observed_at": "2026-09-09T22:40:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example14",
+          "excerpt": "Finally tried one. It's fine? Not $18 fine.",
+          "engagement": 4100,
+          "sentiment": "negative",
+          "observed_at": "2026-09-08T15:12:00Z"
+        },
+        {
+          "source": "google_trends",
+          "url": "https://trends.google.com/trends/explore?q=dubai%20chocolate",
+          "excerpt": "Search interest down 29% vs prior 7-day window; down 71% from peak.",
+          "engagement": null,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-12T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "hot-pot-style-mala-fried-chicken-sandwich-with-numbing-slaw",
+      "name": "Mala fried chicken sandwich with numbing slaw",
+      "aliases": [
+        "mala chicken sandwich",
+        "sichuan fried chicken sandwich"
+      ],
+      "cuisine_tags": [
+        "sichuan",
+        "sandwich",
+        "fried-chicken"
+      ],
+      "trend_score": 68.3,
+      "momentum": "rising",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 97,
+        "by_source": {
+          "youtube": 97,
+          "google_trends": 0
+        },
+        "total_engagement": 12400,
+        "sentiment": {
+          "positive": 0.78,
+          "negative": 0.09,
+          "neutral": 0.13
+        },
+        "negative_theme": "Some report the numbing sensation is off-putting to first-timers without warning on the menu."
+      },
+      "why_trending": {
+        "summary": "Early-stage and YouTube-only -- no search signal yet, which is exactly what a trend looks like before it breaks. Lower confidence than the volume leaders but the highest upside if the restaurant moves first.",
+        "drivers": [
+          "Sichuan peppercorn moving into Western sandwich formats",
+          "Rides the still-durable fried chicken sandwich category",
+          "No search signal yet, suggesting it is genuinely early"
+        ],
+        "audience": "22-35, adventurous and spice-seeking"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example15",
+          "excerpt": "The mala fried chicken sandwich is the most interesting thing I've eaten in months. The numbing slaw makes it.",
+          "engagement": 3900,
+          "sentiment": "positive",
+          "observed_at": "2026-09-11T19:25:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example16",
+          "excerpt": "Warn people about the numbing. My friend thought something was wrong with her mouth.",
+          "engagement": 1100,
+          "sentiment": "neutral",
+          "observed_at": "2026-09-10T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "whipped-ricotta-toast",
+      "name": "Whipped ricotta toast",
+      "aliases": [
+        "ricotta toast",
+        "whipped ricotta with hot honey"
+      ],
+      "cuisine_tags": [
+        "italian",
+        "brunch",
+        "vegetarian",
+        "toast"
+      ],
+      "trend_score": 64.7,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 224,
+        "by_source": {
+          "youtube": 201,
+          "google_trends": 23
+        },
+        "total_engagement": 21800,
+        "sentiment": {
+          "positive": 0.71,
+          "negative": 0.13,
+          "neutral": 0.16
+        },
+        "negative_theme": "Perceived as an overpriced brunch staple; 'it's toast' appears repeatedly."
+      },
+      "why_trending": {
+        "summary": "Not rising, but durable -- this has held steady for months rather than spiking. Low risk and low ceiling: a safe brunch addition that will not generate its own press.",
+        "drivers": [
+          "Established brunch staple with stable demand",
+          "Very high margin and minimal prep",
+          "Photographs well with minimal plating skill"
+        ],
+        "audience": "25-45, brunch and cafe"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example17",
+          "excerpt": "Whipped ricotta toast with hot honey is the easiest thing on our menu and it never stops selling.",
+          "engagement": 2600,
+          "sentiment": "positive",
+          "observed_at": "2026-09-09T10:15:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example18",
+          "excerpt": "$16 for toast. I understand the margins, I just resent them.",
+          "engagement": 1800,
+          "sentiment": "negative",
+          "observed_at": "2026-09-07T13:55:00Z"
+        }
+      ]
+    },
+    {
+      "id": "tinned-fish-board",
+      "name": "Tinned fish board",
+      "aliases": [
+        "conservas board",
+        "seacuterie",
+        "tinned fish date night"
+      ],
+      "cuisine_tags": [
+        "spanish",
+        "portuguese",
+        "shareable",
+        "appetizer"
+      ],
+      "trend_score": 58.9,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 156,
+        "by_source": {
+          "youtube": 149,
+          "google_trends": 7
+        },
+        "total_engagement": 14900,
+        "sentiment": {
+          "positive": 0.66,
+          "negative": 0.18,
+          "neutral": 0.16
+        },
+        "negative_theme": "Resistance to paying restaurant markup on a product that is visibly from a tin."
+      },
+      "why_trending": {
+        "summary": "Holding steady rather than growing. The economics are excellent and prep is near zero, but the central objection -- customers can see it came from a tin -- is a real constraint on pricing.",
+        "drivers": [
+          "Effectively no kitchen labor required",
+          "Long shelf life removes waste risk",
+          "Fits the shareable small-plates format"
+        ],
+        "audience": "28-45, wine bar and date-night"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example19",
+          "excerpt": "Tinned fish boards are the best margin item we've ever run. Zero labor, people love them.",
+          "engagement": 2900,
+          "sentiment": "positive",
+          "observed_at": "2026-09-10T21:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "corn-ribs",
+      "name": "Corn ribs",
+      "aliases": [
+        "elote ribs",
+        "riblet corn"
+      ],
+      "cuisine_tags": [
+        "american",
+        "mexican",
+        "side",
+        "vegetarian"
+      ],
+      "trend_score": 47.2,
+      "momentum": "fading",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 88,
+        "by_source": {
+          "youtube": 84,
+          "google_trends": 4
+        },
+        "total_engagement": 7300,
+        "sentiment": {
+          "positive": 0.58,
+          "negative": 0.24,
+          "neutral": 0.18
+        },
+        "negative_theme": "Repeated complaints that cutting them is dangerous and the yield is poor."
+      },
+      "why_trending": {
+        "summary": "Past its peak and declining. Included for completeness -- the operational objection (cutting raw corn cobs lengthwise is genuinely hazardous) shows up often enough that it should factor into any feasibility decision downstream.",
+        "drivers": [
+          "Residual interest from a prior seasonal peak",
+          "Strong visual novelty",
+          "Cheap ingredient, but poor usable yield"
+        ],
+        "audience": "20-35, seasonal and patio dining"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example20",
+          "excerpt": "Whoever invented corn ribs has never had to prep 200 of them. Two line cooks cut themselves the first week.",
+          "engagement": 4700,
+          "sentiment": "negative",
+          "observed_at": "2026-09-08T23:10:00Z"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example21",
+          "excerpt": "Still think corn ribs are fun even if the internet has moved on.",
+          "engagement": 890,
+          "sentiment": "positive",
+          "observed_at": "2026-09-06T14:20:00Z"
+        }
+      ]
+    },
+    {
+      "id": "ube-cheesecake",
+      "name": "Ube cheesecake",
+      "aliases": [
+        "ube basque cheesecake",
+        "purple yam cheesecake"
+      ],
+      "cuisine_tags": [
+        "filipino",
+        "dessert",
+        "bakery"
+      ],
+      "trend_score": 43.5,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 64,
+        "by_source": {
+          "youtube": 61,
+          "google_trends": 3
+        },
+        "total_engagement": 5400,
+        "sentiment": {
+          "positive": 0.88,
+          "negative": 0.04,
+          "neutral": 0.08
+        },
+        "negative_theme": "Very few complaints; occasional note that ube extract tastes artificial versus real ube."
+      },
+      "why_trending": {
+        "summary": "Low volume but the highest sentiment in this set -- almost nobody who mentions it dislikes it. A small, loyal signal rather than a broad one, which suits a restaurant with an existing dessert program more than one chasing reach.",
+        "drivers": [
+          "Distinctive color with no artificial-looking plating required",
+          "Strong regional and diaspora following",
+          "Very low negative sentiment"
+        ],
+        "audience": "22-40, dessert-forward and regionally specific"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=example22",
+          "excerpt": "Ube basque cheesecake is the single best use of ube outside of halo-halo. Use real ube halaya, not extract.",
+          "engagement": 3100,
+          "sentiment": "positive",
+          "observed_at": "2026-09-11T11:45:00Z"
+        }
+      ]
+    }
+  ]
+}
