@@ -151,11 +151,27 @@ the owner can judge that against their own floor.
 recommendation is a **1.9x increase** — materially different information from a bare
 $7,200, and the P&L already contains it.
 
-**What is still convention:** the band thresholds, the benchmark percentages, the
-payout ratios, and the split. Those come from restaurant industry norms in
-`finance/config.yaml`, not from this restaurant's history. They act as guardrails on
-computed figures rather than as the answer itself — but they are assumptions, and a
-judge asking "where does 4% come from?" deserves that answer.
+**Where the constants come from.** The band thresholds, benchmark percentages,
+payout ratios, and splits are industry convention, not derived from this
+restaurant's history. They are cited inline in `finance/config.yaml`:
+
+| Constant | Value | Source |
+|---|---|---|
+| Food cost | 28–35% (avg 32.4%) | NRA 2026 State of the Industry |
+| Labor | 30–35% target | BLS food-services / NRA 2026 — note 2025 median is **36.5%**, so this is a target, not a median |
+| Prime cost | 60–65% full-service | Industry consensus |
+| Marketing | 3–6% of revenue (established); 2–5% for independents under $5M | ChowNow, Back of House, The Forking Group |
+| Digital share | 60–80% of marketing spend | Same — supports the 62–67% paid social + influencer split |
+
+Two honest caveats:
+
+- **The distressed band's 2% is below every published range.** That is an editorial
+  judgment, not a sourced figure: a restaurant above 70% prime cost has a cost
+  problem, not a demand problem. It is marked as such in the config.
+- **The labor benchmark flags most real restaurants as over.** 2025 median
+  full-service labor is 36.5% against a 30–35% target, so a genuine P&L will often
+  show "critical" on that line. That is accurate, not a bug — but it means the flag
+  reflects an industry-wide condition, not necessarily this operator's failing.
 
 The distressed case matters most and is the one a naive tool gets wrong. A
 restaurant at 72% prime cost does not need a bigger campaign — it needs its food or
