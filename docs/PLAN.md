@@ -7,22 +7,142 @@ concrete menu and marketing decisions. The flow is a loop:
 
 **social media → restaurant → social media**
 
-1. **Trend ingestion (Part 1)** — pull signals from YouTube, Google Trends, and
-   (if time allows) TikTok. Produce a ranked list of trending dishes, each annotated with
-   *why* it is trending.
-2. **Fit analysis (Part 2)** — the owner uploads an inventory CSV and their current
-   menu. The system scores which trending dishes the restaurant can realistically
-   execute, and surfaces the best fits. The owner picks what to pursue.
-3. **Campaign generation (Part 3)** — for the chosen dish(es), generate a campaign
-   strategy across IG / Facebook / TikTok ads, plus a shortlist of local influencers
-   to approach.
+**Part 1 — Financial baseline + trend ingestion** (this branch)
+
+1. **1A. Financial baseline.** The owner uploads a P&L. The system derives their
+   unit economics, compares them against restaurant industry benchmarks, and
+   computes what they can *actually afford* to spend chasing a trend — split
+   across menu experimentation, paid social, and influencer outreach.
+2. **1B. Trend ingestion.** Pull signals from YouTube and Google Trends at both
+   national and local scope. Produce a ranked list of trending dishes, each
+   annotated with *why* it is trending.
+
+**Parts 2 and 3 — downstream**
+
+3. **Fit analysis (Part 2).** The owner uploads an inventory CSV and current menu.
+   The system scores which trending dishes they can realistically execute — now
+   bounded by the budget from 1A, not just by what is in the walk-in.
+4. **Campaign generation (Part 3).** For the chosen dish, generate a campaign
+   across IG / Facebook / TikTok plus local influencers — sized to the allocation
+   from 1A rather than to an imaginary budget.
+
+**Why the money comes first.** A trend recommendation with no budget attached is
+advice, not a decision. A restaurant running a 72% prime cost cannot afford a $4,000
+influencer campaign no matter how well birria is trending, and telling them otherwise
+is worse than telling them nothing. Computing the envelope *before* surfacing trends
+means every downstream recommendation arrives pre-filtered to what the business can
+survive.
 
 This document covers the whole flow for context, then plans **Part 1 in detail** —
 that is the scope of the `harsh` branch.
 
 ---
 
-## Part 1: Trend Ingestion Pipeline (this branch)
+## Part 1A: Financial Baseline (this branch)
+
+### Goal
+
+Take a restaurant P&L and answer one question: **how much can this business afford
+to spend chasing a trend this month, and split how?**
+
+### Input
+
+`data/in/pnl.csv` — a flat line-item export, the format every POS and bookkeeping
+package can produce:
+
+```csv
+line_item,monthly_amount
+Food Sales,142000
+Food COGS,52000
+Hourly Labor,48000
+Rent,14500
+...
+```
+
+Line items are mapped to categories by keyword rules in `finance/config.yaml`, not
+by exact string match. Real P&Ls call the same thing "Hourly Labor", "Wages - FOH",
+and "Payroll - Hourly", and a parser that demands one spelling fails on every real
+file. Unmapped rows are reported rather than silently dropped — a $30k line landing
+in "unclassified" would quietly distort every ratio below it.
+
+### Output contract
+
+`data/out/budget.json`. Separate from `trends.json` because it has a different input
+and a different lifecycle — the P&L changes monthly, trends change daily.
+
+```jsonc
+{
+  "ratios": {
+    "food_cost_pct": 0.325,
+    "labor_cost_pct": 0.383,
+    "prime_cost_pct": 0.708,     // the number that decides everything below
+    "net_margin_pct": 0.021
+  },
+  "benchmarks": [
+    { "metric": "prime_cost_pct", "value": 0.708, "target": "0.55-0.65",
+      "status": "critical", "note": "..." }
+  ],
+  "health": { "band": "distressed", "score": 34 },
+  "allocation": {
+    "monthly_revenue": 180000,
+    "total_budget": { "amount": 3600, "pct_of_revenue": 0.02 },
+    "split": {
+      "menu_experimentation": 1080,
+      "paid_social": 1440,
+      "influencer": 720,
+      "reserve": 360
+    }
+  },
+  "constraints": {
+    "max_trial_ingredient_spend": 1080,
+    "max_influencer_fee": 720,
+    "capex_available": 0,
+    "min_dish_margin_pct": 0.70
+  },
+  "rationale": ["..."]
+}
+```
+
+**`constraints` is the load-bearing block.** Everything else is explanation; that
+block is what Parts 2 and 3 must respect. `capex_available: 0` means Part 2 must
+reject any dish needing new equipment. `max_influencer_fee` caps Part 3's outreach
+list. Without it the budget is a number on a dashboard rather than something that
+changes what gets recommended.
+
+### The allocation logic
+
+**Prime cost** — food plus labor as a share of revenue — is the single number that
+decides restaurant health, and it drives the whole calculation:
+
+| Prime cost | Band | Marketing budget | Reasoning |
+|---|---|---|---|
+| < 60% | healthy | 6% of revenue | Real discretionary capacity |
+| 60–65% | stable | 4% | Standard industry spend |
+| 65–70% | tight | 3% | Fund only what pays back fast |
+| > 70% | distressed | 2% | Maintenance only; the problem is not marketing |
+
+The distressed case matters most and is the one a naive tool gets wrong. A
+restaurant at 72% prime cost does not need a bigger campaign — it needs its food or
+labor cost fixed, and spending its remaining margin on ads accelerates the failure.
+The output says so plainly in `rationale` instead of quietly recommending a small
+number.
+
+The split across menu experimentation / paid social / influencer / reserve comes
+from `finance/config.yaml` and shifts by band: distressed restaurants get a bigger
+reserve and proportionally more experimentation (cheap, reversible) than paid social
+(expensive, slow to pay back).
+
+### What this deliberately does not do
+
+No forecasting, no ROI projection, no "this campaign will return 3.2x." Those
+numbers would be fabricated — there is no historical campaign data to fit against,
+and inventing a return multiple for a judge is the kind of thing that falls apart
+under one question. The tool computes what is affordable from real inputs and stops
+there.
+
+---
+
+## Part 1B: Trend Ingestion Pipeline (this branch)
 
 ### Goal
 
@@ -240,6 +360,11 @@ buried in code. `momentum` is derived from velocity alone: `rising` / `steady` /
 ### Proposed layout
 
 ```
+finance/
+  pnl.py            line-item CSV -> categorized totals + ratios
+  allocate.py       benchmarks, health band, budget + constraints
+  budget.py         CLI entrypoint: writes data/out/budget.json
+  config.yaml       line-item keywords, benchmarks, bands, splits
 ingestion/
   connectors/       youtube.py, google_trends.py, tiktok.py, base.py
   normalize.py
@@ -248,15 +373,22 @@ ingestion/
   pipeline.py       CLI entrypoint: run all stages, write trends.json
   config.yaml       search queries, scoring weights
 data/
+  in/               pnl.csv (client upload), pnl_distressed.csv (demo variant)
   raw/              cached source pulls (gitignored)
   fixtures/         small frozen pulls, committed — the offline demo safety net
-  out/trends.json   the contract above
+  out/trends.json   the trend contract
+  out/budget.json   the financial contract
 ```
 
 Python throughout. `pipeline.py` is a CLI (`python -m ingestion.pipeline --since 7d`)
 so Part 2 can shell out to it or just read `trends.json` — no service required yet.
 
 ### Build order (2-day hackathon)
+
+**Part 1A (financial baseline) is ~4h total and is largely done.** It is also the
+lower-risk half: no API keys, no quota, no scraping, and it cannot degrade at demo
+time. If the schedule slips, 1A holds and 1B falls back to fixtures.
+
 
 **Hour 1 — hand-write `data/out/trends.json` with 10 plausible fake dishes and push
 it.** Before any connector exists. Part 2 is blocked on the *shape* of this file,
@@ -328,10 +460,33 @@ for a fifth connector.
 
 ## Interfaces to Parts 2 and 3
 
-- **Part 1 → Part 2:** `data/out/trends.json`, and nothing else. Part 2 matches
-  `name`/`aliases` against the uploaded menu, and derives whatever ingredient or
-  cost model it needs for the inventory CSV on its own side — so the ingredient
-  vocabulary stays internal to Part 2 rather than becoming a cross-branch contract.
+Part 1 emits **two** files, and they are consumed differently.
+
+- **`data/out/trends.json` → Part 2.** Part 2 matches `name`/`aliases` against the
+  uploaded menu, and derives whatever ingredient or cost model it needs for the
+  inventory CSV on its own side — so the ingredient vocabulary stays internal to
+  Part 2 rather than becoming a cross-branch contract.
+
+- **`data/out/budget.json` → Parts 2 and 3.** Both read `constraints`, and both are
+  expected to *enforce* it:
+
+  | Constraint | Who enforces | Effect |
+  |---|---|---|
+  | `capex_available` | Part 2 | `0` means reject any dish needing new equipment |
+  | `min_dish_margin_pct` | Part 2 | Dishes below this contribution margin are filtered out |
+  | `max_trial_ingredient_spend` | Part 2 | Caps what a test run may cost |
+  | `max_influencer_fee` | Part 3 | Caps the outreach shortlist |
+  | `max_paid_social_spend` | Part 3 | Sizes the ad plan |
+
+  A budget that does not change what gets recommended is decoration. If Part 3 can
+  propose a $4,000 influencer campaign against a $720 cap, the finance work was
+  cosmetic.
+
 - **Part 2 → Part 3:** the owner's selected dish, carrying its `why_trending` and
   `evidence` forward — the campaign copy should be built from the same reasons the
   dish surfaced in the first place.
+
+**Ordering note.** `budget.json` does not depend on `trends.json` and can be
+generated first, independently. That is deliberate: the financial baseline is the
+cheaper, more certain half of Part 1, so it stays useful even if trend ingestion
+degrades to fixture data during the demo.
