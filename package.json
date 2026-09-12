@@ -11,5 +11,12 @@
     "start": "npm run start -w frontend",
     "lint": "npm run lint -w frontend",
     "pipeline": "npm run pipeline -w agent"
+  },
+  "dependencies": {
+    "next": "16.3.5"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "unrs-resolver": true
   }
 }
