@@ -64,8 +64,7 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     load_env()
     config = yaml.safe_load(CONFIG_PATH.read_text())
 
-    loc = config.get("location", {})
-    print(f"Window: {since_days}d | offline: {offline} | market: {loc.get('city', '-')}")
+    print(f"Window: {since_days}d | offline: {offline} | market: US (national)")
 
     posts = []
     sources_used = []
