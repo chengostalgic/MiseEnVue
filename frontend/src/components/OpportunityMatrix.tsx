@@ -4,21 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
-  ExternalLink,
-  ChevronRight,
-  Sparkles,
-  ArrowUpRight,
-  SlidersHorizontal,
-  Flame,
-  ShieldAlert,
-  Percent,
-  RefreshCw,
   DollarSign,
   Minus,
   Play,
 } from "lucide-react";
 
 import { startOpportunityRun, updateOpportunityStatus } from "@/lib/activation";
+import type { BudgetContract, ScrapedDish } from "@/lib/contractTypes";
+import { money } from "@/lib/format";
 import {
   fetchRestaurantOpportunities,
   inboxGroup,
@@ -28,12 +21,9 @@ import {
 
 type Filter = "inbox" | "running" | "passed";
 
-function money(value: number | null | undefined, digits = 0) {
+function moneyOrNull(value: number | null | undefined, digits = 0) {
   if (value == null) return null;
-  return `$${value.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })}`;
+  return money(value, digits);
 }
 
 function evidenceValue(opp: OpportunityCard, type: string) {
@@ -76,7 +66,7 @@ function buildBrief(opp: OpportunityCard, city: string | null) {
     parts.push(`Buy ${opp.missingIngredients.join(", ")}.`);
   }
 
-  const profit = money(opp.economics.incrementalProfit);
+  const profit = moneyOrNull(opp.economics.incrementalProfit);
   parts.push(
     profit
       ? `Two-week lift: +${profit}.`
@@ -86,7 +76,15 @@ function buildBrief(opp: OpportunityCard, city: string | null) {
   return parts.join(" ");
 }
 
-export default function OpportunityMatrix() {
+export default function OpportunityMatrix({
+  budget,
+  trendingDishes = [],
+  onOpenDiscover,
+}: {
+  budget?: BudgetContract | null;
+  trendingDishes?: ScrapedDish[];
+  onOpenDiscover?: (dishId?: string) => void;
+}) {
   const [opportunities, setOpportunities] = useState<OpportunityCard[]>([]);
   const [city, setCity] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -102,24 +100,7 @@ export default function OpportunityMatrix() {
     return rows;
   }
 
-  async function loadOpportunities() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { opportunities: rows } = await fetchRestaurantOpportunities();
-      setOpportunities(rows);
-      if (rows.length > 0) {
-        setSelectedOpp(rows[0]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load opportunities");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadOpportunities();
     let cancelled = false;
     void load()
       .then((rows) => {
@@ -207,51 +188,49 @@ export default function OpportunityMatrix() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 sm:p-6 backdrop-blur-md shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 border border-cyan-800/60 px-2.5 py-0.5 rounded-full">
-                Layer 4 Decision Engine
-              </span>
-              <span className="text-xs text-neutral-400 font-mono">Architecture §6.4 & §6.5</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Opportunity Pairing & Scoring Matrix
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Answers the core question: <strong className="text-neutral-200">"Is this specific trend worth acting on for this specific restaurant right now?"</strong>
-              Combines external trend signals with inventory fit and deterministic margin arithmetic.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-neutral-400 bg-neutral-950 px-3 py-1.5 rounded-xl border border-neutral-800">
-              Scoring Model: <strong className="text-emerald-400">v1.0.0 (5-Factor Weighted)</strong>
-            </span>
-            <button
-              onClick={() => loadOpportunities()}
-              disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold rounded-xl border border-neutral-700 transition"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-              <span>Refresh</span>
-            </button>
-          </div>
-        </div>
-      <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 sm:p-6">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
-          This week{city ? ` in ${city}` : ""}
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/80">
+          Decide{city ? ` · ${city}` : ""}
         </p>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-stone-50 mt-1">
           What is worth running
         </h2>
-        <p className="text-sm text-neutral-400 mt-1 max-w-2xl">
-          Pair a live trend with a dish you already cook. Numbers come from your
-          menu, sales, and inventory — not from a language model.
+        <p className="text-sm text-stone-400 mt-1 max-w-2xl">
+          Pair a scraped trend with a dish you already cook. Economics come from
+          menu, sales, and inventory
+          {budget?.constraints?.max_trial_ingredient_spend != null
+            ? ` — trials stay under ${money(budget.constraints.max_trial_ingredient_spend)}`
+            : ""}
+          .
         </p>
       </div>
+
+      {trendingDishes.length > 0 && (
+        <div className="rounded-2xl border border-stone-800 bg-[#141210] p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-[11px] uppercase tracking-wider text-stone-500">Also trending this week</p>
+            <button
+              type="button"
+              onClick={() => onOpenDiscover?.()}
+              className="text-xs text-amber-200/90 hover:text-amber-100"
+            >
+              Open Discover
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {trendingDishes.slice(0, 5).map((dish) => (
+              <button
+                key={dish.id}
+                type="button"
+                onClick={() => onOpenDiscover?.(dish.id)}
+                className="rounded-full border border-stone-800 bg-[#0c0b0a] px-3 py-1.5 text-xs text-stone-300 hover:border-stone-600 hover:text-stone-100"
+              >
+                {dish.trend_score.toFixed(0)} · {dish.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-sm text-rose-200">
@@ -260,28 +239,8 @@ export default function OpportunityMatrix() {
       )}
 
       {loading && (
-        <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-12 text-center text-sm text-neutral-400">
+        <div className="border border-stone-800 rounded-xl p-12 text-center text-sm text-stone-400">
           Loading this week&apos;s pairings…
-        </div>
-      )}
-
-      {!loading && opportunities.length === 0 && (
-        <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-12 text-center max-w-lg mx-auto space-y-4 shadow-xl">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-white">No Opportunities Available</h3>
-            <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-              The Decision Engine requires either active Supabase data or the Part 1 trend contract to evaluate restaurant viability and profit uplift.
-            </p>
-          </div>
-          <button
-            onClick={() => loadOpportunities()}
-            className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-neutral-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-500/20"
-          >
-            Compute Opportunities
-          </button>
         </div>
       )}
 
@@ -318,14 +277,14 @@ export default function OpportunityMatrix() {
                   onClick={() => void selectOpportunity(opp)}
                   className={`w-full text-left p-3.5 rounded-xl border transition ${
                     selectedOpp?.id === opp.id
-                      ? "bg-neutral-850 border-cyan-500/80"
-                      : "bg-neutral-900/50 hover:bg-neutral-900 border-neutral-800"
+                      ? "bg-stone-100 text-stone-950 border-stone-100"
+                      : "bg-[#141210] hover:bg-stone-900 border-stone-800"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h4 className="text-sm font-bold text-white truncate">{opp.dishName}</h4>
-                      <p className="text-[11px] text-neutral-400 mt-1 truncate">
+                      <h4 className="text-sm font-medium truncate">{opp.dishName}</h4>
+                      <p className={`text-[11px] mt-1 truncate ${selectedOpp?.id === opp.id ? "text-stone-500" : "text-stone-400"}`}>
                         {opp.menuItemName ? `Extends ${opp.menuItemName}` : "No menu match"}
                       </p>
                     </div>
@@ -335,7 +294,7 @@ export default function OpportunityMatrix() {
                   </div>
                   <p className="text-[11px] text-emerald-400 mt-2">
                     {opp.economics.incrementalProfit != null
-                      ? `+${money(opp.economics.incrementalProfit)} profit`
+                      ? `+${moneyOrNull(opp.economics.incrementalProfit)} profit`
                       : "No sales baseline"}
                   </p>
                 </button>
@@ -396,18 +355,18 @@ export default function OpportunityMatrix() {
                   </div>
                   <div className="text-[10px] text-neutral-500 mt-0.5">
                     {selectedOpp.menuItemPrice != null
-                      ? `Now ${money(selectedOpp.menuItemPrice, 2)}`
+                      ? `Now ${moneyOrNull(selectedOpp.menuItemPrice, 2)}`
                       : "No priced pairing"}
                   </div>
                 </div>
                 <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
                   <div className="text-[11px] text-neutral-400">Per plate</div>
                   <div className="text-sm font-bold text-emerald-400 mt-1">
-                    {money(selectedOpp.economics.proposedContribution, 2) ?? "—"}
+                    {moneyOrNull(selectedOpp.economics.proposedContribution, 2) ?? "—"}
                   </div>
                   <div className="text-[10px] text-neutral-500 mt-0.5">
                     {selectedOpp.economics.suggestedPrice != null
-                      ? `${money(selectedOpp.economics.suggestedPrice, 2)} suggested`
+                      ? `${moneyOrNull(selectedOpp.economics.suggestedPrice, 2)} suggested`
                       : "No price yet"}
                   </div>
                 </div>
@@ -415,7 +374,7 @@ export default function OpportunityMatrix() {
                   <div className="text-[11px] text-neutral-400">Two-week profit</div>
                   <div className="text-sm font-bold text-white mt-1">
                     {selectedOpp.economics.incrementalProfit != null
-                      ? `+${money(selectedOpp.economics.incrementalProfit)}`
+                      ? `+${moneyOrNull(selectedOpp.economics.incrementalProfit)}`
                       : "—"}
                   </div>
                   <div className="text-[10px] text-neutral-500 mt-0.5">
@@ -522,20 +481,20 @@ export default function OpportunityMatrix() {
                     <div>
                       <div className="text-[11px] text-neutral-400">Baseline</div>
                       <div className="text-sm font-bold text-white">
-                        {money(selectedOpp.run.result.baselineValue)}
+                        {moneyOrNull(selectedOpp.run.result.baselineValue)}
                       </div>
                     </div>
                     <div>
                       <div className="text-[11px] text-neutral-400">Actual</div>
                       <div className="text-sm font-bold text-white">
-                        {money(selectedOpp.run.result.actualValue)}
+                        {moneyOrNull(selectedOpp.run.result.actualValue)}
                       </div>
                     </div>
                     <div>
                       <div className="text-[11px] text-neutral-400">Profit</div>
                       <div className="text-sm font-bold text-emerald-400">
                         {selectedOpp.run.result.incrementalProfit != null
-                          ? `+${money(selectedOpp.run.result.incrementalProfit)}`
+                          ? `+${moneyOrNull(selectedOpp.run.result.incrementalProfit)}`
                           : "—"}
                       </div>
                     </div>

@@ -320,11 +320,13 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
         <div className="flex-1 flex flex-col items-center justify-center my-auto py-12">
           <div className="w-full max-w-2xl space-y-6">
             <div className="text-center space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Upload CSV File
+              <h1 className="text-3xl font-semibold text-stone-50 tracking-tight">
+                Kitchen files
               </h1>
-              <p className="text-sm sm:text-base text-neutral-400 max-w-md mx-auto">
-                Upload your inventory or financials CSV to inspect, search, and match against active viral trends.
+              <p className="text-sm text-stone-400 max-w-md mx-auto">
+                {currentTrendingDish
+                  ? `Fit check will use “${currentTrendingDish.name}” from this week’s scrape.`
+                  : "Upload inventory or a P&L. Discover picks the dish this file is scored against."}
               </p>
             </div>
 

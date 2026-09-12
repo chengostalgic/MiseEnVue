@@ -1,4 +1,4 @@
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 export type OpportunityStatus =
   | "new"
@@ -239,23 +239,43 @@ export function mapOpportunity(row: OpportunityRow): OpportunityCard {
   };
 }
 
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+export function inboxGroup(status: OpportunityStatus) {
+  if (status === "rejected" || status === "completed") return "passed";
+  if (status === "accepted" || status === "testing") return "running";
+  return "inbox";
+}
+
+async function fetchApiOpportunities() {
+  const res = await fetch("/api/opportunities");
+  if (!res.ok) return null;
+  const json = await res.json();
+  if (!json.success || !Array.isArray(json.opportunities) || json.opportunities.length === 0) {
+    return null;
+  }
+  return {
+    restaurant: { id: "res-local", name: "Local restaurant", city: null } satisfies RestaurantSummary,
+    opportunities: json.opportunities as OpportunityCard[],
+  };
+}
 
 export async function fetchRestaurantOpportunities() {
   if (isSupabaseConfigured()) {
     try {
       const supabase = getSupabaseClient();
-      const { data: restaurants } = await supabase
+      const { data: restaurants, error: restaurantError } = await supabase
         .from("restaurants")
-        .select("id, name")
+        .select("id, name, city")
         .limit(1);
-      const restaurant = restaurants?.[0] ?? null;
+
+      if (restaurantError) throw restaurantError;
+      const restaurant = (restaurants?.[0] as RestaurantSummary | undefined) ?? null;
 
       const { data, error } = await supabase
         .from("opportunities")
         .select(
           `
           id,
+          restaurant_id,
           suggested_name,
           status,
           recommendation,
@@ -270,6 +290,30 @@ export async function fetchRestaurantOpportunities() {
           estimated_cost,
           estimated_incremental_revenue,
           estimated_incremental_profit,
+          menu_items ( name, price ),
+          trends ( name, region ),
+          campaigns (
+            id,
+            name,
+            offer,
+            start_date,
+            end_date,
+            status,
+            created_at,
+            campaign_assets ( channel, variant_label, headline, body, call_to_action ),
+            experiments (
+              status,
+              experiment_results (
+                baseline_value,
+                actual_value,
+                estimated_incremental_profit,
+                roi,
+                confidence_score,
+                recommendation,
+                computed_at
+              )
+            )
+          ),
           opportunity_evidence ( evidence_type, source, display_value, description )
         `,
         )
@@ -282,92 +326,12 @@ export async function fetchRestaurantOpportunities() {
         };
       }
     } catch (err) {
-      console.warn("Supabase opportunities query fallback triggered:", err);
+      console.warn("Supabase opportunities fallback:", err);
     }
   }
-export function inboxGroup(status: OpportunityStatus) {
-  if (status === "rejected" || status === "completed") return "passed";
-  if (status === "accepted" || status === "testing") return "running";
-  return "inbox";
-}
 
-export async function fetchRestaurantOpportunities() {
-  const supabase = getSupabaseClient();
-  const { data: restaurants, error: restaurantError } = await supabase
-    .from("restaurants")
-    .select("id, name, city")
-    .limit(1);
+  const fallback = await fetchApiOpportunities();
+  if (fallback) return fallback;
 
-  if (restaurantError) throw restaurantError;
-  const restaurant = (restaurants?.[0] as RestaurantSummary | undefined) ?? null;
-
-  const { data, error } = await supabase
-    .from("opportunities")
-    .select(
-      `
-      id,
-      restaurant_id,
-      suggested_name,
-      status,
-      recommendation,
-      missing_ingredients,
-      trend_score,
-      local_relevance_score,
-      menu_fit_score,
-      operational_fit_score,
-      profitability_score,
-      overall_score,
-      suggested_price,
-      estimated_cost,
-      estimated_incremental_revenue,
-      estimated_incremental_profit,
-      menu_items ( name, price ),
-      trends ( name, region ),
-      campaigns (
-        id,
-        name,
-        offer,
-        start_date,
-        end_date,
-        status,
-        created_at,
-        campaign_assets ( channel, variant_label, headline, body, call_to_action ),
-        experiments (
-          status,
-          experiment_results (
-            baseline_value,
-            actual_value,
-            estimated_incremental_profit,
-            roi,
-            confidence_score,
-            recommendation,
-            computed_at
-          )
-        )
-      ),
-      opportunity_evidence ( evidence_type, source, display_value, description )
-    `,
-    )
-    .order("overall_score", { ascending: false });
-
-  // Fallback to Layer 4 Decision Engine API (/api/opportunities)
-  try {
-    const res = await fetch("/api/opportunities");
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.opportunities) && json.opportunities.length > 0) {
-        return {
-          restaurant: { id: "res-local", name: "The Wooden Spoon Bistro" },
-          opportunities: json.opportunities as OpportunityCard[],
-        };
-      }
-    }
-  } catch (err) {
-    console.error("Failed to fetch /api/opportunities:", err);
-  }
-
-  return {
-    restaurant: { id: "res-local", name: "The Wooden Spoon Bistro" },
-    opportunities: [],
-  };
+  return { restaurant: null, opportunities: [] };
 }
