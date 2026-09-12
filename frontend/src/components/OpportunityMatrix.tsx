@@ -199,8 +199,9 @@ export default function OpportunityMatrix({
           Pair a scraped trend with a dish you already cook. Economics come from
           menu, sales, and inventory
           {budget?.constraints?.max_trial_ingredient_spend != null
-            ? ` — trials stay under ${money(budget.constraints.max_trial_ingredient_spend)}.`
-            : "."}
+            ? ` — trials stay under ${money(budget.constraints.max_trial_ingredient_spend)}`
+            : ""}
+          .
         </p>
       </div>
 

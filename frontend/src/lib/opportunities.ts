@@ -1,4 +1,4 @@
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 export type OpportunityStatus =
   | "new"
@@ -245,69 +245,93 @@ export function inboxGroup(status: OpportunityStatus) {
   return "inbox";
 }
 
-export async function fetchRestaurantOpportunities() {
-  const supabase = getSupabaseClient();
-  const { data: restaurants, error: restaurantError } = await supabase
-    .from("restaurants")
-    .select("id, name, city")
-    .limit(1);
-
-  if (restaurantError) throw restaurantError;
-  const restaurant = (restaurants?.[0] as RestaurantSummary | undefined) ?? null;
-
-  const { data, error } = await supabase
-    .from("opportunities")
-    .select(
-      `
-      id,
-      restaurant_id,
-      suggested_name,
-      status,
-      recommendation,
-      missing_ingredients,
-      trend_score,
-      local_relevance_score,
-      menu_fit_score,
-      operational_fit_score,
-      profitability_score,
-      overall_score,
-      suggested_price,
-      estimated_cost,
-      estimated_incremental_revenue,
-      estimated_incremental_profit,
-      menu_items ( name, price ),
-      trends ( name, region ),
-      campaigns (
-        id,
-        name,
-        offer,
-        start_date,
-        end_date,
-        status,
-        created_at,
-        campaign_assets ( channel, variant_label, headline, body, call_to_action ),
-        experiments (
-          status,
-          experiment_results (
-            baseline_value,
-            actual_value,
-            estimated_incremental_profit,
-            roi,
-            confidence_score,
-            recommendation,
-            computed_at
-          )
-        )
-      ),
-      opportunity_evidence ( evidence_type, source, display_value, description )
-    `,
-    )
-    .order("overall_score", { ascending: false });
-
-  if (error) throw error;
-
+async function fetchApiOpportunities() {
+  const res = await fetch("/api/opportunities");
+  if (!res.ok) return null;
+  const json = await res.json();
+  if (!json.success || !Array.isArray(json.opportunities) || json.opportunities.length === 0) {
+    return null;
+  }
   return {
-    restaurant,
-    opportunities: (data ?? []).map((row) => mapOpportunity(row as OpportunityRow)),
+    restaurant: { id: "res-local", name: "Local restaurant", city: null } satisfies RestaurantSummary,
+    opportunities: json.opportunities as OpportunityCard[],
   };
+}
+
+export async function fetchRestaurantOpportunities() {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseClient();
+      const { data: restaurants, error: restaurantError } = await supabase
+        .from("restaurants")
+        .select("id, name, city")
+        .limit(1);
+
+      if (restaurantError) throw restaurantError;
+      const restaurant = (restaurants?.[0] as RestaurantSummary | undefined) ?? null;
+
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select(
+          `
+          id,
+          restaurant_id,
+          suggested_name,
+          status,
+          recommendation,
+          missing_ingredients,
+          trend_score,
+          local_relevance_score,
+          menu_fit_score,
+          operational_fit_score,
+          profitability_score,
+          overall_score,
+          suggested_price,
+          estimated_cost,
+          estimated_incremental_revenue,
+          estimated_incremental_profit,
+          menu_items ( name, price ),
+          trends ( name, region ),
+          campaigns (
+            id,
+            name,
+            offer,
+            start_date,
+            end_date,
+            status,
+            created_at,
+            campaign_assets ( channel, variant_label, headline, body, call_to_action ),
+            experiments (
+              status,
+              experiment_results (
+                baseline_value,
+                actual_value,
+                estimated_incremental_profit,
+                roi,
+                confidence_score,
+                recommendation,
+                computed_at
+              )
+            )
+          ),
+          opportunity_evidence ( evidence_type, source, display_value, description )
+        `,
+        )
+        .order("overall_score", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return {
+          restaurant,
+          opportunities: data.map((row) => mapOpportunity(row as OpportunityRow)),
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase opportunities fallback:", err);
+    }
+  }
+
+  const fallback = await fetchApiOpportunities();
+  if (fallback) return fallback;
+
+  return { restaurant: null, opportunities: [] };
 }

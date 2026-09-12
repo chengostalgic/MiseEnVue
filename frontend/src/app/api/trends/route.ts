@@ -1,8 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchLiveSocialTrends } from "@miseenvue/agent";
-import { readTrendsContract } from "@/lib/contracts";
+import { readTrendsContract, type ScrapedDish } from "@/lib/contracts";
 
 export const dynamic = "force-dynamic";
+
+function getFallbackTrendData(query: string, repoDishes: ScrapedDish[]) {
+  const matchedDish =
+    repoDishes.find(
+      (dish) =>
+        dish.name?.toLowerCase().includes(query.toLowerCase()) ||
+        query.toLowerCase().includes(dish.name?.toLowerCase()),
+    ) || repoDishes[0];
+
+  const signals = (matchedDish?.evidence || []).map((item, index) => ({
+    id: `${matchedDish?.id || "dish"}-${index}`,
+    platform: item.source === "youtube" ? "youtube" : "influencer",
+    caption: item.excerpt,
+    views: item.engagement || 0,
+    evidenceUrl: item.url,
+    sentiment: item.sentiment || "neutral",
+  }));
+
+  return {
+    topic: query,
+    generatedAt: new Date().toISOString(),
+    isRealtime: false,
+    summary: matchedDish?.why_trending?.summary || `No live pull for ${query}.`,
+    signals,
+    groundingSources: (matchedDish?.evidence || [])
+      .filter((item) => item.url)
+      .map((item) => ({ title: item.excerpt.slice(0, 48), uri: item.url })),
+  };
+}
 
 export async function GET() {
   const contract = readTrendsContract();
@@ -28,8 +57,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const query = body.query || "Crispy Smash Falafel";
+  const apiKey = body.apiKey;
+  const repoDishes = readTrendsContract()?.dishes ?? [];
+
   try {
-    const { query = "Crispy Smash Falafel", apiKey } = await req.json();
     const realtimeData = await fetchLiveSocialTrends(query, apiKey);
     return NextResponse.json({
       success: true,
@@ -40,6 +73,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch trends";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      query,
+      isRealtime: false,
+      realtimeData: getFallbackTrendData(query, repoDishes),
+      generatedAt: new Date().toISOString(),
+      note: message,
+    });
   }
 }
