@@ -8,6 +8,7 @@ because real P&Ls are inconsistent -- see finance/config.yaml.
 from __future__ import annotations
 
 import csv
+import io
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -83,7 +84,16 @@ class PnL:
 
 
 def parse_pnl(path: Path, config: dict[str, Any]) -> PnL:
-    """Read a line-item CSV into categorized totals.
+    """Read a line-item CSV file into categorized totals."""
+    return parse_pnl_text(path.read_text(), config)
+
+
+def parse_pnl_text(text: str, config: dict[str, Any]) -> PnL:
+    """Parse CSV text into categorized totals.
+
+    Text rather than path so the CLI and the web upload share one code path --
+    the alternative is reimplementing this logic in JavaScript and watching the
+    two drift apart.
 
     Expects columns `line_item` and `monthly_amount`. Amounts are read
     absolute: a P&L that writes expenses as negatives and one that writes them
@@ -93,25 +103,24 @@ def parse_pnl(path: Path, config: dict[str, Any]) -> PnL:
     mapping = config["line_item_map"]
     pnl = PnL(totals={c: 0.0 for c in CATEGORIES}, line_items={c: [] for c in CATEGORIES})
 
-    with path.open(newline="") as fh:
-        for row in csv.DictReader(fh):
-            name = (row.get("line_item") or "").strip()
-            raw = (row.get("monthly_amount") or "").strip()
-            if not name or not raw:
-                continue
-            try:
-                amount = abs(float(raw.replace("$", "").replace(",", "")))
-            except ValueError:
-                pnl.unclassified.append((name, 0.0))
-                continue
+    for row in csv.DictReader(io.StringIO(text)):
+        name = (row.get("line_item") or "").strip()
+        raw = (row.get("monthly_amount") or "").strip()
+        if not name or not raw:
+            continue
+        try:
+            amount = abs(float(raw.replace("$", "").replace(",", "")))
+        except ValueError:
+            pnl.unclassified.append((name, 0.0))
+            continue
 
-            category = _categorize(name, mapping)
-            if category is None:
-                pnl.unclassified.append((name, amount))
-                continue
+        category = _categorize(name, mapping)
+        if category is None:
+            pnl.unclassified.append((name, amount))
+            continue
 
-            pnl.totals[category] += amount
-            pnl.line_items[category].append((name, amount))
+        pnl.totals[category] += amount
+        pnl.line_items[category].append((name, amount))
 
     return pnl
 

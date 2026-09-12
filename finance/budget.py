@@ -18,7 +18,7 @@ from pathlib import Path
 import yaml
 
 from finance.allocate import allocate, build_rationale, evaluate_benchmarks
-from finance.pnl import parse_pnl
+from finance.pnl import parse_pnl_text
 
 CONFIG_PATH = Path("finance/config.yaml")
 PNL_PATH = Path("data/in/pnl.csv")
@@ -27,25 +27,31 @@ OUT_PATH = Path("data/out/budget.json")
 SCHEMA_VERSION = 1
 
 
-def run(pnl_path: Path, dry_run: bool) -> int:
-    config = yaml.safe_load(CONFIG_PATH.read_text())
+def load_config() -> dict:
+    return yaml.safe_load(CONFIG_PATH.read_text())
 
-    if not pnl_path.is_file():
-        print(f"No P&L at {pnl_path}")
-        return 1
 
-    pnl = parse_pnl(pnl_path, config)
+def analyze(csv_text: str, config: dict, source: str = "upload") -> dict:
+    """CSV text -> the full budget report.
+
+    The single entry point for both the CLI and the web UI, so the number on
+    the page and the number in budget.json can never disagree.
+
+    Raises ValueError for input problems the caller should surface to a user.
+    """
+    pnl = parse_pnl_text(csv_text, config)
     ratios = pnl.ratios()
     if not ratios:
-        print("P&L has no revenue lines; cannot compute ratios.")
-        return 1
+        raise ValueError(
+            "No revenue lines found. The CSV needs columns 'line_item' and "
+            "'monthly_amount', with at least one row whose name contains "
+            "'sales', 'revenue', or 'income'."
+        )
 
     benchmarks = evaluate_benchmarks(ratios, config)
     allocation = allocate(pnl, config)
-    rationale = build_rationale(pnl, ratios, benchmarks, allocation)
-
-    output = {
-        "_meta": {"schema_version": SCHEMA_VERSION, "source": str(pnl_path)},
+    return {
+        "_meta": {"schema_version": SCHEMA_VERSION, "source": source},
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "summary": {
             "revenue": round(pnl.revenue, 2),
@@ -64,9 +70,23 @@ def run(pnl_path: Path, dry_run: bool) -> int:
             "split": allocation["split"],
         },
         "constraints": allocation["constraints"],
-        "rationale": rationale,
+        "rationale": build_rationale(pnl, ratios, benchmarks, allocation),
         "unclassified": [{"line_item": n, "amount": a} for n, a in pnl.unclassified],
     }
+
+
+def run(pnl_path: Path, dry_run: bool) -> int:
+    config = load_config()
+
+    if not pnl_path.is_file():
+        print(f"No P&L at {pnl_path}")
+        return 1
+
+    try:
+        output = analyze(pnl_path.read_text(), config, source=str(pnl_path))
+    except ValueError as exc:
+        print(exc)
+        return 1
 
     _print_report(output)
 
