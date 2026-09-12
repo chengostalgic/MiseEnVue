@@ -90,8 +90,14 @@ without touching downstream code.
 |---|---|---|
 | Reddit | official API via PRAW | Easiest real data. Target r/food, r/FoodPorn, r/recipes, r/KitchenConfidential, plus local city subs. |
 | Google Trends | `pytrends` | Gives momentum/velocity per search term — best signal for "is this rising or dying". |
-| TikTok | hashtag/creative-center scrape | No open API. Treat as best-effort; fall back to a cached snapshot. |
-| Instagram | hashtag pull | Most restricted. Lowest priority; cached snapshot is acceptable for demo. |
+| TikTok | hashtag / creative-center scrape | **Stretch.** No open API; scrapers break without warning. |
+| Instagram | hashtag pull | **Cut unless everything else is done.** Most restricted of the four. |
+
+Reddit + Google Trends are the plan. They pair well — Reddit gives dish names and
+the qualitative "why," Google Trends gives the rising/fading signal Reddit can't.
+Together they cover the demo. TikTok and Instagram are a scraping rabbit hole with
+no bounded time cost, which is exactly the wrong shape of task for a two-day build;
+the connector interface is there so they can be added later, not so they must be.
 
 Every connector writes its raw pull to `data/raw/<source>/<timestamp>.json`. Nothing
 re-hits a network API during development — the pipeline is replayable offline from
@@ -118,8 +124,11 @@ to a nameable dish, it is dropped.
   explicitly and instructs the model to return nothing rather than emit a bare
   ingredient or technique.
 - Cluster surface forms into one dish entity ("hot honey wings" / "chili crisp
-  wings" → one dish, the rest become `aliases`). Start with embedding similarity +
-  a threshold; a manual alias override file handles the cases it gets wrong.
+  wings" → one dish, the rest become `aliases`). Do this **inside the same LLM
+  call** by passing the dish list found so far and asking the model to either match
+  an existing entry or start a new one. No embeddings, no vector store, no
+  similarity threshold to tune — at a few hundred posts the model handles it, and
+  the alternative is an afternoon spent on infrastructure that a prompt replaces.
 - Synthesize `why_trending` from the clustered evidence, not from model priors —
   the summary must be grounded in the posts actually collected.
 
@@ -145,37 +154,61 @@ ingestion/
   config.yaml       subreddits, keywords, scoring weights
 data/
   raw/              cached source pulls (gitignored)
+  fixtures/         small frozen pulls, committed — the offline demo safety net
   out/trends.json   the contract above
-tests/
-  fixtures/         small frozen raw pulls, committed
 ```
 
 Python throughout. `pipeline.py` is a CLI (`python -m ingestion.pipeline --since 7d`)
 so Part 2 can shell out to it or just read `trends.json` — no service required yet.
 
-### Build order
+### Build order (2-day hackathon)
 
-1. `base.py` connector interface + `Post` schema + the `trends.json` schema. Commit
-   the schema first; it is the handshake with Parts 2 and 3.
-2. Reddit connector end-to-end with caching. One real source beats four stubs.
-3. Normalize + a naive scorer (volume only). Now the pipeline produces real output.
-4. LLM extraction and clustering — the step that makes output useful rather than a
-   keyword count.
-5. Google Trends connector for velocity; upgrade the scorer to the full formula.
-6. TikTok, then Instagram, as time allows. Both are explicitly optional.
+**Hour 1 — hand-write `data/out/trends.json` with 10 plausible fake dishes and push
+it.** Before any connector exists. Part 2 is blocked on the *shape* of this file,
+not its contents, and every hour they wait is an hour of integration debt that comes
+due at 3am on day 2. Fake data now means Part 2 builds against the real contract all
+weekend and the swap to live data is a one-line path change.
 
-Stop after step 5 if time runs short — the product demos fine on Reddit + Google
-Trends, and the connector interface means the other two slot in without rework.
+Then, in order:
+
+1. **Reddit connector + caching** (~3h). One real source beats four stubs. Cache
+   every pull to disk from the start — retrofitting it later is worse than it sounds.
+2. **Normalize + volume-only scorer** (~2h). The pipeline now produces real output
+   end to end, even if the ranking is dumb. End-to-end early is worth more than any
+   single stage being good.
+3. **LLM extraction + clustering** (~4h). The step that turns a keyword count into a
+   product. This is the demo. Budget the most time here and protect it.
+4. **Google Trends + full scoring formula** (~2h). Adds the velocity signal and
+   `momentum`, which is what makes the output feel like intelligence rather than a
+   leaderboard.
+5. **Stretch only:** TikTok. Instagram if the laws of physics change.
+
+**Ship after step 4.** Reddit + Google Trends + good extraction is a complete demo.
+Day 2 afternoon is for the demo script, edge cases, and the handoff to Part 2 — not
+for a fifth connector.
+
+### Hackathon constraints
+
+- **No tests, no service, no database.** JSON files on disk, one CLI entrypoint.
+  Fixtures exist for demo safety, not coverage.
+- **Cache-first is non-negotiable.** Not for elegance — a rate limit or dead wifi
+  during judging is the single most likely way this demo dies. `--offline` replays
+  the last good pull and must work from the first commit.
+- **Config over code.** Subreddits, keywords, and scoring weights in `config.yaml`
+  so tuning during the demo doesn't mean editing Python at 2am.
+- **Cap output at ~15–20 dishes.** Small enough to eyeball for quality before
+  presenting, which is the only QA process there's time for.
 
 ### Risks
 
-- **TikTok/Instagram access.** No reliable open API. Mitigation: cached snapshots
-  committed as fixtures; the demo never depends on a live scrape succeeding.
-- **Dish clustering quality.** Over-merging ("wings") or under-merging (three
-  entries for one dish) both look bad on screen. Mitigation: alias override file,
-  and cap output at the top ~20 dishes where quality is checkable by eye.
-- **Rate limits mid-demo.** Mitigation: cache-first design; `--offline` flag replays
-  the last pull.
+- **Extraction quality is the whole demo.** Over-merging ("wings") or under-merging
+  (three rows for one dish) is what judges will actually notice. Mitigation: it's
+  a prompt, so it's fast to iterate — leave time on day 2 to iterate on it, and
+  eyeball the top 20 before presenting.
+- **Rate limits or no wifi mid-demo.** Mitigation: cache-first design, `--offline`
+  flag, and a known-good `trends.json` committed before judging.
+- **Scope creep into TikTok/Instagram.** Scraping has unbounded time cost.
+  Mitigation: they are stretch goals, and the plan explicitly ships without them.
 
 ### Done when
 
