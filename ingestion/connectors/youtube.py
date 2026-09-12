@@ -28,6 +28,7 @@ from typing import Any
 
 from ingestion.connectors.base import Connector
 from ingestion.connectors.channels import fetch_channel_uploads
+from ingestion.virality import annotate as annotate_virality
 from ingestion.schema import Post
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -231,6 +232,20 @@ class YouTubeConnector(Connector):
             if before != len(videos):
                 print(f"  [{self.name}] language gate dropped {before - len(videos)} videos")
 
+        # Virality signals, computed against each channel's own baseline.
+        vcfg = self.config.get("virality", {})
+        if vcfg:
+            counts = annotate_virality(videos, vcfg)
+            print(
+                f"  [{self.name}] virality: {counts.get('viral',0)} viral "
+                f"({counts.get('breakout',0)} breakout, {counts.get('surging',0)} surging), "
+                f"{counts.get('trend_marker',0)} trend-marked titles"
+            )
+            if vcfg.get("viral_only", False):
+                before = len(videos)
+                videos = {k: v for k, v in videos.items() if v.get("is_viral")}
+                print(f"  [{self.name}] viral_only kept {len(videos)}/{before}")
+
         # Minimum-views floor, all videos. A 12-view upload is not evidence of
         # anything, and 75% of a relevance-ordered pull fell under 1,000.
         min_views = self.config.get("min_views", 0)
@@ -406,6 +421,9 @@ class YouTubeConnector(Connector):
                     media_type="short" if r.get("is_short") else "video",
                     location=r.get("channel"),
                     scope=r.get("scope") or "national",
+                    breakout_ratio=r.get("breakout_ratio"),
+                    is_viral=bool(r.get("is_viral")),
+                    trend_marker=bool(r.get("trend_marker")),
                 )
             )
         return posts

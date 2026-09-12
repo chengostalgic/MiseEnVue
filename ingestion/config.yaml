@@ -53,36 +53,27 @@ youtube:
   # Add channels by @handle. Handle -> playlist mapping is cached on disk.
   # ---------------------------------------------------------------------------
   channels:
-    # Recipe / technique
-    - "@JoshuaWeissman"
-    - "@bingingwithbabish"
-    - "@EthanChlebowski"
-    - "@aragusea"
-    - "@BrianLagerstrom"
-    - "@ChefJeanPierre"
-    - "@LifebyMikeG"
-    - "@NotAnotherCookingShow"
-    - "@Justine_Snacks"
-    - "@CookingWithShereen"
-    # Meat / BBQ
-    - "@GugaFoods"
-    - "@SousVideEverything"
-    - "@MadScientistBBQ"
-    - "@ChudsBbq"
-    # Food media
-    - "@bonappetit"
-    - "@seriouseats"
-    - "@americastestkitchen"
-    - "@epicurious"
-    - "@Food52"
+    # Trend reporters -- their beat IS viral food. These are the channels that
+    # cover Dubai chocolate, kataifi, cucumber salad etc. while it is happening.
+    - "@InsiderFood"
+    - "@Tastemade"
+    - "@thrillist"
+    - "@foodbeast"
     - "@delish"
     - "@BuzzFeedTasty"
-    # Trend / culture
-    - "@FirstWeFeast"
-    - "@MythicalKitchen"
     - "@eater"
+    # Viral-forward creators -- they make "I tried the viral X" content, so a
+    # dish appearing across several of them is a confirmed trend.
     - "@nickdigiovanni"
-    - "@ChefBillyParisi"
+    - "@CookingWithLynja"
+    - "@itsQCP"
+    - "@TheGoldenBalance"
+    - "@Cookingwithkian"
+    - "@dylanlemay"
+    - "@JoshuaWeissman"
+    - "@MythicalKitchen"
+    - "@thatdudecancook"
+    - "@AaronandClaire"
   channel_videos_each: 50
   # Channels publish weekly, not daily, so a 14-day window caps out around 6
   # videos each. Channel pulls use their own wider window -- a dish several
@@ -181,6 +172,46 @@ youtube:
   # A video nobody watched is not evidence of a trend. Applies to every video,
   # not just Shorts -- 75% of a relevance-only pull was under 1,000 views.
   min_views: 1000
+
+  # ---------------------------------------------------------------------------
+  # WHAT COUNTS AS VIRAL
+  #
+  # Raw views conflate "this dish went viral" with "a 46M-subscriber channel
+  # posted something". The separator is the BREAKOUT RATIO: a video's views
+  # against its own channel's median. A 2M-view video on a channel that
+  # averages 200k means the dish drove it, not the subscriber base -- that is
+  # the Dubai-chocolate signature.
+  #
+  # A video is viral if it clears min_views AND either breaks out against its
+  # channel or is accumulating views fast enough to be mid-surge.
+  # ---------------------------------------------------------------------------
+  virality:
+    # Set true to keep ONLY videos that clear the virality bar. Off by default
+    # so the bar can be tuned against real output before it starts discarding.
+    viral_only: false
+    min_views: 50000
+    breakout_ratio: 2.0       # >= 2x the channel's own median
+    min_views_per_day: 25000  # or still climbing fast
+    # Titles that signal the creator is covering a trend rather than posting an
+    # evergreen recipe. Safe as a positive signal now that the roster is
+    # curated -- the earlier problem was tiny SEO channels using these words,
+    # not the words themselves.
+    # Require BOTH a breakout and a trend-marked title. Breakout alone finds
+    # viral VIDEOS -- a Hot Ones celebrity interview broke out at 100x and has
+    # no dish in it. A trend marker alone finds creators using the word. The
+    # pair is the Dubai-chocolate signature: audience surge on a video the
+    # creator framed as covering a trend.
+    require_trend_marker: true
+    trend_markers:
+      - viral
+      - trending
+      - tiktok
+      - "i tried"
+      - hype
+      - everyone
+      - internet
+      - famous
+      - obsessed
 
 google_trends:
   # Terms are seeded from the dish names extraction finds, not hardcoded.

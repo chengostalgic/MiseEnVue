@@ -60,6 +60,12 @@ class Post:
     # "local"    = the client's city, the scarcest and most decision-relevant.
     # A dish appearing across tiers is the strongest signal in the pipeline.
     scope: Literal["national", "regional", "local"] = "national"
+    # Virality signals -- see ingestion/virality.py. breakout_ratio is views
+    # against the channel's own median, which separates "this dish went viral"
+    # from "a huge channel posted something".
+    breakout_ratio: float | None = None
+    is_viral: bool = False
+    trend_marker: bool = False
 
 
 # --------------------------------------------------------------------------
