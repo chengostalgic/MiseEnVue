@@ -49,3 +49,11 @@ Reports write to `data/reports/`. The CLI reads `data/out/trends.json` for `--co
 ## Deploy
 
 Keep the Vercel **Root Directory** at the repo root (leave it empty), not `frontend/`. The root `package.json` lists `next` so Vercel can detect the framework; workspaces still install `frontend` and `agent`. Tailwind’s Linux native binaries are declared as optional deps so `next build` can compile CSS on Vercel. The build command must stay `npm run build` (or the `vercel.json` command) — a bare `next build` at the repo root will not find the app.
+
+Without hosted env vars the site opens in **demo mode** (scrape contract + API fallbacks, no login). To attach a real restaurant, add these in Vercel → Settings → Environment Variables from a hosted Supabase project (not `127.0.0.1`):
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+GEMINI_API_KEY
+```

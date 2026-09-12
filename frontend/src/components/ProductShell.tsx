@@ -23,7 +23,7 @@ export default function ProductShell({
   restaurantName,
   restaurantCity,
 }: {
-  session: Session;
+  session: Session | null;
   restaurantName?: string | null;
   restaurantCity?: string | null;
 }) {
@@ -65,7 +65,7 @@ export default function ProductShell({
           <div className="min-w-0">
             <div className="text-sm text-stone-100">MiseEnVue</div>
             <div className="text-xs text-stone-500 truncate">
-              {location || session.user.email}
+              {location || session?.user.email || "Demo · no database"}
             </div>
           </div>
 
@@ -91,13 +91,17 @@ export default function ProductShell({
             })}
           </nav>
 
-          <button
-            type="button"
-            className="text-xs text-stone-400 hover:text-stone-100"
-            onClick={() => getSupabaseClient().auth.signOut()}
-          >
-            Sign out
-          </button>
+          {session ? (
+            <button
+              type="button"
+              className="text-xs text-stone-400 hover:text-stone-100"
+              onClick={() => getSupabaseClient().auth.signOut()}
+            >
+              Sign out
+            </button>
+          ) : (
+            <span className="text-xs text-stone-500">Demo</span>
+          )}
         </div>
       </header>
 

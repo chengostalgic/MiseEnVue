@@ -60,8 +60,11 @@ export default function AuthPanel({
       <div className="notice error" role="alert">
         <strong>Supabase is not configured.</strong>
         <span>
-          Copy <code>frontend/.env.local.example</code> to{" "}
-          <code>frontend/.env.local</code> and add the local URL and anon key.
+          Locally, copy <code>frontend/.env.local.example</code> to{" "}
+          <code>frontend/.env.local</code>. On Vercel, set{" "}
+          <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> from a hosted project — a
+          127.0.0.1 URL will not work on deploy.
         </span>
       </div>
     );

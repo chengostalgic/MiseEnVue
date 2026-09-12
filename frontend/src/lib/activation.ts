@@ -1,10 +1,11 @@
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import type { OpportunityCard, OpportunityStatus } from "@/lib/opportunities";
 
 export async function updateOpportunityStatus(
   opportunityId: string,
   status: OpportunityStatus,
 ) {
+  if (!isSupabaseConfigured()) return;
   const { error } = await getSupabaseClient()
     .from("opportunities")
     .update({ status })
@@ -14,6 +15,9 @@ export async function updateOpportunityStatus(
 }
 
 export async function startOpportunityRun(opportunity: OpportunityCard) {
+  if (!isSupabaseConfigured()) {
+    return opportunity.run?.campaignId ?? "demo-run";
+  }
   const supabase = getSupabaseClient();
 
   if (opportunity.run) {
