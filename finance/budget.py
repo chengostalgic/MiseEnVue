@@ -109,8 +109,10 @@ def _print_report(o: dict) -> None:
     print(f"PRIME COST        {r['prime_cost_pct']:>12.1%}   <- drives the band")
     tb = a["total_budget"]
     print(f"\nBand: {o['health']['band'].upper()}")
-    print(f"  profit ceiling  ${tb['profit_ceiling']:>12,.0f}")
-    print(f"  benchmark cap   ${tb['benchmark_ceiling']:>12,.0f}")
+    print(f"  profit before marketing ${tb['profit_before_marketing']:>12,.0f}")
+    print(f"  earnings ceiling ({tb['reinvestment_share']:.0%} of it) "
+          f"${tb['earnings_ceiling']:>11,.0f}")
+    print(f"  benchmark cap            ${tb['benchmark_ceiling']:>12,.0f}")
     print(f"Monthly budget   ${tb['amount']:>12,.0f}  "
           f"({tb['pct_of_revenue']:.1%} of revenue, bound by {tb['binding_constraint']})")
     cs = a["current_spend"]

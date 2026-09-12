@@ -115,25 +115,38 @@ changes what gets recommended.
 standard single measure of restaurant health, and structural where net margin swings
 on one-off items.
 
-| Prime cost | Band | Benchmark cap | Profit payout |
+| Prime cost | Band | Reinvestment share | Revenue cap |
 |---|---|---|---|
-| < 60% | healthy | 6% of revenue | 40% of net profit |
-| 60–65% | stable | 4% | 50% |
-| 65–70% | tight | 3% | 35% |
-| > 70% | distressed | 2% | 20% |
+| < 60% | healthy | 40% of earnings | 5% |
+| 60–65% | stable | 30% | 4% |
+| 65–70% | tight | 20% | 3% |
+| > 70% | distressed | 10% | 2% |
 
-**The budget is the lower of two ceilings, and the output names which one bound it.**
+**The budget is a share of earnings before marketing, not of revenue.**
 
-- **Profit ceiling** — a share of net profit, i.e. money that actually exists. A
-  restaurant earning $2k/month cannot spend $7k on marketing regardless of what a
-  percentage-of-revenue rule says.
-- **Benchmark ceiling** — a share of revenue. Stops one high-margin month from
-  justifying a budget the kitchen has no capacity to execute.
-- **Floor** — 1% of revenue when neither supports anything meaningful. Going dark
-  carries its own risk, but the output calls it a holding position, not a plan.
+```
+net profit                     $14,500
++ marketing already spent      $ 3,800
+= earnings before marketing    $18,300
+x reinvestment share (stable)      30%
+= budget                       $ 5,490     (3.0% of revenue)
+```
 
-"Bound by profit" and "bound by benchmark" call for different conversations, so
-`binding_constraint` is part of the contract rather than an internal detail.
+Adding marketing back before taking a share is the point. Net profit already has
+marketing deducted, so taking a cut of *it* double-counts — and a restaurant that
+currently spends nothing would look like it can afford more than one spending
+sensibly. Earnings before marketing is invariant to current spend, which is the
+property you want: verified by feeding the same P&L with $0 and with $40,000 of
+marketing, both of which yield the same $30,000 pool.
+
+The revenue percentage is now only a **sanity cap**, not the driver, and it uses the
+independent-restaurant scale (2–5%) rather than the established/multi-unit 3–6%.
+Sources are explicit that the 3–6% bracket is the wrong benchmark for an independent
+under $5M; this client is $2.16M/year.
+
+A **floor** of 1% of revenue keeps a struggling operation from going completely
+dark. `binding_constraint` reports which of the three applied — "limited by
+earnings" and "limited by benchmark" are different conversations.
 
 **Two figures make the number defensible**, both computed from the P&L:
 

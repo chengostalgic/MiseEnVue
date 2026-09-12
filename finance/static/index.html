@@ -181,9 +181,9 @@ function render(d) {
   // Say which ceiling bound the number -- "limited by profit" and "limited by
   // benchmark" are different conversations for the owner.
   const boundBy = {
-    profit: `Capped by profit (${usd(tb.profit_ceiling)}), not the industry benchmark (${usd(tb.benchmark_ceiling)}).`,
-    benchmark: `Held to the industry benchmark (${usd(tb.benchmark_ceiling)}); profit could support ${usd(tb.profit_ceiling)}.`,
-    floor: `Minimum maintenance level — profit does not support a real budget.`
+    earnings: `${pct(tb.reinvestment_share, 0)} of ${usd(tb.profit_before_marketing)} earned before marketing — leaving ${usd(tb.profit_before_marketing - tb.amount)} in profit.`,
+    benchmark: `Capped at ${pct(tb.pct_of_revenue)} of revenue for an independent this size; earnings could support ${usd(tb.earnings_ceiling)}.`,
+    floor: `Minimum maintenance level — earnings do not support a real budget.`
   }[tb.binding_constraint];
 
   let html = `
@@ -195,6 +195,22 @@ function render(d) {
       <span style="color:var(--muted)">${pct(tb.pct_of_revenue)} of revenue</span>
     </div>
     <div class="bound">${boundBy}</div>
+  </div>
+
+  <div class="card">
+    <h2>How that number is derived</h2>
+    <table>
+      <tr><td>Net profit</td><td class="num">${usd(d.summary.net_profit)}</td></tr>
+      <tr><td>+ marketing you already spend</td><td class="num">${usd(cs.current_monthly)}</td></tr>
+      <tr><td><b>= earnings before marketing</b></td>
+          <td class="num"><b>${usd(tb.profit_before_marketing)}</b></td></tr>
+      <tr><td>× reinvestment share (${esc(d.health.band)})</td>
+          <td class="num">${pct(tb.reinvestment_share, 0)}</td></tr>
+      <tr><td><b>= budget</b></td><td class="num"><b>${usd(tb.earnings_ceiling)}</b></td></tr>
+      <tr><td>revenue cap (sanity check)</td><td class="num">${usd(tb.benchmark_ceiling)}</td></tr>
+    </table>
+    <p class="note">Marketing is added back before taking a share, because net profit
+    already has marketing subtracted — taking a cut of it would double-count.</p>
   </div>
 
   <div class="card">

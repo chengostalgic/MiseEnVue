@@ -65,18 +65,21 @@ def classify_band(prime_cost_pct: float, config: dict[str, Any]) -> str:
 def allocate(pnl: PnL, config: dict[str, Any]) -> dict[str, Any]:
     """Compute the monthly trend/marketing envelope and its constraints.
 
-    Two independent ceilings, and the tighter one binds:
+    The number is driven by earnings, with the revenue benchmark acting only
+    as a sanity cap:
 
-      profit ceiling    -- a share of net profit, i.e. money that actually
-                           exists. A business earning $2k/month cannot spend
-                           $7k on marketing regardless of what a percentage-of-
-                           revenue rule of thumb says.
-      benchmark ceiling -- a share of revenue, the industry convention. Stops
-                           a high-margin month from justifying a budget the
-                           operation has no capacity to execute.
+      earnings ceiling  -- a share of profit BEFORE marketing, which is the
+                           pool the spend actually comes out of. Using net
+                           profit here would double-count, since net profit
+                           already has marketing deducted.
+      benchmark ceiling -- a share of revenue. Not the driver, just a guard
+                           against one unusually profitable month justifying
+                           a budget the kitchen has no capacity to execute.
+      floor             -- keeps a struggling operation from going completely
+                           dark, which is its own risk.
 
     Reporting which one binds matters as much as the number: "limited by
-    profit" and "limited by benchmark" call for different conversations.
+    earnings" and "limited by benchmark" call for different conversations.
     """
     ratios = pnl.ratios()
     if not ratios:
@@ -86,11 +89,12 @@ def allocate(pnl: PnL, config: dict[str, Any]) -> dict[str, Any]:
     band = config["bands"][band_name]
     revenue = pnl.revenue
 
-    benchmark_ceiling = round(revenue * band["marketing_pct_of_revenue"], 2)
-    profit_ceiling = round(max(pnl.net_profit, 0.0) * band["profit_payout_ratio"], 2)
+    pbm = max(pnl.profit_before_marketing, 0.0)
+    earnings_ceiling = round(pbm * band["reinvestment_share"], 2)
+    benchmark_ceiling = round(revenue * band["max_pct_of_revenue"], 2)
 
-    total = min(benchmark_ceiling, profit_ceiling)
-    binding = "profit" if profit_ceiling < benchmark_ceiling else "benchmark"
+    total = min(earnings_ceiling, benchmark_ceiling)
+    binding = "earnings" if earnings_ceiling <= benchmark_ceiling else "benchmark"
 
     # A loss-making business gets a floor, not zero: going dark is its own
     # risk, and the floor is small enough to be maintenance rather than a bet.
@@ -109,8 +113,10 @@ def allocate(pnl: PnL, config: dict[str, Any]) -> dict[str, Any]:
             "amount": total,
             "pct_of_revenue": round(total / revenue, 4) if revenue else 0.0,
             "binding_constraint": binding,
+            "earnings_ceiling": earnings_ceiling,
             "benchmark_ceiling": benchmark_ceiling,
-            "profit_ceiling": profit_ceiling,
+            "profit_before_marketing": round(pbm, 2),
+            "reinvestment_share": band["reinvestment_share"],
         },
         "current_spend": _current_spend(pnl, total),
         "breakeven": breakeven(total, cm_pct, config),
@@ -208,26 +214,27 @@ def build_rationale(
         )
 
     # Which ceiling bound the number, and what that implies.
-    if tb["binding_constraint"] == "profit":
+    if tb["binding_constraint"] == "earnings":
         lines.append(
-            f"Budget is capped by profit, not by the industry benchmark. "
-            f"${tb['profit_ceiling']:,.0f} is the affordable share of "
-            f"${pnl.net_profit:,.0f} monthly profit, below the "
-            f"${tb['benchmark_ceiling']:,.0f} a percentage-of-revenue rule would "
-            f"suggest. Spending to the benchmark would come out of cash, not earnings."
+            f"Before marketing, the business earns ${tb['profit_before_marketing']:,.0f}/month "
+            f"(${pnl.net_profit:,.0f} net profit plus the ${cs['current_monthly']:,.0f} it "
+            f"already spends on marketing). Reinvesting "
+            f"{tb['reinvestment_share']:.0%} of that gives ${tb['amount']:,.0f} and leaves "
+            f"${tb['profit_before_marketing'] - tb['amount']:,.0f} in profit."
         )
     elif tb["binding_constraint"] == "floor":
         lines.append(
-            f"Profit does not support a meaningful budget, so this is a minimum "
+            f"Earnings do not support a meaningful budget, so this is a minimum "
             f"maintenance figure. Going completely dark carries its own risk, but "
             f"${tb['amount']:,.0f} is a holding position, not a growth plan."
         )
     else:
         lines.append(
-            f"Profit could support ${tb['profit_ceiling']:,.0f}, but the budget is "
-            f"held to ${tb['benchmark_ceiling']:,.0f} — the industry benchmark for "
-            f"this band. Spending beyond it tends to outrun what a kitchen this "
-            f"size can execute."
+            f"Earnings could support ${tb['earnings_ceiling']:,.0f}, but the budget is "
+            f"capped at ${tb['benchmark_ceiling']:,.0f} — "
+            f"{tb['pct_of_revenue']:.1%} of revenue, the ceiling for an independent "
+            f"restaurant this size. Spending beyond it tends to outrun what a kitchen "
+            f"this size can execute."
         )
 
     # Recommendation against actual current spend.

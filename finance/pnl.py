@@ -36,6 +36,19 @@ class PnL:
     def net_profit(self) -> float:
         return self.revenue - self.total_expenses
 
+    @property
+    def profit_before_marketing(self) -> float:
+        """Net profit with existing marketing spend added back.
+
+        This, not net profit, is the pool a marketing budget comes out of.
+        Net profit already has marketing subtracted, so sizing a marketing
+        budget as a share of it double-counts: you take a fraction of a number
+        that has already been reduced by the thing you are budgeting for, and
+        a restaurant that currently spends nothing looks like it can afford
+        more than one that spends sensibly.
+        """
+        return self.net_profit + self.totals.get("marketing", 0.0)
+
     def variable_costs(self, hourly_keywords: list[str]) -> float:
         """Costs that scale with each additional cover.
 
