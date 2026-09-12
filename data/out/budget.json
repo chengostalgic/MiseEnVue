@@ -3,7 +3,7 @@
     "schema_version": 1,
     "source": "data/in/pnl.csv"
   },
-  "generated_at": "2026-09-12T20:06:04Z",
+  "generated_at": "2026-09-12T20:12:20Z",
   "summary": {
     "revenue": 180000.0,
     "total_expenses": 165500.0,
@@ -70,7 +70,27 @@
     "monthly_revenue": 180000.0,
     "total_budget": {
       "amount": 7200.0,
-      "pct_of_revenue": 0.04
+      "pct_of_revenue": 0.04,
+      "binding_constraint": "benchmark",
+      "benchmark_ceiling": 7200.0,
+      "profit_ceiling": 7250.0
+    },
+    "current_spend": {
+      "current_monthly": 3800.0,
+      "current_pct_of_revenue": 0.0211,
+      "recommended_monthly": 7200.0,
+      "delta": 3400.0,
+      "direction": "increase",
+      "multiple": 1.89
+    },
+    "breakeven": {
+      "computable": true,
+      "contribution_margin_pct": 0.4733,
+      "incremental_revenue_needed": 15212.34,
+      "pct_of_current_revenue": null,
+      "avg_check": 38.0,
+      "incremental_covers_needed": 400,
+      "incremental_covers_per_day": 13.3
     },
     "split": {
       "menu_experimentation": 2016.0,
@@ -87,7 +107,10 @@
     "min_dish_margin_pct": 0.68
   },
   "rationale": [
-    "Prime cost is 62.5% of revenue (food 31.3% + labor 31.2%), which places this business in the 'stable' band."
+    "Prime cost is 62.5% of revenue (food 31.3% + labor 31.2%), which places this business in the 'stable' band.",
+    "Profit could support $7,250, but the budget is held to $7,200 \u2014 the industry benchmark for this band. Spending beyond it tends to outrun what a kitchen this size can execute.",
+    "They currently spend $3,800/month (2.1% of revenue). This is a 1.9x increase \u2014 treat it as a target to phase into, not a switch to flip.",
+    "At a 47.3% contribution margin, $7,200 needs $15,212 in incremental revenue to break even \u2014 about 13.3 extra covers per day at a $38 average check. That is the bar, not a forecast."
   ],
   "unclassified": []
 }

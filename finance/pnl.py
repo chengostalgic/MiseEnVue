@@ -35,6 +35,30 @@ class PnL:
     def net_profit(self) -> float:
         return self.revenue - self.total_expenses
 
+    def variable_costs(self, hourly_keywords: list[str]) -> float:
+        """Costs that scale with each additional cover.
+
+        COGS plus hourly labor. Salaried management, rent, and insurance do
+        not move when one more table sits down, so they are excluded -- this
+        is the distinction that makes contribution margin mean something.
+        """
+        hourly = sum(
+            amount
+            for name, amount in self.line_items.get("labor", [])
+            if any(k in name.lower() for k in hourly_keywords)
+        )
+        return self.totals.get("cogs", 0.0) + hourly
+
+    def contribution_margin_pct(self, hourly_keywords: list[str]) -> float:
+        """Share of each incremental dollar that survives variable costs.
+
+        This is what a marketing dollar has to earn back against, and it is
+        computed from their P&L rather than assumed.
+        """
+        if self.revenue <= 0:
+            return 0.0
+        return round((self.revenue - self.variable_costs(hourly_keywords)) / self.revenue, 4)
+
     def ratios(self) -> dict[str, float]:
         """Expense ratios as a share of revenue.
 

@@ -59,6 +59,8 @@ def run(pnl_path: Path, dry_run: bool) -> int:
         "allocation": {
             "monthly_revenue": allocation["monthly_revenue"],
             "total_budget": allocation["total_budget"],
+            "current_spend": allocation["current_spend"],
+            "breakeven": allocation["breakeven"],
             "split": allocation["split"],
         },
         "constraints": allocation["constraints"],
@@ -85,9 +87,21 @@ def _print_report(o: dict) -> None:
     print(f"\nFood cost         {r['food_cost_pct']:>12.1%}")
     print(f"Labor cost        {r['labor_cost_pct']:>12.1%}")
     print(f"PRIME COST        {r['prime_cost_pct']:>12.1%}   <- drives the band")
+    tb = a["total_budget"]
     print(f"\nBand: {o['health']['band'].upper()}")
-    print(f"Monthly budget   ${a['total_budget']['amount']:>12,.0f}  "
-          f"({a['total_budget']['pct_of_revenue']:.0%} of revenue)")
+    print(f"  profit ceiling  ${tb['profit_ceiling']:>12,.0f}")
+    print(f"  benchmark cap   ${tb['benchmark_ceiling']:>12,.0f}")
+    print(f"Monthly budget   ${tb['amount']:>12,.0f}  "
+          f"({tb['pct_of_revenue']:.1%} of revenue, bound by {tb['binding_constraint']})")
+    cs = a["current_spend"]
+    print(f"  vs current      ${cs['current_monthly']:>12,.0f}  -> {cs['direction']}"
+          + (f" ({cs['multiple']:.1f}x)" if cs.get("multiple") else ""))
+    be = a["breakeven"]
+    if be.get("computable"):
+        print(f"\nBreak-even       ${be['incremental_revenue_needed']:>12,.0f} incremental revenue")
+        print(f"  contribution margin {be['contribution_margin_pct']:.1%}")
+        if be.get("incremental_covers_per_day"):
+            print(f"  = {be['incremental_covers_per_day']} extra covers/day @ ${be['avg_check']:.0f} check")
     for k, v in a["split"].items():
         print(f"  {k:<22} ${v:>10,.0f}")
 

@@ -111,15 +111,51 @@ changes what gets recommended.
 
 ### The allocation logic
 
-**Prime cost** — food plus labor as a share of revenue — is the single number that
-decides restaurant health, and it drives the whole calculation:
+**Prime cost** — food plus labor as a share of revenue — sets the *band*. It is the
+standard single measure of restaurant health, and structural where net margin swings
+on one-off items.
 
-| Prime cost | Band | Marketing budget | Reasoning |
+| Prime cost | Band | Benchmark cap | Profit payout |
 |---|---|---|---|
-| < 60% | healthy | 6% of revenue | Real discretionary capacity |
-| 60–65% | stable | 4% | Standard industry spend |
-| 65–70% | tight | 3% | Fund only what pays back fast |
-| > 70% | distressed | 2% | Maintenance only; the problem is not marketing |
+| < 60% | healthy | 6% of revenue | 40% of net profit |
+| 60–65% | stable | 4% | 50% |
+| 65–70% | tight | 3% | 35% |
+| > 70% | distressed | 2% | 20% |
+
+**The budget is the lower of two ceilings, and the output names which one bound it.**
+
+- **Profit ceiling** — a share of net profit, i.e. money that actually exists. A
+  restaurant earning $2k/month cannot spend $7k on marketing regardless of what a
+  percentage-of-revenue rule says.
+- **Benchmark ceiling** — a share of revenue. Stops one high-margin month from
+  justifying a budget the kitchen has no capacity to execute.
+- **Floor** — 1% of revenue when neither supports anything meaningful. Going dark
+  carries its own risk, but the output calls it a holding position, not a plan.
+
+"Bound by profit" and "bound by benchmark" call for different conversations, so
+`binding_constraint` is part of the contract rather than an internal detail.
+
+**Two figures make the number defensible**, both computed from the P&L:
+
+*Contribution margin* — revenue minus variable costs (COGS + hourly labor; salaried
+management and rent don't move when one more table sits down). The sample P&L
+computes to 47.3%.
+
+*Break-even* — what the spend has to generate to pay for itself:
+`budget ÷ contribution margin ÷ average check`. For the stable sample: $7,200 needs
+$15,212 incremental revenue, **about 13 extra covers per day**. That is a bar, not a
+forecast — it does not claim the spend will work, it states what "working" means, and
+the owner can judge that against their own floor.
+
+*Current spend* is compared too. The sample already spends $3,800/month, so the
+recommendation is a **1.9x increase** — materially different information from a bare
+$7,200, and the P&L already contains it.
+
+**What is still convention:** the band thresholds, the benchmark percentages, the
+payout ratios, and the split. Those come from restaurant industry norms in
+`finance/config.yaml`, not from this restaurant's history. They act as guardrails on
+computed figures rather than as the answer itself — but they are assumptions, and a
+judge asking "where does 4% come from?" deserves that answer.
 
 The distressed case matters most and is the one a naive tool gets wrong. A
 restaurant at 72% prime cost does not need a bigger campaign — it needs its food or

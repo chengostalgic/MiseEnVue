@@ -63,26 +63,57 @@ def classify_band(prime_cost_pct: float, config: dict[str, Any]) -> str:
 
 
 def allocate(pnl: PnL, config: dict[str, Any]) -> dict[str, Any]:
-    """Compute the monthly trend/marketing envelope and its constraints."""
+    """Compute the monthly trend/marketing envelope and its constraints.
+
+    Two independent ceilings, and the tighter one binds:
+
+      profit ceiling    -- a share of net profit, i.e. money that actually
+                           exists. A business earning $2k/month cannot spend
+                           $7k on marketing regardless of what a percentage-of-
+                           revenue rule of thumb says.
+      benchmark ceiling -- a share of revenue, the industry convention. Stops
+                           a high-margin month from justifying a budget the
+                           operation has no capacity to execute.
+
+    Reporting which one binds matters as much as the number: "limited by
+    profit" and "limited by benchmark" call for different conversations.
+    """
     ratios = pnl.ratios()
     if not ratios:
         raise ValueError("P&L has no revenue; cannot compute an allocation.")
 
     band_name = classify_band(ratios["prime_cost_pct"], config)
     band = config["bands"][band_name]
-
     revenue = pnl.revenue
-    total = round(revenue * band["marketing_pct_of_revenue"], 2)
+
+    benchmark_ceiling = round(revenue * band["marketing_pct_of_revenue"], 2)
+    profit_ceiling = round(max(pnl.net_profit, 0.0) * band["profit_payout_ratio"], 2)
+
+    total = min(benchmark_ceiling, profit_ceiling)
+    binding = "profit" if profit_ceiling < benchmark_ceiling else "benchmark"
+
+    # A loss-making business gets a floor, not zero: going dark is its own
+    # risk, and the floor is small enough to be maintenance rather than a bet.
+    floor = round(revenue * config["minimum_spend_pct_of_revenue"], 2)
+    if total < floor:
+        total, binding = floor, "floor"
+
     split = {k: round(total * pct, 2) for k, pct in band["split"].items()}
 
     capex_allowed = band_name in config["constraints"]["capex_allowed_bands"]
+    cm_pct = pnl.contribution_margin_pct(config["hourly_labor_keywords"])
     return {
         "band": band_name,
         "monthly_revenue": round(revenue, 2),
         "total_budget": {
             "amount": total,
-            "pct_of_revenue": band["marketing_pct_of_revenue"],
+            "pct_of_revenue": round(total / revenue, 4) if revenue else 0.0,
+            "binding_constraint": binding,
+            "benchmark_ceiling": benchmark_ceiling,
+            "profit_ceiling": profit_ceiling,
         },
+        "current_spend": _current_spend(pnl, total),
+        "breakeven": breakeven(total, cm_pct, config),
         "split": split,
         "constraints": {
             "max_trial_ingredient_spend": split.get("menu_experimentation", 0.0),
@@ -96,6 +127,54 @@ def allocate(pnl: PnL, config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def breakeven(budget: float, cm_pct: float, config: dict[str, Any]) -> dict[str, Any]:
+    """What this spend has to produce to pay for itself.
+
+    Entirely arithmetic on the restaurant's own numbers -- no forecast, no
+    assumed return. It does not claim the spend will work; it states the bar
+    it has to clear, which the owner can judge against their own floor.
+    """
+    if cm_pct <= 0:
+        return {"computable": False, "reason": "contribution margin is zero or negative"}
+
+    avg_check = config.get("avg_check")
+    revenue_needed = round(budget / cm_pct, 2)
+    out = {
+        "computable": True,
+        "contribution_margin_pct": cm_pct,
+        "incremental_revenue_needed": revenue_needed,
+        "pct_of_current_revenue": None,
+    }
+    if avg_check:
+        covers = revenue_needed / avg_check
+        out["avg_check"] = avg_check
+        out["incremental_covers_needed"] = round(covers)
+        out["incremental_covers_per_day"] = round(covers / 30, 1)
+    return out
+
+
+def _current_spend(pnl: PnL, recommended: float) -> dict[str, Any]:
+    """Compare recommendation against what they already spend.
+
+    A recommendation in isolation is a target; against current spend it is a
+    direction. "Nearly double your marketing" is a materially different message
+    from "$7,200" and the P&L already contains the answer.
+    """
+    current = pnl.totals.get("marketing", 0.0)
+    out = {
+        "current_monthly": round(current, 2),
+        "current_pct_of_revenue": round(current / pnl.revenue, 4) if pnl.revenue else 0.0,
+        "recommended_monthly": recommended,
+        "delta": round(recommended - current, 2),
+    }
+    out["direction"] = (
+        "increase" if out["delta"] > 1 else "decrease" if out["delta"] < -1 else "hold"
+    )
+    if current > 0:
+        out["multiple"] = round(recommended / current, 2)
+    return out
+
+
 def build_rationale(
     pnl: PnL, ratios: dict[str, float], benchmarks: list[dict], allocation: dict
 ) -> list[str]:
@@ -105,6 +184,8 @@ def build_rationale(
     rather than restating the ratios they can already see.
     """
     band = allocation["band"]
+    tb, cs, be = allocation["total_budget"], allocation["current_spend"], allocation["breakeven"]
+
     lines = [
         f"Prime cost is {ratios['prime_cost_pct']:.1%} of revenue "
         f"(food {ratios['food_cost_pct']:.1%} + labor {ratios['labor_cost_pct']:.1%}), "
@@ -124,6 +205,53 @@ def build_rationale(
             "There is room to act, but only on things that pay back quickly. The "
             "allocation leans toward menu experimentation over paid reach, because a "
             "test batch is cheap and reversible where an ad spend is neither."
+        )
+
+    # Which ceiling bound the number, and what that implies.
+    if tb["binding_constraint"] == "profit":
+        lines.append(
+            f"Budget is capped by profit, not by the industry benchmark. "
+            f"${tb['profit_ceiling']:,.0f} is the affordable share of "
+            f"${pnl.net_profit:,.0f} monthly profit, below the "
+            f"${tb['benchmark_ceiling']:,.0f} a percentage-of-revenue rule would "
+            f"suggest. Spending to the benchmark would come out of cash, not earnings."
+        )
+    elif tb["binding_constraint"] == "floor":
+        lines.append(
+            f"Profit does not support a meaningful budget, so this is a minimum "
+            f"maintenance figure. Going completely dark carries its own risk, but "
+            f"${tb['amount']:,.0f} is a holding position, not a growth plan."
+        )
+    else:
+        lines.append(
+            f"Profit could support ${tb['profit_ceiling']:,.0f}, but the budget is "
+            f"held to ${tb['benchmark_ceiling']:,.0f} — the industry benchmark for "
+            f"this band. Spending beyond it tends to outrun what a kitchen this "
+            f"size can execute."
+        )
+
+    # Recommendation against actual current spend.
+    if cs["direction"] == "increase" and cs.get("multiple"):
+        lines.append(
+            f"They currently spend ${cs['current_monthly']:,.0f}/month "
+            f"({cs['current_pct_of_revenue']:.1%} of revenue). This is a "
+            f"{cs['multiple']:.1f}x increase — treat it as a target to phase into, "
+            f"not a switch to flip."
+        )
+    elif cs["direction"] == "decrease":
+        lines.append(
+            f"They currently spend ${cs['current_monthly']:,.0f}/month, which is "
+            f"${abs(cs['delta']):,.0f} above what these economics support."
+        )
+
+    # The bar the spend has to clear -- arithmetic, not forecast.
+    if be.get("computable") and be.get("incremental_covers_per_day"):
+        lines.append(
+            f"At a {be['contribution_margin_pct']:.1%} contribution margin, "
+            f"${tb['amount']:,.0f} needs ${be['incremental_revenue_needed']:,.0f} in "
+            f"incremental revenue to break even — about "
+            f"{be['incremental_covers_per_day']} extra covers per day at a "
+            f"${be['avg_check']:.0f} average check. That is the bar, not a forecast."
         )
 
     for b in benchmarks:

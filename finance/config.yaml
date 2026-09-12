@@ -65,6 +65,18 @@ line_item_map:
     - fees
     - other operating
 
+# Labor lines that scale with covers. Salaried management does not move when
+# one more table sits down, so it is excluded from contribution margin.
+hourly_labor_keywords: [hourly, wages, foh, boh]
+
+# Average check. The P&L has no cover count, so this comes from the POS. It
+# only affects the break-even cover figure, not the budget itself.
+avg_check: 38.00
+
+# Floor for a loss-making or barely-profitable operation. Going dark carries
+# its own risk; this is small enough to be maintenance rather than a bet.
+minimum_spend_pct_of_revenue: 0.01
+
 # ---------------------------------------------------------------------------
 # Industry benchmarks. Ranges are share of total revenue.
 # ---------------------------------------------------------------------------
@@ -86,18 +98,26 @@ benchmarks:
 # ---------------------------------------------------------------------------
 bands:
   healthy:
+    # Real capacity to invest; still keeps 60% of profit.
+    profit_payout_ratio: 0.4
     max_prime_cost: 0.60
     marketing_pct_of_revenue: 0.06
     split: { menu_experimentation: 0.25, paid_social: 0.45, influencer: 0.22, reserve: 0.08 }
   stable:
+    # Profit is the usual binding constraint at this band.
+    profit_payout_ratio: 0.5
     max_prime_cost: 0.65
     marketing_pct_of_revenue: 0.04
     split: { menu_experimentation: 0.28, paid_social: 0.42, influencer: 0.20, reserve: 0.10 }
   tight:
+    # Protect profit -- it is thin and doing other work.
+    profit_payout_ratio: 0.35
     max_prime_cost: 0.70
     marketing_pct_of_revenue: 0.03
     split: { menu_experimentation: 0.30, paid_social: 0.38, influencer: 0.17, reserve: 0.15 }
   distressed:
+    # Whatever profit exists is needed elsewhere.
+    profit_payout_ratio: 0.2
     max_prime_cost: 999
     marketing_pct_of_revenue: 0.02
     # Experimentation is cheap and reversible; paid social is expensive and slow
