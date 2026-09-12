@@ -1,5 +1,3 @@
-import { getSupabaseClient } from "@/lib/supabase";
-
 export type OpportunityCard = {
   id: string;
   dishName: string;
@@ -96,44 +94,71 @@ export function mapOpportunity(row: OpportunityRow): OpportunityCard {
   };
 }
 
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+
 export async function fetchRestaurantOpportunities() {
-  const supabase = getSupabaseClient();
-  const { data: restaurants, error: restaurantError } = await supabase
-    .from("restaurants")
-    .select("id, name")
-    .limit(1);
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseClient();
+      const { data: restaurants } = await supabase
+        .from("restaurants")
+        .select("id, name")
+        .limit(1);
+      const restaurant = restaurants?.[0] ?? null;
 
-  if (restaurantError) throw restaurantError;
-  const restaurant = restaurants?.[0] ?? null;
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select(
+          `
+          id,
+          suggested_name,
+          status,
+          recommendation,
+          missing_ingredients,
+          trend_score,
+          local_relevance_score,
+          menu_fit_score,
+          operational_fit_score,
+          profitability_score,
+          overall_score,
+          suggested_price,
+          estimated_cost,
+          estimated_incremental_revenue,
+          estimated_incremental_profit,
+          opportunity_evidence ( evidence_type, source, display_value, description )
+        `,
+        )
+        .order("overall_score", { ascending: false });
 
-  const { data, error } = await supabase
-    .from("opportunities")
-    .select(
-      `
-      id,
-      suggested_name,
-      status,
-      recommendation,
-      missing_ingredients,
-      trend_score,
-      local_relevance_score,
-      menu_fit_score,
-      operational_fit_score,
-      profitability_score,
-      overall_score,
-      suggested_price,
-      estimated_cost,
-      estimated_incremental_revenue,
-      estimated_incremental_profit,
-      opportunity_evidence ( evidence_type, source, display_value, description )
-    `,
-    )
-    .order("overall_score", { ascending: false });
+      if (!error && data && data.length > 0) {
+        return {
+          restaurant,
+          opportunities: data.map((row) => mapOpportunity(row as OpportunityRow)),
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase opportunities query fallback triggered:", err);
+    }
+  }
 
-  if (error) throw error;
+  // Fallback to Layer 4 Decision Engine API (/api/opportunities)
+  try {
+    const res = await fetch("/api/opportunities");
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.opportunities) && json.opportunities.length > 0) {
+        return {
+          restaurant: { id: "res-local", name: "The Wooden Spoon Bistro" },
+          opportunities: json.opportunities as OpportunityCard[],
+        };
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch /api/opportunities:", err);
+  }
 
   return {
-    restaurant,
-    opportunities: (data ?? []).map((row) => mapOpportunity(row as OpportunityRow)),
+    restaurant: { id: "res-local", name: "The Wooden Spoon Bistro" },
+    opportunities: [],
   };
 }

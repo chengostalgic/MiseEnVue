@@ -14,6 +14,7 @@ import {
   Flame,
   ShieldAlert,
   Percent,
+  RefreshCw,
 } from "lucide-react";
 
 import {
@@ -31,27 +32,24 @@ export default function OpportunityMatrix({ onSelectForCampaign }: OpportunityMa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  async function loadOpportunities() {
+    setLoading(true);
+    setError(null);
+    try {
+      const { opportunities: rows } = await fetchRestaurantOpportunities();
+      setOpportunities(rows);
+      if (rows.length > 0) {
+        setSelectedOpp(rows[0]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load opportunities");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false;
-    void fetchRestaurantOpportunities()
-      .then(({ opportunities: rows }) => {
-        if (cancelled) return;
-        setOpportunities(rows);
-        if (rows.length > 0) {
-          setSelectedOpp(rows[0]);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load opportunities");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    loadOpportunities();
   }, []);
 
   function getScoreColor(score: number) {
@@ -85,6 +83,14 @@ export default function OpportunityMatrix({ onSelectForCampaign }: OpportunityMa
             <span className="text-xs font-mono text-neutral-400 bg-neutral-950 px-3 py-1.5 rounded-xl border border-neutral-800">
               Scoring Model: <strong className="text-emerald-400">v1.0.0 (5-Factor Weighted)</strong>
             </span>
+            <button
+              onClick={() => loadOpportunities()}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold rounded-xl border border-neutral-700 transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
           </div>
         </div>
       </div>
@@ -99,6 +105,26 @@ export default function OpportunityMatrix({ onSelectForCampaign }: OpportunityMa
         <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-12 text-center space-y-3">
           <div className="w-10 h-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin mx-auto"></div>
           <p className="text-xs text-neutral-400">Computing 5-factor weighted opportunity scorecards...</p>
+        </div>
+      )}
+
+      {!loading && opportunities.length === 0 && (
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-12 text-center max-w-lg mx-auto space-y-4 shadow-xl">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">No Opportunities Available</h3>
+            <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
+              The Decision Engine requires either active Supabase data or the Part 1 trend contract to evaluate restaurant viability and profit uplift.
+            </p>
+          </div>
+          <button
+            onClick={() => loadOpportunities()}
+            className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-neutral-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-500/20"
+          >
+            Compute Opportunities
+          </button>
         </div>
       )}
 
