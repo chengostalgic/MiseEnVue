@@ -31,6 +31,15 @@ from ingestion.schema import Post
 
 API = "https://www.googleapis.com/youtube/v3"
 
+# Narrowest geographic scope wins when a video is found by several query sets.
+_SCOPE_RANK = {"local": 0, "regional": 1, "national": 2}
+
+
+def _narrowest(*scopes: str | None) -> str:
+    """Most specific of the given scopes; national when none are given."""
+    present = [s for s in scopes if s]
+    return min(present, key=lambda s: _SCOPE_RANK.get(s, 9)) if present else "national"
+
 
 class YouTubeConnector(Connector):
     name = "youtube"
@@ -60,7 +69,13 @@ class YouTubeConnector(Connector):
         # locally might be an opening or might be a bad fit for the market, and
         # only the local signal tells you which.
         city = self.config.get("city", "")
+        region = self.config.get("region_name", "")
         queries = [(q, "national") for q in self.config.get("queries", [])]
+        if region:
+            queries += [
+                (t.format(region=region), "regional")
+                for t in self.config.get("regional_query_templates", [])
+            ]
         if city:
             queries += [
                 (t.format(city=city), "local")
@@ -104,10 +119,21 @@ class YouTubeConnector(Connector):
                     "published_at": snippet["publishedAt"],
                     "url": f"https://www.youtube.com/watch?v={vid}",
                     "matched_query": query,
-                    # A video found by both query sets counts as local -- local
-                    # relevance is the scarcer, more decision-relevant signal.
-                    "scope": "local" if scope == "local" else videos.get(vid, {}).get("scope", "national"),
+                    # A video found by several query sets keeps the narrowest
+                    # scope -- local relevance is the scarcer, more
+                    # decision-relevant signal than regional or national.
+                    "scope": _narrowest(scope, videos.get(vid, {}).get("scope")),
                 }
+
+        # Shorts come in through their own pass and are gated on engagement
+        # rate below, after statistics land -- the gate needs like and comment
+        # counts, which the search response does not carry.
+        shorts: dict[str, dict[str, Any]] = {}
+        if self.config.get("include_shorts", True):
+            shorts = self._fetch_shorts(requests, key, published_after, queries)
+            for vid, video in shorts.items():
+                if vid not in videos:
+                    videos[vid] = video
 
         if not videos:
             return []
@@ -130,10 +156,78 @@ class YouTubeConnector(Connector):
                     comment_count=int(s.get("commentCount", 0)),
                 )
 
+        # Apply the Shorts engagement gate now that statistics are attached.
+        # Long-form videos are never gated -- they already survived the
+        # relevance-ordered search, and a low like rate there usually means a
+        # small channel rather than bait.
+        dropped = 0
+        for vid in list(videos):
+            if videos[vid].get("is_short") and not self._passes_engagement_gate(videos[vid]):
+                del videos[vid]
+                dropped += 1
+        if shorts:
+            print(f"  [{self.name}] shorts: {len(shorts)} found, {dropped} failed engagement gate")
+
         for vid, video in videos.items():
             video["top_comments"] = self._comments(requests, key, vid, comment_limit)
 
         return list(videos.values())
+
+    def _fetch_shorts(self, requests, key, published_after, queries) -> dict[str, dict]:
+        """Second pass for Shorts, gated on engagement rate rather than views.
+
+        Shorts are where food trends break first, but also where engagement
+        bait lives. Bait racks up views without earning likes or comments;
+        genuine food content converts far better. Filtering on views selects
+        for the bait, which is why the main pass excludes Shorts outright and
+        this pass re-admits only the ones that clear a like and comment rate.
+        """
+        per_query = self.config.get("shorts_results_per_query", 15)
+        found: dict[str, dict[str, Any]] = {}
+
+        for query, scope in queries:
+            resp = requests.get(
+                f"{API}/search",
+                params={
+                    "key": key, "q": query, "part": "snippet", "type": "video",
+                    "publishedAfter": published_after, "maxResults": per_query,
+                    "relevanceLanguage": "en",
+                    "regionCode": self.config.get("region_code", "US"),
+                    "videoDuration": "short",
+                    # viewCount is safe here only because the engagement gate
+                    # below does the real filtering.
+                    "order": "viewCount",
+                },
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                continue
+            for item in resp.json().get("items", []):
+                vid = item["id"]["videoId"]
+                snippet = item["snippet"]
+                found[vid] = {
+                    "id": vid,
+                    "title": snippet["title"],
+                    "description": snippet.get("description", ""),
+                    "channel": snippet.get("channelTitle", ""),
+                    "published_at": snippet["publishedAt"],
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                    "matched_query": query,
+                    "scope": _narrowest(scope, found.get(vid, {}).get("scope")),
+                    "is_short": True,
+                }
+        return found
+
+    def _passes_engagement_gate(self, video: dict[str, Any]) -> bool:
+        views = video.get("view_count", 0)
+        if not views:
+            return False
+        likes = video.get("like_count", 0)
+        comments = video.get("comment_count", 0)
+        return (
+            likes / views >= self.config.get("shorts_min_like_rate", 0.03)
+            and comments >= self.config.get("shorts_min_comments", 25)
+        )
 
     def _comments(self, requests, key: str, video_id: str, limit: int) -> list[str]:
         """Top comments for one video.
@@ -183,9 +277,9 @@ class YouTubeConnector(Connector):
                     # in asking for the dish. Percentile-normalized downstream.
                     engagement=r.get("view_count", 0),
                     comments=r.get("top_comments", []),
-                    media_type="video",
+                    media_type="short" if r.get("is_short") else "video",
                     location=r.get("channel"),
-                    scope=r.get("scope", "national"),
+                    scope=r.get("scope") or "national",
                 )
             )
         return posts

@@ -53,10 +53,13 @@ class Post:
     media_type: str | None = None
     location: str | None = None
     engagement_pct: float | None = None
+    # Three geographic tiers, narrowest wins when a post matches more than one.
     # "national" = broad category search, catches emerging dishes early.
-    # "local" = tied to the client's city, reflects what this market wants.
-    # A dish appearing in both is the strongest signal in the pipeline.
-    scope: Literal["national", "local"] = "national"
+    # "regional" = the surrounding state; catches food-scene coverage relevant
+    #   to this market that never names the city.
+    # "local"    = the client's city, the scarcest and most decision-relevant.
+    # A dish appearing across tiers is the strongest signal in the pipeline.
+    scope: Literal["national", "regional", "local"] = "national"
 
 
 # --------------------------------------------------------------------------

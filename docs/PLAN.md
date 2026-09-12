@@ -303,6 +303,7 @@ without touching downstream code.
 |---|---|---|
 | YouTube | Data API v3, API key | **Primary.** Instant self-service key, no approval. Titles give dish names, comments give sentiment, view counts give volume. |
 | Google Trends | `pytrends` | Velocity per term — the rising/fading signal. No auth. |
+| YouTube Shorts | Same API, second pass gated on engagement rate | Shorts are where trends break first — and where engagement bait lives. See below. |
 | TikTok | hashtag / creative-center scrape | **Stretch.** No open API; scrapers break without warning. |
 | Instagram | hashtag pull | **Cut unless everything else is done.** Most restricted of the four. |
 | ~~Reddit~~ | ~~PRAW~~ | **Not available.** See below. |
@@ -320,24 +321,56 @@ access simply is not available on a two-day timeline.
 A trend is only useful to this restaurant if it means something in *this* market,
 so every source is queried at two scopes and the results are kept distinct.
 
+Three tiers, narrowest wins when a post matches more than one.
+
 | Scope | How | What it answers |
 |---|---|---|
 | National | Category queries: "viral chicken recipe" | What is rising anywhere — where being early comes from |
-| Local | Same API, city templated in: "{city} best new restaurant" | What this market actually turns up for, and what competitors already serve |
-| Local (search) | Google Trends DMA code, e.g. `US-TX-618` | True metro-level search velocity |
+| Regional | State templated in: "{region} food trend" | Food-scene coverage relevant to this market that never names the city |
+| Local | City templated in: "{city} best new restaurant" | What this market turns up for, and what competitors already serve |
 
-Point the whole pipeline at a different restaurant by editing three values under
-`location` in `config.yaml`: `city`, `region_code`, `trends_geo`.
+Google Trends queries all three geographies per dish (`US` / `US-TX` /
+`US-TX-618`) and **falls back outward** — metro, then state, then national.
 
-**Google Trends DMA codes are the strongest local signal available.** Verified:
-querying "birria" at `US-TX-618` returns *"dripped birria katy"* and *"blk mkt
-birria"* — suburb-level results, not national data with a filter over it.
+**A metro DMA is frequently too narrow to use on its own.** Verified: "qishta"
+returns no data at any tier, and "chicken au poivre" returns a metro reading of
+*+100%* that is an artifact of a zero baseline — nobody searched for it last week,
+so one search this week is an infinite percentage. Taken at face value that dish
+reads as *rising*; falling back to the state tier shows **−62.9% and fading**.
+Zero-baseline readings are flagged and skipped in favour of a solid wider-tier
+reading, and `momentum_basis` records which tier the answer actually came from.
+
+Point the pipeline at a different restaurant by editing `location` in
+`config.yaml`: `city`, `region_name`, `region_code`, `trends_geo`,
+`trends_geo_region`.
+
+**Google Trends DMA codes give genuinely local signal.** Verified: querying
+"birria" at `US-TX-618` returns *"dripped birria katy"* and *"blk mkt birria"* —
+suburb-level results, not national data with a filter over it. And the tiers do
+diverge in ways that matter: "birria tacos" is **−17.9% nationally but +51% in
+Houston**. A national-only view would have called that dish dead here.
+
+**Only velocity is comparable across dishes, not interest.** Google Trends
+normalizes its 0–100 interest values *within a single query batch*, so a dish
+scoring 80 in one batch and 40 in another cannot be ranked against each other —
+the scale is re-derived per request. Velocity is a ratio computed inside one
+term's own series, so the normalization cancels. That is the only Trends figure
+the scorer uses.
 
 **YouTube's `location` + `locationRadius` parameters were tested and rejected.**
 They only match videos carrying explicit geotags, which is a small and
 unrepresentative slice, and results mixed genuinely local content with generic food
 videos that happened to be tagged. Putting the city name in the query returned
 markedly better local results and costs nothing extra.
+
+**Shorts are re-admitted through an engagement gate, not a view threshold.**
+The main pass sets `videoDuration=medium`, which excludes Shorts, because a first
+attempt at `order=viewCount` returned Hindi-language vlogs with `#viral #recipe`
+tagged on and no dish in them. But Shorts are where food trends actually break,
+so a second pass pulls them and filters on **like rate and comment count** rather
+than views. Bait accumulates views without earning likes or comments; genuine
+food content converts at 4–8%. Filtering on raw views selects for exactly the
+wrong thing — which is why the naive version failed.
 
 **Two consequences worth knowing:**
 

@@ -24,6 +24,7 @@ from ingestion.extract import extract
 from ingestion.normalize import dedupe, normalize, within_window
 from ingestion.schema import build_output
 from ingestion.score import score_all
+from ingestion.trends import fetch_velocity
 
 CONFIG_PATH = Path("ingestion/config.yaml")
 OUT_PATH = Path("data/out/trends.json")
@@ -89,7 +90,18 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     clusters = extract(posts, config)
     print(f"{len(clusters)} dish clusters")
 
-    dishes = score_all(clusters, since_days, config)
+    # Trends runs after extraction because it scores dish names, not posts.
+    # Only the clusters big enough to survive ranking are worth querying --
+    # each term costs a rate-limited request.
+    ranked = sorted(clusters, key=lambda c: len(c.posts), reverse=True)
+    terms = [c.name for c in ranked[: config.get("output", {}).get("max_dishes", 20)]]
+    velocities = fetch_velocity(terms, config, offline=offline)
+    if velocities:
+        sources_used.append("google_trends")
+        computable = sum(1 for v in velocities.values() if v.computable)
+        print(f"  [trends] velocity for {computable}/{len(terms)} dishes")
+
+    dishes = score_all(clusters, since_days, config, velocities)
     print(f"{len(dishes)} dishes after ranking\n")
 
     now = datetime.now(timezone.utc)
@@ -107,6 +119,7 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
         print(
             f"  {d['trend_score']:5.1f}  {d['name'][:40]:42} "
             f"{d['metrics']['mention_count']:4} mentions  {s['positive']:.0%} pos"
+            f"  {d['momentum']}"
         )
 
     if dry_run:
