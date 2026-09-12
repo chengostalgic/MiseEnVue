@@ -62,13 +62,22 @@ youtube:
     - "{region} food trend"
     - "best new restaurants {region}"
 
-  results_per_query: 25
+  results_per_query: 50
   # Comments carry the sentiment signal; titles and descriptions are marketing.
   comments_per_video: 20
   # "medium" excludes Shorts from the main pass, which is where hashtag spam
   # concentrates. Shorts come back through the quality-gated pass below.
   duration: medium
   order: relevance
+
+  # regionCode and relevanceLanguage only RANK results -- they do not filter by
+  # origin. A live pull returned a large amount of South Asian home cooking
+  # with English titles, which is real content but not servable in a US
+  # restaurant. defaultAudioLanguage is the only mechanical origin signal
+  # YouTube gives. It is often unset, and an unset value passes through to the
+  # extraction relevance gate rather than being dropped, since dropping on
+  # missing metadata would discard a lot of legitimate US content.
+  allowed_audio_languages: [en]
 
   # ---------------------------------------------------------------------------
   # SHORTS PASS
@@ -108,19 +117,45 @@ google_trends:
   fetch_rising: true
 
 extraction:
-  model: claude-opus-5
+  # Clustering is high-volume classification; synthesis is short summarization
+  # over evidence that has already been selected. Neither needs a frontier
+  # model, and clustering is where nearly all the tokens go -- Haiku is roughly
+  # 5x cheaper per token than Opus and skips thinking tokens entirely.
+  #
+  # NOTE: Haiku 4.5 rejects adaptive thinking and the effort parameter with a
+  # 400. extract.py builds request params per-model, so setting either of these
+  # to an Opus/Sonnet id re-enables them automatically.
+  cluster_model: claude-haiku-4-5
+  reason_model: claude-haiku-4-5
+  # Cap posts reaching the model. A wide pull can return ~1000 videos, which is
+  # ~80 clustering calls for little gain -- the tail is low-engagement noise.
+  # Sampled per scope, not globally: local posts pull 20-900 views against
+  # national's hundreds of thousands, so a global top-N cut would delete the
+  # local tier outright.
+  max_posts: 300
+  scope_floors:
+    local: 60
+    regional: 60
   # Posts per clustering call. Larger batches see more context at once (better
   # clustering) but each call gets slower and the running dish list grows.
-  batch_size: 12
+  batch_size: 25
   effort: medium
   # why_trending synthesis is one call per dish; a dish with a single mention
   # will not survive ranking anyway.
   explain_top_n: 20
+  # Synthesis calls are independent. Run sequentially this was the slowest
+  # stage in the pipeline -- ~20 calls at 8s each.
+  synthesis_workers: 8
 
 output:
   # Small enough to eyeball for quality before presenting, which is the only
   # QA process a 2-day build affords.
   max_dishes: 20
+  # A dish mentioned once is not a trend, it is one video. Without this floor
+  # singletons dominate the ranking purely by arriving: in a 180-post run,
+  # 14 of the top 20 had a single mention and pushed a genuine 3-creator
+  # cluster down to rank 12. Trends are defined by independent repetition.
+  min_mentions: 2
 
 scoring:
   # Task #6 applies these. The volume-only placeholder ignores them.

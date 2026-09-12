@@ -426,9 +426,22 @@ with structured outputs (schema enforced server-side, so a malformed response is
 not a failure mode to handle mid-demo):
 
 1. **Cluster** — batches of posts → dish assignments, carrying the running dish
-   list forward.
+   list forward. Sequential by necessity: each batch needs the dish list the
+   previous one produced.
 2. **Synthesize** — per dish → `why_trending`, grounded only in that dish's own
-   posts and comments.
+   posts and comments. Independent, so run concurrently.
+
+**Both phases run on Haiku 4.5, not a frontier model.** Clustering is
+high-volume classification and synthesis is short summarization over evidence
+that has already been selected — neither needs frontier reasoning, and
+clustering is where nearly all the tokens go. Measured on a real pull, Haiku
+holds clustering quality (it correctly grouped chicken au poivre across three
+creators) at roughly an eighth of the cost and about half the latency.
+
+One gotcha the code handles: **Haiku 4.5 rejects adaptive thinking and the
+`effort` parameter with a 400.** Requests are built per-model, so pointing
+`cluster_model` or `reason_model` at an Opus or Sonnet id re-enables them
+automatically.
 
 
 The unit of extraction is a **dish** — something an owner could put on a menu and a

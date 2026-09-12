@@ -43,7 +43,23 @@ def score_all(
     velocities = velocities or {}
     scoring = config.get("scoring", {})
     weights = scoring.get("weights", {})
-    top_n = config.get("output", {}).get("max_dishes", 20)
+    out_cfg = config.get("output", {})
+    top_n = out_cfg.get("max_dishes", 20)
+
+    # Drop singletons before scoring. A dish with one mention has no evidence
+    # of independent repetition, which is the whole definition of a trend --
+    # and because volume is identical across singletons, their relative order
+    # is decided by rounding noise in recency rather than by anything real.
+    floor = out_cfg.get("min_mentions", 2)
+    eligible = [c for c in clusters if len(c.posts) >= floor]
+    if not eligible:
+        # Everything is a singleton -- better to show a weak list than none,
+        # but say so rather than silently returning an empty file.
+        print(f"  [score] no dish reached {floor} mentions; showing singletons")
+        eligible = clusters
+    elif len(eligible) < len(clusters):
+        print(f"  [score] {len(clusters) - len(eligible)} single-mention dishes dropped")
+    clusters = eligible
 
     peak_volume = max(len(c.posts) for c in clusters)
     peak_breadth = max(len(_source_scopes(c)) for c in clusters) or 1

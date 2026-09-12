@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -40,7 +41,24 @@ from pydantic import BaseModel, Field
 
 from ingestion.schema import Post, WhyTrending
 
-MODEL = "claude-opus-5"
+# Clustering is high-volume classification and synthesis is short-form
+# summarization over pre-selected evidence -- neither needs a frontier model,
+# and clustering is where nearly all the tokens go. Bump these in config.yaml
+# if output quality warrants the cost.
+CLUSTER_MODEL = "claude-haiku-4-5"
+REASON_MODEL = "claude-haiku-4-5"
+
+# Adaptive thinking and the effort parameter are rejected with a 400 on models
+# older than the 4.6 family, so requests are built per-model rather than
+# assuming the newer surface.
+_ADAPTIVE_THINKING_MODELS = ("claude-opus-", "claude-sonnet-5", "claude-sonnet-4-6", "claude-fable-")
+
+
+def _model_params(model: str, effort: str) -> dict:
+    """Thinking/effort params the given model actually accepts."""
+    if model.startswith(_ADAPTIVE_THINKING_MODELS):
+        return {"thinking": {"type": "adaptive"}, "output_config": {"effort": effort}}
+    return {}
 
 
 # --------------------------------------------------------------------------
@@ -104,6 +122,23 @@ a post is about one and names no dish, omit the post entirely. Omitting is \
 correct and expected -- much of the input is vlogs, hauls, and general food \
 content with no dish in it. Do not force an assignment.
 
+MARKET RELEVANCE
+The audience is an independent restaurant in the United States deciding what to \
+put on its menu. Omit a post when the dish would not plausibly work there.
+
+Omit regional home cooking aimed at a non-US audience -- everyday subcontinental, \
+regional Chinese, or other home-kitchen staples being cooked for viewers in those \
+markets. These are real dishes with real audiences and they are not the question \
+being asked.
+
+Keep a dish from any cuisine when it is being cooked or eaten as a US food \
+trend: birria, qishta, gochujang desserts, and smashed cucumber salad are all \
+non-American in origin and all valid. The test is not where the dish comes from, \
+it is whether a US restaurant could put it on a menu and have customers order it.
+
+When genuinely unsure, keep the dish. Scoring will drop it if it has no \
+independent repetition behind it.
+
 MATCHING
 You are given the dishes found so far. If a post is about a dish already on that \
 list, reuse its exact dish_id and dish_name. Only coin a new dish_id when it is \
@@ -163,9 +198,9 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
     cfg = config.get("extraction", {})
     client = _client()
     if client is None:
-        print("  [extract] ANTHROPIC_API_KEY not set; skipping extraction")
         return []
 
+    posts = _select(posts, cfg)
     clusters = _cluster(client, posts, cfg)
     print(f"  [extract] {len(clusters)} dishes from {len(posts)} posts")
 
@@ -173,10 +208,57 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
     # call per dish, and a dish with a single mention is not going to make the
     # cut anyway.
     ranked = sorted(clusters.values(), key=lambda c: len(c.posts), reverse=True)
-    for cluster in ranked[: cfg.get("explain_top_n", 20)]:
-        _explain(client, cluster, cfg)
+    to_explain = ranked[: cfg.get("explain_top_n", 20)]
+
+    # Synthesis calls are independent, so run them concurrently. Sequentially
+    # this was the slowest stage in the pipeline by a wide margin -- twenty
+    # calls at ~8s each is nearly three minutes of a demo spent watching a
+    # terminal do nothing.
+    workers = min(cfg.get("synthesis_workers", 8), len(to_explain) or 1)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(lambda c: _explain(client, c, cfg), to_explain))
 
     return list(clusters.values())
+
+
+def _select(posts: list[Post], cfg: dict) -> list[Post]:
+    """Cap how many posts reach the model, sampling within each scope.
+
+    A wide pull can return a thousand videos, which is ~80 clustering calls --
+    slow and expensive for little gain, since the tail is mostly low-engagement
+    noise. Taking the globally top-N by engagement would be wrong though: local
+    posts pull 20-900 views against national's hundreds of thousands, so a
+    global cut would delete the local tier entirely. Quota is allocated per
+    scope instead, and each scope keeps its own most-engaged posts.
+    """
+    cap = cfg.get("max_posts", 300)
+    if len(posts) <= cap:
+        return posts
+
+    by_scope: dict[str, list[Post]] = {}
+    for p in posts:
+        by_scope.setdefault(p.scope, []).append(p)
+
+    # Reserve a floor for the narrow tiers, then give national the remainder.
+    floors = cfg.get("scope_floors", {"local": 60, "regional": 60})
+    selected: list[Post] = []
+    for scope, group in by_scope.items():
+        group.sort(key=lambda p: p.engagement_pct or 0, reverse=True)
+        if scope in floors:
+            selected += group[: floors[scope]]
+
+    remaining = cap - len(selected)
+    national = sorted(
+        by_scope.get("national", []), key=lambda p: p.engagement_pct or 0, reverse=True
+    )
+    selected += national[: max(0, remaining)]
+
+    kept = {}
+    for p in selected:
+        kept.setdefault(p.scope, 0)
+        kept[p.scope] += 1
+    print(f"  [extract] {len(posts)} posts -> {len(selected)} sampled {kept}")
+    return selected
 
 
 def _client():
@@ -209,12 +291,12 @@ def _cluster(client, posts: list[Post], cfg: dict) -> dict[str, DishCluster]:
             f"POSTS TO ASSIGN\n\n" + "\n\n".join(_render(p) for p in batch)
         )
 
+        model = cfg.get("cluster_model", CLUSTER_MODEL)
         try:
             response = client.messages.parse(
-                model=cfg.get("model", MODEL),
+                model=model,
                 max_tokens=8000,
-                thinking={"type": "adaptive"},
-                output_config={"effort": cfg.get("effort", "medium")},
+                **_model_params(model, cfg.get("effort", "medium")),
                 system=[{
                     "type": "text",
                     "text": CLUSTER_SYSTEM,
@@ -253,12 +335,12 @@ def _cluster(client, posts: list[Post], cfg: dict) -> dict[str, DishCluster]:
 def _explain(client, cluster: DishCluster, cfg: dict) -> None:
     """Pass 2: synthesize why_trending for one dish from its own evidence."""
     evidence = "\n\n".join(_render(p) for p in cluster.posts[:12])
+    model = cfg.get("reason_model", REASON_MODEL)
     try:
         response = client.messages.parse(
-            model=cfg.get("model", MODEL),
+            model=model,
             max_tokens=4000,
-            thinking={"type": "adaptive"},
-            output_config={"effort": cfg.get("effort", "medium")},
+            **_model_params(model, cfg.get("effort", "medium")),
             system=[{
                 "type": "text",
                 "text": REASON_SYSTEM,

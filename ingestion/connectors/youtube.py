@@ -35,6 +35,16 @@ API = "https://www.googleapis.com/youtube/v3"
 _SCOPE_RANK = {"local": 0, "regional": 1, "national": 2}
 
 
+def _language_ok(lang: str | None, allowed: list[str]) -> bool:
+    """Match on the primary subtag so en-US and en-GB both pass an "en" rule.
+
+    Unset language passes: it is missing metadata, not evidence of origin.
+    """
+    if not lang:
+        return True
+    return lang.split("-")[0].lower() in {a.split("-")[0].lower() for a in allowed}
+
+
 def _narrowest(*scopes: str | None) -> str:
     """Most specific of the given scopes; national when none are given."""
     present = [s for s in scopes if s]
@@ -144,17 +154,43 @@ class YouTubeConnector(Connector):
             chunk = ids[i : i + 50]
             stats = requests.get(
                 f"{API}/videos",
-                params={"key": key, "id": ",".join(chunk), "part": "statistics"},
+                # snippet costs nothing extra here and carries defaultAudioLanguage,
+                # the only mechanical signal YouTube gives for content origin.
+                params={"key": key, "id": ",".join(chunk), "part": "statistics,snippet"},
                 timeout=30,
             )
             stats.raise_for_status()
             for item in stats.json().get("items", []):
-                s = item.get("statistics", {})
+                st = item.get("statistics", {})
+                sn = item.get("snippet", {})
                 videos[item["id"]].update(
-                    view_count=int(s.get("viewCount", 0)),
-                    like_count=int(s.get("likeCount", 0)),
-                    comment_count=int(s.get("commentCount", 0)),
+                    view_count=int(st.get("viewCount", 0)),
+                    like_count=int(st.get("likeCount", 0)),
+                    comment_count=int(st.get("commentCount", 0)),
+                    audio_language=sn.get("defaultAudioLanguage")
+                    or sn.get("defaultLanguage"),
                 )
+
+        # Language gate. regionCode and relevanceLanguage rank results, they do
+        # not filter by origin -- a live pull returned a large amount of South
+        # Asian home cooking with English titles (Dhaba Style Daal Mash Fry,
+        # Jawla Kolim, Collegei Pota). Real dishes with real audiences, but not
+        # servable in a US restaurant, and they crowded out the US trends.
+        #
+        # defaultAudioLanguage is the only mechanical origin signal YouTube
+        # exposes. It is frequently unset, so an unset value is passed through
+        # to the extraction prompt's relevance gate rather than dropped here --
+        # dropping on missing metadata would discard a large slice of
+        # legitimate US content.
+        allowed = self.config.get("allowed_audio_languages")
+        if allowed:
+            before = len(videos)
+            videos = {
+                vid: v for vid, v in videos.items()
+                if _language_ok(v.get("audio_language"), allowed)
+            }
+            if before != len(videos):
+                print(f"  [{self.name}] language gate dropped {before - len(videos)} videos")
 
         # Apply the Shorts engagement gate now that statistics are attached.
         # Long-form videos are never gated -- they already survived the
