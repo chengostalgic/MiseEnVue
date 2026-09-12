@@ -164,15 +164,25 @@ export async function GET(_req: NextRequest) {
 
       return {
         id: `opp-${dish.id || index + 1}`,
+        restaurantId: "res-local",
         dishName: dish.name,
-        status: index === 0 ? "high_conviction" : "qualified",
+        status: index === 0 ? "new" : "viewed",
         recommendation:
           dish.why_trending?.summary ||
           `High-margin ${dish.name} trending with strong viral momentum.`,
         missingIngredients: dish.missing_ingredients || [],
+        menuItemName: null,
+        menuItemPrice: null,
+        trendName: dish.name,
+        trendRegion: null,
         scorecard,
-        economics,
+        economics: {
+          ...economics,
+          incrementalRevenue: economics.incrementalRevenue,
+          incrementalProfit: economics.incrementalProfit,
+        },
         evidence: evidenceList,
+        run: null,
       };
     });
 
