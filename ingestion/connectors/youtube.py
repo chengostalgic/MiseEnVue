@@ -459,6 +459,7 @@ class YouTubeConnector(Connector):
                     location=r.get("channel"),
                     scope=r.get("scope") or "national",
                     breakout_ratio=r.get("breakout_ratio"),
+                    views_per_day=r.get("views_per_day"),
                     is_viral=bool(r.get("is_viral")),
                     trend_marker=bool(r.get("trend_marker")),
                 )

@@ -64,6 +64,7 @@ class Post:
     # against the channel's own median, which separates "this dish went viral"
     # from "a huge channel posted something".
     breakout_ratio: float | None = None
+    views_per_day: int | None = None
     is_viral: bool = False
     trend_marker: bool = False
 

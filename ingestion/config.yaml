@@ -290,3 +290,9 @@ scoring:
     breadth: 0.10
     recency: 0.10
   recency_halflife_days: 5
+  # Momentum thresholds on mean breakout ratio, used when Google Trends is
+  # unreachable (it rate-limits per IP at ~8-10 sessions/hour). A dish whose
+  # videos consistently outperform their channels' own medians is one the
+  # audience is seeking out.
+  rising_breakout: 1.8
+  fading_breakout: 0.7
