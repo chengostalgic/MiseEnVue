@@ -88,6 +88,18 @@ youtube:
   # YouTube gives. It is often unset, and an unset value passes through to the
   # extraction relevance gate rather than being dropped, since dropping on
   # missing metadata would discard a lot of legitimate US content.
+  # Channel country is the strongest mechanical origin signal YouTube gives.
+  # Declared audio language is NOT reliable on its own -- an Indian
+  # village-cooking channel with 12.9M views declares "en-US". Channel country
+  # is set by the owner on the channel and is accurate where present.
+  # It is unset on ~60% of channels; those pass through to the extraction
+  # relevance gate rather than being dropped, since dropping on missing
+  # metadata would take most of the legitimate US content with it.
+  allowed_channel_countries: [US]
+
+  # Kept as a secondary filter only: it does catch honestly-declared non-English
+  # audio (one pull dropped 299 videos on hi/ur/ta), but cannot be trusted
+  # alone for the reason above.
   allowed_audio_languages: [en]
 
   # ---------------------------------------------------------------------------

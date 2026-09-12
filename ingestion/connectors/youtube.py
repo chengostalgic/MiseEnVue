@@ -139,6 +139,7 @@ class YouTubeConnector(Connector):
                     "title": snippet["title"],
                     "description": snippet.get("description", ""),
                     "channel": snippet.get("channelTitle", ""),
+                    "channel_id": snippet.get("channelId", ""),
                     "published_at": snippet["publishedAt"],
                     "url": f"https://www.youtube.com/watch?v={vid}",
                     "matched_query": query,
@@ -184,17 +185,26 @@ class YouTubeConnector(Connector):
                     or sn.get("defaultLanguage"),
                 )
 
-        # Language gate. regionCode and relevanceLanguage rank results, they do
-        # not filter by origin -- a live pull returned a large amount of South
-        # Asian home cooking with English titles (Dhaba Style Daal Mash Fry,
-        # Jawla Kolim, Collegei Pota). Real dishes with real audiences, but not
-        # servable in a US restaurant, and they crowded out the US trends.
+        # Channel country gate -- the strongest mechanical origin signal
+        # available, and far better than declared language.
         #
-        # defaultAudioLanguage is the only mechanical origin signal YouTube
-        # exposes. It is frequently unset, so an unset value is passed through
-        # to the extraction prompt's relevance gate rather than dropped here --
-        # dropping on missing metadata would discard a large slice of
-        # legitimate US content.
+        # defaultAudioLanguage turned out to be self-reported and unreliable:
+        # an Indian village-cooking channel with 12.9M views declares "en-US".
+        # Channel country is set by the owner on the channel itself and is
+        # accurate where present -- it correctly flags Village Cooking Channel
+        # and Foodies findings as IN.
+        #
+        # It is unset on roughly 60% of channels, and unset passes through to
+        # the extraction relevance gate rather than being dropped. Dropping on
+        # missing metadata would discard most of the legitimate US content too.
+        countries = self.config.get("allowed_channel_countries")
+        if countries:
+            self._apply_country_gate(requests, key, videos, countries)
+
+        # Language gate. Weaker than the country gate above and kept only
+        # because it does catch honestly-declared non-English audio (a live
+        # pull dropped 299 videos on hi/ur/ta). It cannot be trusted on its
+        # own -- see the en-US example above.
         allowed = self.config.get("allowed_audio_languages")
         if allowed:
             before = len(videos)
@@ -274,10 +284,49 @@ class YouTubeConnector(Connector):
                     "published_at": snippet["publishedAt"],
                     "url": f"https://www.youtube.com/watch?v={vid}",
                     "matched_query": query,
+                    "channel_id": snippet.get("channelId", ""),
                     "scope": _narrowest(scope, found.get(vid, {}).get("scope")),
                     "is_short": True,
                 }
         return found
+
+    def _apply_country_gate(self, requests, key, videos: dict, allowed: list[str]) -> None:
+        """Drop videos whose channel declares a country outside `allowed`.
+
+        Mutates `videos` in place. One channels.list call per 50 channels at
+        1 quota unit each -- effectively free. Channels with no declared
+        country are kept and left for the extraction relevance gate.
+        """
+        chan_ids = {v.get("channel_id") for v in videos.values() if v.get("channel_id")}
+        if not chan_ids:
+            return
+
+        country_of: dict[str, str | None] = {}
+        ids = list(chan_ids)
+        for i in range(0, len(ids), 50):
+            resp = requests.get(
+                f"{API}/channels",
+                params={"key": key, "id": ",".join(ids[i : i + 50]), "part": "snippet"},
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                return  # gate is best-effort; never fail a run over it
+            for item in resp.json().get("items", []):
+                country_of[item["id"]] = item["snippet"].get("country")
+
+        allowed_set = {c.upper() for c in allowed}
+        dropped = [
+            vid for vid, v in videos.items()
+            if (c := country_of.get(v.get("channel_id"))) and c.upper() not in allowed_set
+        ]
+        for vid in dropped:
+            del videos[vid]
+        if dropped:
+            known = sum(1 for c in country_of.values() if c)
+            print(
+                f"  [{self.name}] country gate dropped {len(dropped)} videos "
+                f"({known}/{len(country_of)} channels declare a country)"
+            )
 
     def _passes_engagement_gate(self, video: dict[str, Any]) -> bool:
         views = video.get("view_count", 0)

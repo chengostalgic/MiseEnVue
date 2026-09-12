@@ -363,6 +363,17 @@ unrepresentative slice, and results mixed genuinely local content with generic f
 videos that happened to be tagged. Putting the city name in the query returned
 markedly better local results and costs nothing extra.
 
+**US-only filtering goes through channel country, not declared language.**
+`defaultAudioLanguage` looked like the obvious origin signal and is not
+trustworthy — it is self-reported, and an Indian village-cooking channel with
+12.9M views declares `en-US`. Channel country (`channels.list`, 1 quota unit per
+50 channels) is set by the owner and is accurate where present: it correctly
+flags Village Cooking Channel and Foodies findings as `IN`. About 80% of
+channels declare one; the rest pass through to the extraction relevance gate,
+because dropping on missing metadata would take most of the legitimate US
+content with it. On a live pull the gate cut 312 videos to 217 and left a
+genuinely US creator set (Guga Foods, Sous Vide Everything, Dan-O's Seasoning).
+
 **Shorts are re-admitted through an engagement gate, not a view threshold.**
 The main pass sets `videoDuration=medium`, which excludes Shorts, because a first
 attempt at `order=viewCount` returned Hindi-language vlogs with `#viral #recipe`
