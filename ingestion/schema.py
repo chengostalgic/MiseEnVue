@@ -141,7 +141,7 @@ def build_output(
     if fixture:
         out["_meta"] = {
             "fixture": True,
-            "note": "Generated from committed fixtures, not a live pull.",
+            "note": "Generated from cached source data, not a live pull.",
             "schema_version": SCHEMA_VERSION,
         }
     else:
