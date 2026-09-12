@@ -74,6 +74,27 @@ youtube:
     - "@MythicalKitchen"
     - "@thatdudecancook"
     - "@AaronandClaire"
+    # Food media -- the Eater shape. These cover what is trending rather than
+    # publishing evergreen recipes, so a dish appearing across several of them
+    # is the clustering signal.
+    - "@bonappetit"
+    - "@Mashed"
+    - "@munchies"
+    - "@FoodNetwork"
+    - "@NYTCooking"
+    - "@seriouseats"
+    - "@FoodAndWine"
+    - "@Chowhound"
+    - "@SpoonUniversity"
+    - "@PureWow"
+    # Viral-food testers and reactors -- they cover a dish precisely because it
+    # is blowing up, which is the signal we want.
+    - "@ChefReactions"
+    - "@emmymade"
+    - "@MaxtheMeatGuy"
+    - "@SamTheCookingGuy"
+    - "@StephanieSoo"
+    - "@BerylShereshewsky"
   channel_videos_each: 50
   # Channels publish weekly, not daily, so a 14-day window caps out around 6
   # videos each. Channel pulls use their own wider window -- a dish several

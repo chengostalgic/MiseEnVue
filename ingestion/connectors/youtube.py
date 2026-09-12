@@ -365,7 +365,15 @@ class YouTubeConnector(Connector):
         1 quota unit each -- effectively free. Channels with no declared
         country are kept and left for the extraction relevance gate.
         """
-        chan_ids = {v.get("channel_id") for v in videos.values() if v.get("channel_id")}
+        # Curated-roster videos are exempt: the roster already answered the
+        # origin question, and a channel's declared country can disagree with
+        # its content (Mashed is registered GB and publishes US food coverage).
+        # The gate exists for search-discovered videos, where nothing else
+        # establishes origin.
+        gated = {
+            vid: v for vid, v in videos.items() if not v.get("from_channel")
+        }
+        chan_ids = {v.get("channel_id") for v in gated.values() if v.get("channel_id")}
         if not chan_ids:
             return
 
@@ -384,7 +392,7 @@ class YouTubeConnector(Connector):
 
         allowed_set = {c.upper() for c in allowed}
         dropped = [
-            vid for vid, v in videos.items()
+            vid for vid, v in gated.items()
             if (c := country_of.get(v.get("channel_id"))) and c.upper() not in allowed_set
         ]
         for vid in dropped:
