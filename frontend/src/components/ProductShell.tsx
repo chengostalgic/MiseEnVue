@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import TrendPipeline from "@/components/TrendPipeline";
 import OpportunityMatrix from "@/components/OpportunityMatrix";
 import CsvStudio from "@/components/CsvStudio";
+import type { BudgetContract, ScrapedDish } from "@/lib/contractTypes";
+import { money } from "@/lib/format";
 import { getSupabaseClient } from "@/lib/supabase";
-import { FileSpreadsheet, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { ClipboardList, Search, UtensilsCrossed } from "lucide-react";
 
-type View = "pipeline" | "opportunities" | "csv";
+type View = "opportunities" | "pipeline" | "csv";
+
+const NAV: Array<{ id: View; label: string; icon: typeof Search }> = [
+  { id: "opportunities", label: "Decide", icon: ClipboardList },
+  { id: "pipeline", label: "Discover", icon: Search },
+  { id: "csv", label: "Kitchen", icon: UtensilsCrossed },
+];
 
 export default function ProductShell({
   session,
@@ -20,65 +28,72 @@ export default function ProductShell({
   restaurantCity?: string | null;
 }) {
   const [currentView, setCurrentView] = useState<View>("opportunities");
+  const [budget, setBudget] = useState<BudgetContract | null>(null);
+  const [dishes, setDishes] = useState<ScrapedDish[]>([]);
+  const [scrapeMeta, setScrapeMeta] = useState<{ fixture?: boolean; sourcesUsed?: string[] }>({});
+  const [selectedDishId, setSelectedDishId] = useState<string | null>(null);
   const location = [restaurantName, restaurantCity].filter(Boolean).join(" · ");
 
+  useEffect(() => {
+    void fetch("/api/budget")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setBudget(data.budget);
+      })
+      .catch(() => undefined);
+
+    void fetch("/api/trends")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success || !Array.isArray(data.dishes)) return;
+        setDishes(data.dishes);
+        setScrapeMeta({ fixture: data.fixture, sourcesUsed: data.sourcesUsed });
+        setSelectedDishId((current) => current ?? data.dishes[0]?.id ?? null);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const selectedDish = useMemo(
+    () => dishes.find((dish) => dish.id === selectedDishId) ?? dishes[0] ?? null,
+    [dishes, selectedDishId],
+  );
+
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/10">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold tracking-tight text-white text-lg">MiseEnVue</span>
-              </div>
-              <div className="text-[11px] text-neutral-400 truncate">
-                {location || session.user.email}
-              </div>
+    <div className="min-h-screen flex flex-col bg-[#0c0b0a] text-stone-100">
+      <header className="sticky top-0 z-30 border-b border-stone-800/80 bg-[#0c0b0a]/95">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm text-stone-100">MiseEnVue</div>
+            <div className="text-xs text-stone-500 truncate">
+              {location || session.user.email}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 bg-neutral-950/80 border border-neutral-800 p-1 rounded-xl shadow-inner">
-            <button
-              onClick={() => setCurrentView("opportunities")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                currentView === "opportunities"
-                  ? "bg-neutral-800 text-white shadow-sm border border-neutral-700/60"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
-            >
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Opportunities</span>
-            </button>
-            <button
-              onClick={() => setCurrentView("pipeline")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                currentView === "pipeline"
-                  ? "bg-neutral-800 text-white shadow-sm border border-neutral-700/60"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Research</span>
-            </button>
-            <button
-              onClick={() => setCurrentView("csv")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                currentView === "csv"
-                  ? "bg-neutral-800 text-white shadow-sm border border-neutral-700/60"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
-              <span>Kitchen</span>
-            </button>
-          </div>
+          <nav className="flex items-center gap-1">
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              const active = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setCurrentView(item.id)}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm ${
+                    active
+                      ? "bg-stone-100 text-stone-950"
+                      : "text-stone-400 hover:text-stone-100"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
           <button
             type="button"
-            className="text-xs font-semibold text-neutral-300 border border-neutral-800 rounded-lg px-2.5 py-1 hover:bg-neutral-800"
+            className="text-xs text-stone-400 hover:text-stone-100"
             onClick={() => getSupabaseClient().auth.signOut()}
           >
             Sign out
@@ -86,11 +101,79 @@ export default function ProductShell({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
-        {currentView === "opportunities" && <OpportunityMatrix />}
-        {currentView === "pipeline" && <TrendPipeline />}
-        {currentView === "csv" && <CsvStudio />}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+        {budget && (
+          <section className="rounded-2xl border border-stone-800 bg-[#141210] p-4 sm:p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/80">This month’s envelope</p>
+                <p className="text-sm text-stone-400 mt-1">
+                  From the P&L. Discover and campaigns stay inside these caps.
+                </p>
+              </div>
+              {scrapeMeta.sourcesUsed?.length ? (
+                <p className="text-[11px] text-stone-500">
+                  Scrape: {scrapeMeta.sourcesUsed.join(" · ")}
+                  {scrapeMeta.fixture ? " · sample" : ""}
+                </p>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Metric label="Health" value={budget.health?.band || "—"} />
+              <Metric
+                label="Can spend"
+                value={money(budget.allocation?.total_budget?.amount)}
+              />
+              <Metric
+                label="Menu trials"
+                value={money(budget.constraints?.max_trial_ingredient_spend)}
+              />
+              <Metric
+                label="Influencer cap"
+                value={money(budget.constraints?.max_influencer_fee)}
+              />
+            </div>
+          </section>
+        )}
+
+        {currentView === "opportunities" && (
+          <OpportunityMatrix
+            budget={budget}
+            trendingDishes={dishes}
+            onOpenDiscover={(dishId) => {
+              if (dishId) setSelectedDishId(dishId);
+              setCurrentView("pipeline");
+            }}
+          />
+        )}
+        {currentView === "pipeline" && (
+          <TrendPipeline
+            dishes={dishes}
+            selectedDish={selectedDish}
+            scrapeMeta={scrapeMeta}
+            onSelectDish={(dish) => setSelectedDishId(dish.id)}
+            onUseInKitchen={() => setCurrentView("csv")}
+          />
+        )}
+        {currentView === "csv" && (
+          <CsvStudio
+            currentTrendingDish={
+              selectedDish
+                ? { name: selectedDish.name, aliases: selectedDish.aliases }
+                : undefined
+            }
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-stone-800 bg-[#0c0b0a] px-3.5 py-3">
+      <div className="text-[11px] uppercase tracking-wider text-stone-500">{label}</div>
+      <div className="mt-1 text-lg font-medium capitalize text-stone-50">{value}</div>
     </div>
   );
 }

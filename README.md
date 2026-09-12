@@ -9,6 +9,19 @@ finance/     P&L baseline and budget allocation
 data/out     Pipeline artifacts (not backend, not frontend)
 ```
 
+## How the scrape fits
+
+The Python jobs are **batch**, not the Next.js request path:
+
+1. `python -m finance.budget` reads a P&L and writes `data/out/budget.json` — the monthly spending envelope.
+2. `python -m ingestion.pipeline` (or `--offline`) pulls YouTube + Google Trends and writes `data/out/trends.json` — ranked dishes and evidence.
+3. The app reads those files. Opportunities stay in Supabase. Research lists the scraped dishes, then Gemini can live-enrich a pick.
+
+```bash
+python -m finance.budget
+python -m ingestion.pipeline --offline   # replay fixtures; drop --offline for a live pull
+```
+
 ## Run
 
 ```bash
@@ -32,3 +45,7 @@ npm run pipeline -- --topic "Hot Honey"
 ```
 
 Reports write to `data/reports/`. The CLI reads `data/out/trends.json` for `--contract`.
+
+## Deploy
+
+Keep the host root at the **repo root**, not `frontend/`. Root `npm install` now installs the `frontend` and `agent` workspaces so `next` exists for `npm run build`. If the build command is a bare `next build`, it will fail with `next: command not found` — use `npm run build`.

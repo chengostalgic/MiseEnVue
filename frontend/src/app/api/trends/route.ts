@@ -1,34 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchLiveSocialTrends, TRENDS_CONTRACT_PATH } from "@miseenvue/agent";
-import fs from "node:fs";
+import { fetchLiveSocialTrends } from "@miseenvue/agent";
+import { readTrendsContract } from "@/lib/contracts";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const query =
-    new URL(req.url).searchParams.get("query") ||
-    "Crispy Smash Falafel with Whipped Feta";
-
-  try {
-    const realtimeData = await fetchLiveSocialTrends(query);
-    let repoDishes: unknown[] = [];
-    if (fs.existsSync(TRENDS_CONTRACT_PATH)) {
-      const contract = JSON.parse(fs.readFileSync(TRENDS_CONTRACT_PATH, "utf-8"));
-      repoDishes = contract.dishes || [];
-    }
-
-    return NextResponse.json({
-      success: true,
-      query,
-      isRealtime: true,
-      realtimeData,
-      repoDishes,
-      generatedAt: new Date().toISOString(),
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch trends";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+export async function GET() {
+  const contract = readTrendsContract();
+  if (!contract) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "No scrape contract yet. Run: python -m ingestion.pipeline --offline",
+      },
+      { status: 404 },
+    );
   }
+
+  return NextResponse.json({
+    success: true,
+    source: "scrape",
+    fixture: Boolean(contract._meta?.fixture || contract._meta?.hand_written),
+    generatedAt: contract.generated_at ?? null,
+    window: contract.window ?? null,
+    sourcesUsed: contract.sources_used ?? [],
+    dishes: contract.dishes,
+  });
 }
 
 export async function POST(req: NextRequest) {
