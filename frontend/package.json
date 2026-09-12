@@ -9,14 +9,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@miseenvue/agent": "file:../agent",
     "@supabase/supabase-js": "^2.116.0",
+    "lucide-react": "^0.453.0",
     "next": "16.3.5",
+    "papaparse": "^5.4.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

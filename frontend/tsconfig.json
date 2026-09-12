@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@miseenvue/agent": ["../agent/src/index.ts"]
     }
   },
   "include": [
