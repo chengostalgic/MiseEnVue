@@ -27,6 +27,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ingestion.connectors.base import Connector
+from ingestion.connectors.channels import fetch_channel_uploads
 from ingestion.schema import Post
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -111,6 +112,19 @@ class YouTubeConnector(Connector):
         orders = self.config.get("orders", ["relevance", "viewCount"])
 
         videos: dict[str, dict[str, Any]] = {}
+
+        # Curated channels first -- ~1 quota unit each against search's 100,
+        # and the origin question is already answered by the roster.
+        for video in fetch_channel_uploads(
+            requests, key,
+            self.config.get("channels", []),
+            self.config.get("channel_window_days", since_days),
+            self.config.get("channel_videos_each", 50),
+        ):
+            videos[video["id"]] = video
+        if videos:
+            print(f"  [{self.name}] {len(videos)} videos from curated channels")
+
         for query, scope, order in [
             (q, sc, o) for q, sc in queries for o in orders
         ]:
@@ -134,6 +148,8 @@ class YouTubeConnector(Connector):
             for item in found.json().get("items", []):
                 vid = item["id"]["videoId"]
                 snippet = item["snippet"]
+                if vid in videos:
+                    continue  # already have it from a channel pull
                 videos[vid] = {
                     "id": vid,
                     "title": snippet["title"],

@@ -38,14 +38,65 @@ youtube:
   # using "trending dessert recipe" returned 11 channels whose titles all said
   # "Viral"/"Trending" and which had ~11,400 views between them. Let the view
   # counts decide what is hot; the query only decides the topic.
+  # ---------------------------------------------------------------------------
+  # CHANNEL DISCOVERY -- the cheap path, and the main one.
+  #
+  # search.list costs 100 quota units per call; playlistItems.list costs 1, and
+  # every channel has an "uploads" playlist. Pulling recent uploads from these
+  # channels costs ~60 units for ~1,500 videos, where 24 keyword searches cost
+  # 2,400 units for ~300.
+  #
+  # It is also better content: a search-only pull was roughly a third non-US
+  # home cooking that had to be filtered back out. A curated US roster answers
+  # the origin question before the first request.
+  #
+  # Add channels by @handle. Handle -> playlist mapping is cached on disk.
+  # ---------------------------------------------------------------------------
+  channels:
+    # Recipe / technique
+    - "@JoshuaWeissman"
+    - "@bingingwithbabish"
+    - "@EthanChlebowski"
+    - "@aragusea"
+    - "@BrianLagerstrom"
+    - "@ChefJeanPierre"
+    - "@LifebyMikeG"
+    - "@NotAnotherCookingShow"
+    - "@Justine_Snacks"
+    - "@CookingWithShereen"
+    # Meat / BBQ
+    - "@GugaFoods"
+    - "@SousVideEverything"
+    - "@MadScientistBBQ"
+    - "@ChudsBbq"
+    # Food media
+    - "@bonappetit"
+    - "@seriouseats"
+    - "@americastestkitchen"
+    - "@epicurious"
+    - "@Food52"
+    - "@delish"
+    - "@BuzzFeedTasty"
+    # Trend / culture
+    - "@FirstWeFeast"
+    - "@MythicalKitchen"
+    - "@eater"
+    - "@nickdigiovanni"
+    - "@ChefBillyParisi"
+  channel_videos_each: 50
+  # Channels publish weekly, not daily, so a 14-day window caps out around 6
+  # videos each. Channel pulls use their own wider window -- a dish several
+  # creators made over a month is still a trend, and unlike keyword search the
+  # quota cost of looking further back is zero.
+  channel_window_days: 45
+
+  # Keyword search is now a SUPPLEMENT, not the main path. Channel discovery
+  # above costs ~2 units per channel; each search below costs 100. These exist
+  # only to catch dishes trending outside the curated roster, so the list is
+  # deliberately short.
   queries:
-    - chicken recipe
-    - pasta recipe
-    - dessert recipe
-    - beef recipe
-    - seafood recipe
-    - appetizer recipe
-    - restaurant style recipe
+    - viral restaurant dish
+    - new menu item trend
   # Local queries, templated with location.city. These return restaurant
   # reviews and local food-scene coverage rather than recipe videos -- a
   # different signal from the national set, and the one that says whether this
@@ -79,7 +130,10 @@ youtube:
   # viewCount ranks on actual audience but admits bait, which the language and
   # engagement gates remove. Running only relevance produced a pull with a
   # median of 124 views and nothing above 1M.
-  orders: [relevance, viewCount]
+  # viewCount only. Relevance ordering was there to avoid Shorts spam, but the
+  # engagement and country gates handle that now, and reach-weighted scoring
+  # means popularity is what we are actually after. Halves the search quota.
+  orders: [viewCount]
 
   # regionCode and relevanceLanguage only RANK results -- they do not filter by
   # origin. A live pull returned a large amount of South Asian home cooking
