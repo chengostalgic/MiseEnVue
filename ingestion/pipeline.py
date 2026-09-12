@@ -64,8 +64,7 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     load_env()
     config = yaml.safe_load(CONFIG_PATH.read_text())
 
-    loc = config.get("location", {})
-    print(f"Window: {since_days}d | offline: {offline} | market: {loc.get('city', '-')}")
+    print(f"Window: {since_days}d | offline: {offline} | market: US (national)")
 
     posts = []
     sources_used = []
@@ -83,7 +82,29 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
         print("\nNo posts from any source. Nothing to write.", file=sys.stderr)
         return 1
 
-    posts = within_window(dedupe(posts), since_days)
+    # Channel pulls deliberately reach further back than --since: channels
+    # publish weekly, so a 14-day window caps out at ~6 videos each, and
+    # looking further back costs no extra quota on that path. Filtering to
+    # --since afterwards would undo that -- it discarded 128 of 316 videos
+    # before this was caught. The effective window is the widest any connector
+    # was asked for.
+    effective_window = max(
+        since_days,
+        config.get("youtube", {}).get("channel_window_days", since_days),
+    )
+    posts = within_window(dedupe(posts), effective_window)
+    if effective_window != since_days:
+        print(f"  [window] keeping {effective_window}d (channel pulls reach back further)")
+    # viral_only is applied here, not in the connector. The connector's
+    # version only ran on live fetches -- --offline replays the cache straight
+    # into parse() and skipped it, so the same corpus produced different
+    # results depending on the flag. Filtering post-parse makes the two paths
+    # agree, and it is a policy decision rather than a fetch concern anyway.
+    if config.get("youtube", {}).get("virality", {}).get("viral_only", False):
+        before = len(posts)
+        posts = [p for p in posts if p.is_viral]
+        print(f"  [viral_only] {len(posts)}/{before} posts cleared the virality bar")
+
     posts = normalize(posts)
     print(f"\n{len(posts)} posts after dedupe + window filter")
 

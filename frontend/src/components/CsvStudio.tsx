@@ -185,6 +185,10 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
   // Fit Analysis (Part 2)
   async function runFitAnalysis() {
     if (parsedData.length === 0) return;
+    if (!currentTrendingDish?.name) {
+      setErrorMessage("Pick a scraped dish in Discover before running kitchen fit.");
+      return;
+    }
     setIsAnalyzingFit(true);
     try {
       const res = await fetch("/api/fit", {
@@ -192,7 +196,7 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inventoryItems: parsedData,
-          trendingDish: currentTrendingDish || { name: "Crispy Smash Falafel with Whipped Feta" },
+          trendingDish: currentTrendingDish,
         }),
       });
       const data = await res.json();

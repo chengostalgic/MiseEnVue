@@ -1,660 +1,733 @@
 {
   "_meta": {
     "fixture": true,
-    "hand_written": true,
-    "note": "HAND-WRITTEN SAMPLE DATA. Defines the Part 1 -> Part 2 contract so downstream work is not blocked on the pipeline. The real pipeline overwrites this same path. URLs here are synthetic placeholders and will 404 -- real evidence URLs arrive with the YouTube connector. Evidence excerpts are video titles or viewer comments; sentiment comes from comments, not creator descriptions. Metrics include local_mention_count -- how much of the conversation is in the client's own market (config: location.city).",
+    "note": "Generated from cached source data, not a live pull.",
     "schema_version": 1
   },
-  "generated_at": "2026-09-12T14:30:00Z",
+  "generated_at": "2026-09-12T17:02:22Z",
   "window": {
     "days": 7,
-    "start": "2026-09-05T00:00:00Z",
-    "end": "2026-09-12T00:00:00Z"
+    "start": "2026-09-05T22:02:22Z",
+    "end": "2026-09-12T22:02:22Z"
   },
   "sources_used": [
-    "youtube",
-    "google_trends"
+    "youtube"
   ],
   "dishes": [
     {
-      "id": "chili-crisp-hot-honey-wings",
-      "name": "Chili crisp hot honey wings",
+      "id": "chapli-kebab-chopped-cheese",
+      "name": "Chapli Kebab Chopped Cheese",
       "aliases": [
-        "hot honey wings",
-        "chili crisp wings",
-        "sweet heat wings"
+        "Pakistani Chopped Cheese"
       ],
       "cuisine_tags": [
-        "american",
-        "bar-food",
-        "asian-fusion"
+        "Pakistani",
+        "American"
       ],
-      "trend_score": 94.2,
+      "trend_score": 87.6,
       "momentum": "rising",
       "metrics": {
         "window_days": 7,
-        "mention_count": 342,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 310,
-          "google_trends": 32
+          "youtube": 2
         },
-        "total_engagement": 48200,
+        "total_engagement": 870853,
         "sentiment": {
-          "positive": 0.81,
-          "negative": 0.08,
-          "neutral": 0.11
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
         },
-        "negative_theme": "Cloyingly sweet when the honey is overdone; a few call it a played-out trend.",
-        "local_mention_count": 11
+        "negative_theme": "Sauce overwhelms the bread structure and drowns out the meat, making it hard to eat without it falling apart or tasting like just condiments."
       },
       "why_trending": {
-        "summary": "Chili crisp has crossed over from a niche condiment into mainstream bar food, and wings are the cheapest vehicle for it. Short-form video does the rest -- the glaze photographs well and the pull-apart shot is reliably satisfying.",
+        "summary": "This Pakistani-American fusion sandwich is driving traffic to Nishaan as their most-ordered item, with national Food Network exposure amplifying demand. The appeal lies in authentic spice complexity and house-made sauce elevated above the standard NYC chopped cheese, creating a destination dish that justifies a trip to the East Village.",
         "drivers": [
-          "Chili crisp is having a broad cultural moment beyond this one dish",
-          "Requires no new equipment -- it is a sauce swap on an existing fryer item",
-          "High visual payoff in short-form video"
+          "Pakistani spice complexity and house-made cilantro sauce",
+          "NYC bodega classic meets immigrant cuisine trend",
+          "Food Network validation and owner's Great Food Truck Race pedigree",
+          "Destination-worthy sandwich generating travel demand"
         ],
-        "audience": "18-34, casual dining and late-night"
+        "audience": "25-45, casual dining and lunch/takeout"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example1",
-          "excerpt": "Made chili crisp hot honey wings for the third weekend in a row. My roommates have stopped asking for anything else.",
-          "engagement": 4200,
-          "sentiment": "positive",
-          "observed_at": "2026-09-10T18:22:00Z"
+          "url": "https://www.youtube.com/watch?v=Mse_qrQ1LHM",
+          "excerpt": "The Pakistani Chopped Cheese That Has NYC Obsessed \u2014 Most-Ordered On this episode of \"Most-Ordered,\" we head to Nishaan in New York City's East Village, where chef-owner Zeeshan Bakhrani makes the Cha",
+          "observed_at": "2026-09-09T13:00:16Z",
+          "engagement": 858247,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example2",
-          "excerpt": "We put chili crisp wings on as a special and they outsold the regular buffalo three to one. They're staying.",
-          "engagement": 2810,
-          "sentiment": "positive",
-          "observed_at": "2026-09-09T02:10:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example3",
-          "excerpt": "Honestly getting tired of seeing hot honey on literally everything.",
-          "engagement": 640,
-          "sentiment": "negative",
-          "observed_at": "2026-09-08T21:45:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example4",
-          "excerpt": "The trick is cutting the honey with rice vinegar so it doesn't go syrupy.",
-          "engagement": 1900,
-          "sentiment": "positive",
-          "observed_at": "2026-09-11T14:03:00Z"
-        },
-        {
-          "source": "google_trends",
-          "url": "https://trends.google.com/trends/explore?q=hot%20honey%20wings",
-          "excerpt": "Search interest for 'hot honey wings' up 61% vs prior 7-day window.",
-          "engagement": null,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-12T09:00:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example5",
-          "excerpt": "Chili crisp is the single best value-add ingredient I've bought this year.",
-          "engagement": 3350,
-          "sentiment": "positive",
-          "observed_at": "2026-09-07T16:30:00Z"
+          "url": "https://www.youtube.com/watch?v=7sBo-mUKizk",
+          "excerpt": "Is this the best twist on classic chopped cheese sandwich? #shorts On this episode of \"Most-Ordered,\" we head to Nishaan in New York City's East Village, where chef-owner Zeeshan Bakhrani makes the Ch",
+          "observed_at": "2026-09-12T13:00:19Z",
+          "engagement": 12606,
+          "sentiment": "positive"
         }
       ]
     },
     {
-      "id": "birria-grilled-cheese",
-      "name": "Birria grilled cheese",
+      "id": "hooters-breaded-wings",
+      "name": "Hooters Breaded Wings",
       "aliases": [
-        "birria melt",
-        "quesabirria grilled cheese"
+        "iconic breaded wings"
       ],
       "cuisine_tags": [
-        "mexican",
-        "comfort",
-        "sandwich"
+        "chicken",
+        "wings"
       ],
-      "trend_score": 88.6,
+      "trend_score": 80.2,
       "momentum": "rising",
       "metrics": {
         "window_days": 7,
-        "mention_count": 271,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 248,
-          "google_trends": 23
+          "youtube": 2
         },
-        "total_engagement": 39400,
+        "total_engagement": 4011312,
         "sentiment": {
-          "positive": 0.86,
-          "negative": 0.05,
-          "neutral": 0.09
+          "positive": 0.5,
+          "negative": 0.0,
+          "neutral": 0.5
         },
-        "negative_theme": "Purists object to calling it birria; some report it goes greasy fast.",
-        "local_mention_count": 24
+        "negative_theme": "Detractors dismiss Hooters wings as overrated and question whether anyone actually goes for the food rather than the brand."
       },
       "why_trending": {
-        "summary": "The birria wave has moved past tacos into other formats, and grilled cheese is the most legible one for non-Mexican menus. The consomme dip is the shareable moment -- it is effectively a built-in video hook.",
+        "summary": "Hooters wings are gaining renewed attention through celebrity endorsement and brand-led content, with Sam Smith publicly naming them as a favorite and pairing them with chili crisp condiments. This represents an opportunity to capitalize on nostalgia dining and the ongoing chili crisp trend that's resonating with younger consumers.",
         "drivers": [
-          "Format extension of an already-proven trend rather than a cold start",
-          "The dip shot is inherently shareable",
-          "Reads as familiar comfort food to a broad audience"
+          "celebrity endorsement by Sam Smith",
+          "chili crisp condiment pairing",
+          "nostalgia/retro dining trend",
+          "no specialized equipment needed"
         ],
-        "audience": "21-40, weekend and comfort-food occasions"
+        "audience": "25-40, casual dining and late-night"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example6",
-          "excerpt": "Birria grilled cheese with the consomme on the side might be the best sandwich I've had this year.",
-          "engagement": 7800,
-          "sentiment": "positive",
-          "observed_at": "2026-09-11T20:15:00Z"
+          "url": "https://www.youtube.com/watch?v=uEfhZsj7scY",
+          "excerpt": "Sam Smith Loves Hooters Chicken Wings Sam Smith joins Bon App\u00e9tit to talk about everything food, from their favorite chicken wings and go-to condiment to the foods actually worth waiting in line for.",
+          "observed_at": "2026-08-20T16:00:13Z",
+          "engagement": 4008297,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example7",
-          "excerpt": "Calling it birria is a stretch but I'm not going to pretend it isn't delicious.",
-          "engagement": 1240,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-09T11:50:00Z"
-        },
-        {
-          "source": "google_trends",
-          "url": "https://trends.google.com/trends/explore?q=birria%20grilled%20cheese",
-          "excerpt": "Search interest up 44% vs prior 7-day window; sustained growth over 6 weeks.",
-          "engagement": null,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-12T09:00:00Z"
+          "url": "https://www.youtube.com/watch?v=1-7zshc6n4Q",
+          "excerpt": "5 Golden Rules Of Hooters Wings From @hooters girl to Director of Brand Development, Becky Moore is sharing the 5 golden rules of the iconic restaurant's breaded wings \ud83c\udf57\n\nShot by @catsillars",
+          "observed_at": "2026-08-31T17:00:42Z",
+          "engagement": 3015,
+          "sentiment": "neutral"
         }
       ]
     },
     {
-      "id": "cucumber-salad",
-      "name": "Smashed cucumber salad",
+      "id": "gnocchi-sausage-vodka-sauce",
+      "name": "Gnocchi with Sausage and Vodka Sauce",
       "aliases": [
-        "cucumber salad",
-        "smashed cucumbers",
-        "din tai fung cucumbers"
+        "Creamy Sausage Gnocchi in Pink Sauce",
+        "Roasted Gnocchi with Sausage"
       ],
       "cuisine_tags": [
-        "chinese",
-        "salad",
-        "side",
-        "vegetarian"
+        "Italian",
+        "pasta",
+        "gnocchi"
       ],
-      "trend_score": 82.1,
-      "momentum": "rising",
+      "trend_score": 56.7,
+      "momentum": "steady",
       "metrics": {
         "window_days": 7,
-        "mention_count": 512,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 468,
-          "google_trends": 44
+          "youtube": 2
         },
-        "total_engagement": 61300,
+        "total_engagement": 221946,
         "sentiment": {
-          "positive": 0.74,
-          "negative": 0.14,
-          "neutral": 0.12
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
         },
-        "negative_theme": "Widely seen as overpriced for what it is; several complain about watery execution.",
-        "local_mention_count": 6
+        "negative_theme": ""
       },
       "why_trending": {
-        "summary": "Very high mention volume driven by a viral short-form recipe format, but sentiment is softer than the raw numbers suggest -- a meaningful slice of the conversation is people objecting to restaurant pricing on a cheap ingredient.",
+        "summary": "Gnocchi with sausage and vodka sauce is trending as an approachable, visually appealing Italian-American comfort dish that works well in casual home cooking and restaurant contexts. The trend is amplified by high-profile food media coverage showing it as an easy weeknight dinner option, with audiences drawn to its pillowy texture, savory sausage, and creamy pink sauce combination. For restaurants, this represents a straightforward menu addition that resonates with diners seeking familiar, Instagram-worthy comfort food.",
         "drivers": [
-          "Extremely low food cost and no cooking equipment required",
-          "Viral recipe format with a satisfying smash step",
-          "Rides the broader interest in lighter, vegetable-forward sides"
+          "High-profile food media featuring it as an easy sheet pan dinner",
+          "Creamy pink sauce and sausage combination appeals to comfort food demand",
+          "Pillowy gnocchi texture trend",
+          "Simple technique requires no specialized equipment"
         ],
-        "audience": "18-35, health-conscious and value-conscious"
+        "audience": "25-45, casual weeknight dining and social media-worthy meals"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example8",
-          "excerpt": "Smashed cucumber salad has replaced every other side dish in my rotation.",
-          "engagement": 9100,
-          "sentiment": "positive",
-          "observed_at": "2026-09-10T13:20:00Z"
+          "url": "https://www.youtube.com/watch?v=vcHZymQ8wso",
+          "excerpt": "Our 3 Favorite Sheet Pan Recipes | Made in House | Bon App\u00e9tit Bon App\u00e9tit\u2019s Jesse Szewczyk shows how to get the most out of your oven with three sheet pan dinners designed for every rack. Learn how t",
+          "observed_at": "2026-09-08T16:00:06Z",
+          "engagement": 202079,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example9",
-          "excerpt": "Charging $14 for cucumbers is how you lose a regular. I don't care how good the chili oil is.",
-          "engagement": 3400,
-          "sentiment": "negative",
-          "observed_at": "2026-09-08T19:05:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example10",
-          "excerpt": "Salt them and let them drain first or you end up with soup.",
-          "engagement": 2200,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-07T09:40:00Z"
-        },
-        {
-          "source": "google_trends",
-          "url": "https://trends.google.com/trends/explore?q=smashed%20cucumber%20salad",
-          "excerpt": "Search interest up 38% vs prior 7-day window.",
-          "engagement": null,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-12T09:00:00Z"
+          "url": "https://www.youtube.com/watch?v=i8cyfUTwwTo",
+          "excerpt": "Gnocchi with Sausage and Vodka Sauce \ud83d\udcdd: https://tasty.co/recipe/creamy-sausage-gnocchi-in-pink-sauce\nGnocchi with Sausage and Vodka Sauce \ud83c\udf5d\u2728 by @VinnyDelgiudice Pillowy gnocchi, savory Italian sausage",
+          "observed_at": "2026-09-08T19:30:07Z",
+          "engagement": 19867,
+          "sentiment": "positive"
         }
       ]
     },
     {
-      "id": "gochujang-caramel-cookies",
-      "name": "Gochujang caramel cookies",
-      "aliases": [
-        "gochujang cookies",
-        "spicy caramel cookies"
-      ],
+      "id": "short-rib-sandwich",
+      "name": "Short Rib Sandwich",
+      "aliases": [],
       "cuisine_tags": [
-        "dessert",
-        "korean-fusion",
-        "bakery"
+        "American"
       ],
-      "trend_score": 76.8,
+      "trend_score": 54.4,
       "momentum": "rising",
       "metrics": {
         "window_days": 7,
-        "mention_count": 143,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 131,
-          "google_trends": 12
+          "youtube": 2
         },
-        "total_engagement": 18700,
+        "total_engagement": 282673,
         "sentiment": {
-          "positive": 0.69,
-          "negative": 0.19,
-          "neutral": 0.12
+          "positive": 0.5,
+          "negative": 0.0,
+          "neutral": 0.5
         },
-        "negative_theme": "Polarizing -- a real contingent finds sweet-plus-fermented-chili actively unpleasant.",
-        "local_mention_count": 0
+        "negative_theme": "Critics argue $30 is excessive for a sandwich in a late-night context and question whether the elaborate 3-day sous vide process is performative rather than substantive."
       },
       "why_trending": {
-        "summary": "A genuinely divisive dish, which is part of why it travels. The argument in the comments is the engagement engine; people who love it evangelize and people who hate it say so loudly.",
+        "summary": "The short rib sandwich is trending as a high-concept late-night bar bite at All Well, a new Michelin-connected Chicago restaurant that pairs fine-dining technique with casual walk-in accessibility. The 3-day sous vide preparation and premium pricing ($30) create buzz around technique-forward casual dining, though some diners question the value proposition for late-night eating.",
         "drivers": [
-          "Novelty and controversy drive comment volume",
-          "Sits in the broader swicy dessert category",
-          "Low barrier for a kitchen that already bakes"
+          "Michelin-connected restaurant credibility",
+          "3-day sous vide technique creates novelty and social media appeal",
+          "Late-night bar service positioning (casual vs. fine dining)",
+          "Premium casual dining concept gaining traction"
         ],
-        "audience": "22-38, adventurous eaters and dessert-forward"
+        "audience": "25-45, late-night casual dining and bar snacking"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example11",
-          "excerpt": "Gochujang caramel cookies sound wrong and taste incredible. The heat shows up at the very end.",
-          "engagement": 5600,
-          "sentiment": "positive",
-          "observed_at": "2026-09-11T17:00:00Z"
+          "url": "https://www.youtube.com/watch?v=W7G6ol9TlZg",
+          "excerpt": "This Restaurant Has a Five-Course Tasting Menu and a Late-Night Short Rib Sandwich All Well, the new sister restaurant to two-starred Michelin restaurant Oriole, opened this past spring in Chicago's W",
+          "observed_at": "2026-08-03T14:00:28Z",
+          "engagement": 242972,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example12",
-          "excerpt": "I do not want my dessert to be fermented and spicy. This is a step too far.",
-          "engagement": 2100,
-          "sentiment": "negative",
-          "observed_at": "2026-09-10T08:30:00Z"
+          "url": "https://www.youtube.com/watch?v=Sk827pJNWdY",
+          "excerpt": "Why this short rib sandwich takes 3 days to make #shorts #recipe #eater This short rib sandwich takes late-night snacking to a new level. \n\nAt All Well, one of Chicago\u2019s newest hot spots, executive ch",
+          "observed_at": "2026-09-06T13:00:26Z",
+          "engagement": 39701,
+          "sentiment": "neutral"
         }
       ]
     },
     {
-      "id": "pistachio-kunafa-chocolate-bar",
-      "name": "Pistachio kunafa chocolate bar",
+      "id": "scones-strawberry-jam",
+      "name": "Scones with Strawberry Jam",
       "aliases": [
-        "dubai chocolate",
-        "kunafa chocolate",
-        "pistachio knafeh bar"
+        "british scones"
       ],
       "cuisine_tags": [
-        "dessert",
-        "middle-eastern",
-        "confection"
+        "british",
+        "dessert"
       ],
-      "trend_score": 71.4,
+      "trend_score": 53.2,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 3,
+        "by_source": {
+          "youtube": 3
+        },
+        "total_engagement": 39336,
+        "sentiment": {
+          "positive": 0.67,
+          "negative": 0.0,
+          "neutral": 0.33
+        },
+        "negative_theme": "Scones have a reputation for being dry and dense, requiring excessive tea to swallow."
+      },
+      "why_trending": {
+        "summary": "Scones with strawberry jam are trending through high-profile celebrity baker content on Food Network, driven by the appeal of properly-made, moist scones that counter the common perception of dry, dense ones. The dish pairs classic British tea-time aesthetics with accessibility, resonating with home bakers and casual diners interested in quality bakery products.",
+        "drivers": [
+          "Celebrity baker endorsement and Food Network platform",
+          "Misconception reversal (moist scones vs. dry reputation)",
+          "British tea-time cultural appeal",
+          "Simple ingredient execution with visible technique focus"
+        ],
+        "audience": "25-54, casual dining and afternoon tea/brunch"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=oqr3DIRkEVs",
+          "excerpt": "The Scone Queen Reveals Her TOP-SECRET Scone Recipe \ud83d\udc51\ud83d\udd11 Best Bake Ever with Danielle Sepsy If you think all scones are so dry and dense they need to be paired with a gallon of tea to swallow, think aga",
+          "observed_at": "2026-09-03T23:00:11Z",
+          "engagement": 26188,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=0c34dS1g8Dg",
+          "excerpt": "If you think scones are dry... you've been eating the wrong scones \ud83e\udd37\u200d\u2640\ufe0f \u200b@chefdaniellesepsy is sharing her tips for impossibly moist, bakery-worthy scones on her new YouTube series, #BestBakeEver.\n\nWa",
+          "observed_at": "2026-09-09T02:00:21Z",
+          "engagement": 9243,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=9KbjMyyK70s",
+          "excerpt": "These Scones are so British. We're obsessed! #tea #scones #strawberry #jam _______________________________________________________\n\nSubscribe to Tastemade: https://bit.ly/3PSFkYm\nJOIN us at Tastemade+",
+          "observed_at": "2026-08-10T18:01:55Z",
+          "engagement": 3905,
+          "sentiment": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "texas-bbq-brisket",
+      "name": "Texas BBQ Brisket",
+      "aliases": [
+        "Sweet and Sour Brisket"
+      ],
+      "cuisine_tags": [],
+      "trend_score": 52.5,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 3,
+        "by_source": {
+          "youtube": 3
+        },
+        "total_engagement": 40179,
+        "sentiment": {
+          "positive": 0.67,
+          "negative": 0.0,
+          "neutral": 0.33
+        },
+        "negative_theme": "Brisket is prohibitively expensive as a menu item (\"costs mega bucks\"), and home cooking requires significant time commitment and active monitoring to avoid burning."
+      },
+      "why_trending": {
+        "summary": "Texas BBQ brisket is trending as both a commercial draw (restaurants reporting 2,000+ pounds weekly volume) and a home-cooking aspiration, driven by Food Network recipes that demystify the cooking process and emphasize foolproof tenderness. The dish appeals across contexts\u2014from casual barbecue joints to holiday and ceremonial dining\u2014positioning it as a reliable, crowd-pleasing centerpiece that addresses home cooks' traditional fear of drying out the meat.",
+        "drivers": [
+          "Food Network legitimization and accessible recipes",
+          "High-volume commercial demand at BBQ establishments",
+          "Perceived difficulty overcome (\"afraid it would turn out dry\")",
+          "Jewish holiday and ceremonial dining occasions"
+        ],
+        "audience": "25-55, holiday dining, special occasions, and casual barbecue restaurants"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=xpbdCcx8VAo",
+          "excerpt": "How to Make the Best Brisket: Food Network Kitchen's Foolproof Recipe Why is this holiday brisket so ridiculously tender? \ud83e\udd69\u2728\n\nExecutive Chef Ginevra Iverson shares Food Network Kitchen's Best Brisket",
+          "observed_at": "2026-09-02T23:00:18Z",
+          "engagement": 17705,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=4TogXtGrV00",
+          "excerpt": "Why is this brisket so ridiculously tender? \ud83e\udd69\u2728 Executive Chef Ginevra Iverson walks you through it step by step.\n\nWatch the full how-to now on Food Network's channel.\n\nGet the recipe \ud83d\udc47\n\nIngredients\n\nO",
+          "observed_at": "2026-09-08T18:00:17Z",
+          "engagement": 11322,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=Ym3afVxpgNs",
+          "excerpt": "This #TexasBBQ restaurant goes through 2,000 pounds of #brisket a week. #barbecue #smallbusiness ------------------------------------------------------\n\nInsider Food is brought to you by Business Insi",
+          "observed_at": "2026-09-02T12:00:14Z",
+          "engagement": 11152,
+          "sentiment": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "scrapple-sandwich",
+      "name": "Scrapple Sandwich",
+      "aliases": [],
+      "cuisine_tags": [
+        "American",
+        "Pennsylvania"
+      ],
+      "trend_score": 51.4,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 2,
+        "by_source": {
+          "youtube": 2
+        },
+        "total_engagement": 81657,
+        "sentiment": {
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
+        },
+        "negative_theme": ""
+      },
+      "why_trending": {
+        "summary": "Scrapple sandwiches are gaining national attention beyond their traditional Mid-Atlantic base, driven by regional cuisine content celebrating Pennsylvania breakfast culture. The trending visibility is expanding awareness among non-traditional markets where scrapple was previously unavailable or unknown, creating new consumer demand in areas like the Midwest and South.",
+        "drivers": [
+          "Regional breakfast pride and 'My State, My Plate' media coverage",
+          "Geographic expansion into new markets (grocery availability outside PA/MD)",
+          "Nostalgic appeal to diaspora communities missing regional foods",
+          "Crispy texture contrast with buttered potato bread as technique highlight"
+        ],
+        "audience": "25-55, regional breakfast and nostalgia-driven dining"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=vuy77hYdvwk",
+          "excerpt": "Every Pennsylvania Kid Knows This Breakfast \u2014 Here\u2019s How to Make It Watch more \"My State, My Plate\" \ud83c\udf7d\ufe0f \u2192 https://www.youtube.com/playlist?list=PL8zglt-LDl-h-_BqQmncustyxziDbKWPu\n0:00 - The Pennsylvani",
+          "observed_at": "2026-09-05T17:00:18Z",
+          "engagement": 62575,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=5dty7BzuVUI",
+          "excerpt": "How To Make A Pennsylvania Scrapple Sandwich | My State, My Plate \ud83c\udfa5: https://youtu.be/vuy77hYdvwk\nWhat\u2019s the best breakfast in America? Pennsylvania has entered the chat. \ud83d\udc40\ud83e\udd53 @eatwithlee is putting a P",
+          "observed_at": "2026-09-05T17:00:41Z",
+          "engagement": 19082,
+          "sentiment": "positive"
+        }
+      ]
+    },
+    {
+      "id": "italian-pastina-soup",
+      "name": "Italian Style Penicillin Soup",
+      "aliases": [
+        "Pastina Soup"
+      ],
+      "cuisine_tags": [
+        "Italian"
+      ],
+      "trend_score": 48.4,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 2,
+        "by_source": {
+          "youtube": 2
+        },
+        "total_engagement": 167906,
+        "sentiment": {
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
+        },
+        "negative_theme": "Critics argue the recipe conflates orzo with true pastina and oversimplifies Italian preparation by blending vegetables rather than keeping them as distinct pieces."
+      },
+      "why_trending": {
+        "summary": "Italian Style Penicillin Soup is trending as a cozy, one-pot comfort dish featuring bone broth, shredded chicken, and small pasta (orzo or pastina), appealing to diners seeking nourishing, accessible comfort food for cooler months. The trend capitalizes on growing interest in bone broth-based soups and simple, nostalgic Italian preparations that require minimal equipment and familiar ingredients.",
+        "drivers": [
+          "Bone broth and wellness positioning",
+          "One-pot simplicity, minimal equipment needed",
+          "Pastina/orzo pasta gaining restaurant visibility",
+          "Comfort food for seasonal dining"
+        ],
+        "audience": "25-45, casual dining and comfort-focused occasions"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=NIw-AHnbUdk",
+          "excerpt": "Call me Pastina Aguilera \ud83e\udd24#duet #shorts #chef #chefreactions #reactions #recipe #food \ud83c\udfa5:heresyourbite This rubs me the right way \ud83e\uddde\u200d\u2642\ufe0f #duet #shorts #chef #chefreactions #reactions #recipe #food",
+          "observed_at": "2026-08-19T22:17:07Z",
+          "engagement": 102515,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=4AZgCSENxkI",
+          "excerpt": "Italian Style Penicillin (Pastina) Soup \ud83d\udcdd: https://tasty.co/recipe/italian-style-penicillin-pastina-soup\nItalian Style Penicillin (Pastina) Soup by @mymanabites \ud83c\udf72\u2728 A cozy, one pot chicken and pasta so",
+          "observed_at": "2026-09-03T19:30:16Z",
+          "engagement": 65391,
+          "sentiment": "positive"
+        }
+      ]
+    },
+    {
+      "id": "soy-glazed-eggplant-rice-bowl",
+      "name": "Soy-Glazed Eggplant Rice Bowl",
+      "aliases": [],
+      "cuisine_tags": [
+        "Japanese"
+      ],
+      "trend_score": 46.7,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 2,
+        "by_source": {
+          "youtube": 2
+        },
+        "total_engagement": 76713,
+        "sentiment": {
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
+        },
+        "negative_theme": "Starch coating technique can be difficult to apply evenly, and some viewers want alcohol-free adaptations of traditional Japanese ingredients like sake and mirin."
+      },
+      "why_trending": {
+        "summary": "This Japanese-style soy-glazed eggplant rice bowl is gaining traction as an accessible vegetarian bowl that converts eggplant skeptics through technique (silky seared eggplant in sticky glaze) and simplicity. Viewers are rushing to make it at home using common pantry ingredients, with many reporting it's impressive enough to share with friends and family.",
+        "drivers": [
+          "Vegetable-forward comfort food appeals to health-conscious diners",
+          "No fancy ingredients, accessible technique",
+          "Converts eggplant haters through proper preparation",
+          "Social media amplification from cooking channels"
+        ],
+        "audience": "25-55, home cooking and weeknight dinner"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=xcytm2TwidU",
+          "excerpt": "Even Eggplant Haters Will Love This Japanese Soy Glazed Eggplant Rice Bowl! Head to https://betterhelp.com/aaronandclaire to get 10% off your first month with our paid partner, BetterHelp. Therapy can",
+          "observed_at": "2026-08-22T00:00:09Z",
+          "engagement": 60947,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=SYcnhccgCx8",
+          "excerpt": "Even Eggplant Haters Will Love This Japanese Soy Glazed Eggplant Rice Bowl! Not a fan of eggplant? This sweet and savory Soy-Glazed Eggplant Rice Bowl is guaranteed to change your mind! \ud83c\udf46\ud83c\udf5a\u2728\nSilky, per",
+          "observed_at": "2026-09-03T13:00:13Z",
+          "engagement": 15766,
+          "sentiment": "positive"
+        }
+      ]
+    },
+    {
+      "id": "mushroom-risotto",
+      "name": "Mushroom Risotto",
+      "aliases": [],
+      "cuisine_tags": [
+        "Italian"
+      ],
+      "trend_score": 46.4,
       "momentum": "fading",
       "metrics": {
         "window_days": 7,
-        "mention_count": 688,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 602,
-          "google_trends": 86
+          "youtube": 2
         },
-        "total_engagement": 94500,
+        "total_engagement": 405920,
         "sentiment": {
-          "positive": 0.52,
-          "negative": 0.33,
-          "neutral": 0.15
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
         },
-        "negative_theme": "Strong saturation backlash -- widely described as overexposed and overpriced for the portion.",
-        "local_mention_count": 19
+        "negative_theme": ""
       },
       "why_trending": {
-        "summary": "Still the highest raw mention volume in this window, but the trajectory is down and sentiment has turned noticeably sour. This is a late-stage trend: the volume is real, the opportunity is mostly gone, and a third of the conversation is now backlash.",
+        "summary": "Mushroom risotto is trending through cooking content creators who are making it accessible and entertaining, with established chefs like Gabe Bertaccini teaching the classic Italian technique while newer creators are building audiences around their versions. The dish appeals to home cooks seeking to master a restaurant-quality technique, making it a draw for cooking channels and a viable menu item for restaurants positioning themselves as traditional or technique-forward.",
         "drivers": [
-          "Long tail of an enormous prior viral peak",
-          "Backlash and saturation commentary now a large share of mentions",
-          "Specialty ingredients make it expensive to execute well"
+          "cooking content creators featuring the dish on YouTube and Food Network",
+          "classic Italian technique positioning as achievable for home cooks",
+          "established chefs validating the dish as foundational cooking knowledge"
         ],
-        "audience": "18-30, dessert and novelty seekers"
+        "audience": "25-45, home cooking and casual dining"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example13",
-          "excerpt": "If I see one more dubai chocolate bar I'm going to lose it. It was good six months ago.",
-          "engagement": 8800,
-          "sentiment": "negative",
-          "observed_at": "2026-09-09T22:40:00Z"
+          "url": "https://www.youtube.com/watch?v=NHcaFU5Q1PM",
+          "excerpt": "Mushroom Risotto! Recipe in bio! Recipe: https://provecho.co/platform/recipe/iF22NyjTLP5CxjmI8pqr",
+          "observed_at": "2026-08-11T15:30:25Z",
+          "engagement": 396049,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example14",
-          "excerpt": "Finally tried one. It's fine? Not $18 fine.",
-          "engagement": 4100,
-          "sentiment": "negative",
-          "observed_at": "2026-09-08T15:12:00Z"
-        },
-        {
-          "source": "google_trends",
-          "url": "https://trends.google.com/trends/explore?q=dubai%20chocolate",
-          "excerpt": "Search interest down 29% vs prior 7-day window; down 71% from peak.",
-          "engagement": null,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-12T09:00:00Z"
+          "url": "https://www.youtube.com/watch?v=B8HMk6Qlx-M",
+          "excerpt": "How to cook mushroom risotto like an Italian! Chef Gabe Bertaccini breaks down the classic technique for cooking it perfectly every time \ud83d\udc4c\n\nWatch him cook it on his YouTube cooking show, #CookLikeAnIt",
+          "observed_at": "2026-09-04T02:00:40Z",
+          "engagement": 9871,
+          "sentiment": "positive"
         }
       ]
     },
     {
-      "id": "hot-pot-style-mala-fried-chicken-sandwich-with-numbing-slaw",
-      "name": "Mala fried chicken sandwich with numbing slaw",
+      "id": "lemon-linguine",
+      "name": "Lemon Linguine",
       "aliases": [
-        "mala chicken sandwich",
-        "sichuan fried chicken sandwich"
-      ],
-      "cuisine_tags": [
-        "sichuan",
-        "sandwich",
-        "fried-chicken"
-      ],
-      "trend_score": 68.3,
-      "momentum": "rising",
-      "metrics": {
-        "window_days": 7,
-        "mention_count": 97,
-        "by_source": {
-          "youtube": 97,
-          "google_trends": 0
-        },
-        "total_engagement": 12400,
-        "sentiment": {
-          "positive": 0.78,
-          "negative": 0.09,
-          "neutral": 0.13
-        },
-        "negative_theme": "Some report the numbing sensation is off-putting to first-timers without warning on the menu.",
-        "local_mention_count": 0
-      },
-      "why_trending": {
-        "summary": "Early-stage and YouTube-only -- no search signal yet, which is exactly what a trend looks like before it breaks. Lower confidence than the volume leaders but the highest upside if the restaurant moves first.",
-        "drivers": [
-          "Sichuan peppercorn moving into Western sandwich formats",
-          "Rides the still-durable fried chicken sandwich category",
-          "No search signal yet, suggesting it is genuinely early"
-        ],
-        "audience": "22-35, adventurous and spice-seeking"
-      },
-      "evidence": [
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example15",
-          "excerpt": "The mala fried chicken sandwich is the most interesting thing I've eaten in months. The numbing slaw makes it.",
-          "engagement": 3900,
-          "sentiment": "positive",
-          "observed_at": "2026-09-11T19:25:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example16",
-          "excerpt": "Warn people about the numbing. My friend thought something was wrong with her mouth.",
-          "engagement": 1100,
-          "sentiment": "neutral",
-          "observed_at": "2026-09-10T12:00:00Z"
-        }
-      ]
-    },
-    {
-      "id": "whipped-ricotta-toast",
-      "name": "Whipped ricotta toast",
-      "aliases": [
-        "ricotta toast",
-        "whipped ricotta with hot honey"
+        "lemony linguine"
       ],
       "cuisine_tags": [
         "italian",
-        "brunch",
-        "vegetarian",
-        "toast"
+        "pasta"
       ],
-      "trend_score": 64.7,
-      "momentum": "steady",
-      "metrics": {
-        "window_days": 7,
-        "mention_count": 224,
-        "by_source": {
-          "youtube": 201,
-          "google_trends": 23
-        },
-        "total_engagement": 21800,
-        "sentiment": {
-          "positive": 0.71,
-          "negative": 0.13,
-          "neutral": 0.16
-        },
-        "negative_theme": "Perceived as an overpriced brunch staple; 'it's toast' appears repeatedly.",
-        "local_mention_count": 8
-      },
-      "why_trending": {
-        "summary": "Not rising, but durable -- this has held steady for months rather than spiking. Low risk and low ceiling: a safe brunch addition that will not generate its own press.",
-        "drivers": [
-          "Established brunch staple with stable demand",
-          "Very high margin and minimal prep",
-          "Photographs well with minimal plating skill"
-        ],
-        "audience": "25-45, brunch and cafe"
-      },
-      "evidence": [
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example17",
-          "excerpt": "Whipped ricotta toast with hot honey is the easiest thing on our menu and it never stops selling.",
-          "engagement": 2600,
-          "sentiment": "positive",
-          "observed_at": "2026-09-09T10:15:00Z"
-        },
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example18",
-          "excerpt": "$16 for toast. I understand the margins, I just resent them.",
-          "engagement": 1800,
-          "sentiment": "negative",
-          "observed_at": "2026-09-07T13:55:00Z"
-        }
-      ]
-    },
-    {
-      "id": "tinned-fish-board",
-      "name": "Tinned fish board",
-      "aliases": [
-        "conservas board",
-        "seacuterie",
-        "tinned fish date night"
-      ],
-      "cuisine_tags": [
-        "spanish",
-        "portuguese",
-        "shareable",
-        "appetizer"
-      ],
-      "trend_score": 58.9,
-      "momentum": "steady",
-      "metrics": {
-        "window_days": 7,
-        "mention_count": 156,
-        "by_source": {
-          "youtube": 149,
-          "google_trends": 7
-        },
-        "total_engagement": 14900,
-        "sentiment": {
-          "positive": 0.66,
-          "negative": 0.18,
-          "neutral": 0.16
-        },
-        "negative_theme": "Resistance to paying restaurant markup on a product that is visibly from a tin.",
-        "local_mention_count": 3
-      },
-      "why_trending": {
-        "summary": "Holding steady rather than growing. The economics are excellent and prep is near zero, but the central objection -- customers can see it came from a tin -- is a real constraint on pricing.",
-        "drivers": [
-          "Effectively no kitchen labor required",
-          "Long shelf life removes waste risk",
-          "Fits the shareable small-plates format"
-        ],
-        "audience": "28-45, wine bar and date-night"
-      },
-      "evidence": [
-        {
-          "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example19",
-          "excerpt": "Tinned fish boards are the best margin item we've ever run. Zero labor, people love them.",
-          "engagement": 2900,
-          "sentiment": "positive",
-          "observed_at": "2026-09-10T21:30:00Z"
-        }
-      ]
-    },
-    {
-      "id": "corn-ribs",
-      "name": "Corn ribs",
-      "aliases": [
-        "elote ribs",
-        "riblet corn"
-      ],
-      "cuisine_tags": [
-        "american",
-        "mexican",
-        "side",
-        "vegetarian"
-      ],
-      "trend_score": 47.2,
+      "trend_score": 44.9,
       "momentum": "fading",
       "metrics": {
         "window_days": 7,
-        "mention_count": 88,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 84,
-          "google_trends": 4
+          "youtube": 2
         },
-        "total_engagement": 7300,
+        "total_engagement": 48730,
         "sentiment": {
-          "positive": 0.58,
-          "negative": 0.24,
-          "neutral": 0.18
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
         },
-        "negative_theme": "Repeated complaints that cutting them is dangerous and the yield is poor.",
-        "local_mention_count": 2
+        "negative_theme": ""
       },
       "why_trending": {
-        "summary": "Past its peak and declining. Included for completeness -- the operational objection (cutting raw corn cobs lengthwise is genuinely hazardous) shows up often enough that it should factor into any feasibility decision downstream.",
+        "summary": "Lemon linguine is trending as a accessible, minimal-ingredient pasta that delivers fresh, summery flavors with just four core components. The dish appeals to home cooks seeking quick weeknight meals and has strong social validation from cooking influencers, with viewers actively customizing it by adding proteins like shrimp, haddock, and vegetables, indicating high engagement potential for menu positioning as a customizable pasta option.",
         "drivers": [
-          "Residual interest from a prior seasonal peak",
-          "Strong visual novelty",
-          "Cheap ingredient, but poor usable yield"
+          "Minimal ingredient count (four items) lowers prep complexity",
+          "Fresh lemon flavor aligns with summer dining season",
+          "Highly customizable base for protein and vegetable additions",
+          "Accessible to home cooks across age ranges"
         ],
-        "audience": "20-35, seasonal and patio dining"
+        "audience": "35-65, home cooking and summer entertaining"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example20",
-          "excerpt": "Whoever invented corn ribs has never had to prep 200 of them. Two line cooks cut themselves the first week.",
-          "engagement": 4700,
-          "sentiment": "negative",
-          "observed_at": "2026-09-08T23:10:00Z"
+          "url": "https://www.youtube.com/watch?v=R8xjCExa1WQ",
+          "excerpt": "Have These 4 Ingredients? Make This Pasta! Get a free 8-count Sample Pack of LMNT\u2019s most popular drink mix flavors with any purchase at http://drinklmnt.com/ThatDudeCanCook Find your favorite LMNT fla",
+          "observed_at": "2026-08-07T17:18:52Z",
+          "engagement": 47126,
+          "sentiment": "positive"
         },
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example21",
-          "excerpt": "Still think corn ribs are fun even if the internet has moved on.",
-          "engagement": 890,
-          "sentiment": "positive",
-          "observed_at": "2026-09-06T14:20:00Z"
+          "url": "https://www.youtube.com/watch?v=EmwR8lThRZw",
+          "excerpt": "This Lemon-y Linguine Tastes like Summer! #cooking #pasta #lemon #summer _______________________________________________________\n\nSubscribe to Tastemade: https://bit.ly/3PSFkYm\nJOIN us at Tastemade+:",
+          "observed_at": "2026-09-01T18:00:04Z",
+          "engagement": 1604,
+          "sentiment": "positive"
         }
       ]
     },
     {
-      "id": "ube-cheesecake",
-      "name": "Ube cheesecake",
-      "aliases": [
-        "ube basque cheesecake",
-        "purple yam cheesecake"
-      ],
+      "id": "apple-bear-claws",
+      "name": "Apple Bear Claws",
+      "aliases": [],
       "cuisine_tags": [
-        "filipino",
-        "dessert",
-        "bakery"
+        "American",
+        "Pastry",
+        "Dessert"
       ],
-      "trend_score": 43.5,
+      "trend_score": 44.5,
       "momentum": "steady",
       "metrics": {
         "window_days": 7,
-        "mention_count": 64,
+        "mention_count": 2,
         "by_source": {
-          "youtube": 61,
-          "google_trends": 3
+          "youtube": 2
         },
-        "total_engagement": 5400,
+        "total_engagement": 101549,
         "sentiment": {
-          "positive": 0.88,
-          "negative": 0.04,
-          "neutral": 0.08
+          "positive": 1.0,
+          "negative": 0.0,
+          "neutral": 0.0
         },
-        "negative_theme": "Very few complaints; occasional note that ube extract tastes artificial versus real ube.",
-        "local_mention_count": 5
+        "negative_theme": ""
       },
       "why_trending": {
-        "summary": "Low volume but the highest sentiment in this set -- almost nobody who mentions it dislikes it. A small, loyal signal rather than a broad one, which suits a restaurant with an existing dessert program more than one chasing reach.",
+        "summary": "Apple bear claws are trending as a home-baker-friendly pastry through NYT Cooking's September monthly bake feature, capitalizing on accessible store-bought components (puff pastry, almond flour) and make-ahead convenience. The dish appeals to home bakers seeking impressive-looking desserts that don't require advanced pastry skills, with strong engagement around the approachability and visual appeal of the final product.",
         "drivers": [
-          "Distinctive color with no artificial-looking plating required",
-          "Strong regional and diaspora following",
-          "Very low negative sentiment"
+          "NYT Cooking featuring as monthly bake with video tutorial",
+          "Make-ahead preparation (prep night before, bake morning)",
+          "Accessible ingredients (store-bought puff pastry, simple frangipane)",
+          "Resembles premium pastries but achievable at home"
         ],
-        "audience": "22-40, dessert-forward and regionally specific"
+        "audience": "35-65, home entertaining and special occasions (church breakfasts, birthdays)"
       },
       "evidence": [
         {
           "source": "youtube",
-          "url": "https://www.youtube.com/watch?v=example22",
-          "excerpt": "Ube basque cheesecake is the single best use of ube outside of halo-halo. Use real ube halaya, not extract.",
-          "engagement": 3100,
-          "sentiment": "positive",
-          "observed_at": "2026-09-11T11:45:00Z"
+          "url": "https://www.youtube.com/watch?v=TL9WQqyILY8",
+          "excerpt": "Put Your Claws Up! Vaughn Makes Apple Bear Claws | Bake Time | NYT Cooking Get the FREE recipe: https://nyti.ms/4i53U9H\nSubscribe to our Bake Time newsletter: https://nyti.ms/4nQD2tF\nSend your photos",
+          "observed_at": "2026-08-28T18:00:15Z",
+          "engagement": 84335,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=xWN5F0T1Isk",
+          "excerpt": "For September\u2019s Monthly Bake, Vaughn shows us how to make his apple-y twist on bear claws \ud83c\udf4e\ud83d\udc3b Download the Cooking app for daily dinner picks, helpful tools, and even more videos: https://apps.apple.co",
+          "observed_at": "2026-08-28T18:17:24Z",
+          "engagement": 17214,
+          "sentiment": "positive"
+        }
+      ]
+    },
+    {
+      "id": "chiles-rellenos",
+      "name": "Chiles Rellenos",
+      "aliases": [
+        "Chili Relleno Casserole"
+      ],
+      "cuisine_tags": [
+        "Mexican"
+      ],
+      "trend_score": 44.4,
+      "momentum": "steady",
+      "metrics": {
+        "window_days": 7,
+        "mention_count": 2,
+        "by_source": {
+          "youtube": 2
+        },
+        "total_engagement": 87913,
+        "sentiment": {
+          "positive": 0.5,
+          "negative": 0.0,
+          "neutral": 0.5
+        },
+        "negative_theme": ""
+      },
+      "why_trending": {
+        "summary": "Chiles rellenos are experiencing a viral moment driven by simplified, accessible recipes from creators like Cooking Con Claudia who make traditional Mexican dishes approachable for home cooks. The trend suggests strong appeal for comfort-focused dining, with particular momentum around casserole variations and seasonal hatch chile versions that emphasize ingredient quality and ease of preparation.",
+        "drivers": [
+          "Simplified recipe formats removing traditional complexity",
+          "Viral creator content (Cooking Con Claudia)",
+          "Seasonal hatch chile availability",
+          "Comfort food and cheese-forward appeal"
+        ],
+        "audience": "25-45, home cooking and casual family dining"
+      },
+      "evidence": [
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=5P7POyWrUFc",
+          "excerpt": "Chili Relleno Casserole \ud83e\udd24 \ud83c\udfa5: KarinaValladares I'll take the whole thing. Please and thank you. \n#duet #chef #chefreactions #reactions #recipe #food",
+          "observed_at": "2026-08-18T23:18:51Z",
+          "engagement": 85246,
+          "sentiment": "positive"
+        },
+        {
+          "source": "youtube",
+          "url": "https://www.youtube.com/watch?v=pJlCiVlR_fI",
+          "excerpt": "Chiles Rellenos The chiles rellenos obsession is very real, and now that I can make them at home, there\u2019s no limit to how many I\u2019ll eat \ud83d\udc40\n\nFind the full recipe on the Delish app or at our link in bio!",
+          "observed_at": "2026-09-08T21:01:36Z",
+          "engagement": 2667,
+          "sentiment": "neutral"
         }
       ]
     }
-  ],
-  "market": {
-    "city": "Houston",
-    "trends_geo": "US-TX-618"
-  }
+  ]
 }

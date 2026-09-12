@@ -60,6 +60,13 @@ class Post:
     # "local"    = the client's city, the scarcest and most decision-relevant.
     # A dish appearing across tiers is the strongest signal in the pipeline.
     scope: Literal["national", "regional", "local"] = "national"
+    # Virality signals -- see ingestion/virality.py. breakout_ratio is views
+    # against the channel's own median, which separates "this dish went viral"
+    # from "a huge channel posted something".
+    breakout_ratio: float | None = None
+    views_per_day: int | None = None
+    is_viral: bool = False
+    trend_marker: bool = False
 
 
 # --------------------------------------------------------------------------
@@ -85,12 +92,6 @@ class Metrics:
     total_engagement: int
     sentiment: dict[str, float]
     negative_theme: str = ""
-    # How much of the conversation is in the client's own market. A dish
-    # trending nationally with zero local mentions is either an early opening
-    # or a poor fit for local taste, and the owner is far better placed to
-    # judge which than the pipeline is -- so surface the number, don't bury it
-    # in the score.
-    local_mention_count: int = 0
 
 
 @dataclass
@@ -140,7 +141,7 @@ def build_output(
     if fixture:
         out["_meta"] = {
             "fixture": True,
-            "note": "Generated from committed fixtures, not a live pull.",
+            "note": "Generated from cached source data, not a live pull.",
             "schema_version": SCHEMA_VERSION,
         }
     else:
