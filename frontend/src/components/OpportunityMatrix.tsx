@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -246,6 +247,7 @@ export default function OpportunityMatrix({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<"run" | "pass" | null>(null);
   const [showProposeModal, setShowProposeModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [customDishName, setCustomDishName] = useState("");
   const [customMenuPairing, setCustomMenuPairing] = useState("");
   const [customPrice, setCustomPrice] = useState("14.50");
@@ -268,6 +270,7 @@ export default function OpportunityMatrix({
   const trendKey = trendingDishes.map((dish) => dish.id).join("|");
 
   useEffect(() => {
+    setMounted(true);
     let cancelled = false;
     void load()
       .then((rows) => {
@@ -1053,13 +1056,18 @@ export default function OpportunityMatrix({
       )}
 
       {/* PROPOSE CUSTOM DISH MODAL */}
-      {showProposeModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+      {showProposeModal && mounted && createPortal(
+        <div
+          className="fixed inset-0 z-[999] bg-neutral-950/40 backdrop-blur-md flex items-center justify-center p-4 transition-all"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowProposeModal(false);
+          }}
+        >
           <form
             onSubmit={handleProposeCustom}
-            className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white p-6 space-y-4 shadow-2xl font-sans"
+            className="w-full max-w-lg rounded-2xl bg-white p-6 space-y-4 shadow-2xl font-sans border-0"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+            <div className="flex items-center justify-between pb-1">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">Propose New Dish Candidate</h3>
                 <p className="text-xs text-neutral-500 mt-0.5">
@@ -1084,7 +1092,7 @@ export default function OpportunityMatrix({
                   placeholder="e.g. Birria Smash Tacos"
                   value={customDishName}
                   onChange={(e) => setCustomDishName(e.target.value)}
-                  className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF]"
+                  className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF]"
                 />
               </div>
 
@@ -1095,7 +1103,7 @@ export default function OpportunityMatrix({
                   placeholder="e.g. Classic Cheeseburger, Loaded Waffle Fries"
                   value={customMenuPairing}
                   onChange={(e) => setCustomMenuPairing(e.target.value)}
-                  className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF]"
+                  className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF]"
                 />
               </div>
 
@@ -1108,7 +1116,7 @@ export default function OpportunityMatrix({
                     required
                     value={customPrice}
                     onChange={(e) => setCustomPrice(e.target.value)}
-                    className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF] tabular-nums"
+                    className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF] tabular-nums"
                   />
                 </div>
                 <div>
@@ -1119,7 +1127,7 @@ export default function OpportunityMatrix({
                     required
                     value={customCost}
                     onChange={(e) => setCustomCost(e.target.value)}
-                    className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF] tabular-nums"
+                    className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF] tabular-nums"
                   />
                 </div>
               </div>
@@ -1131,7 +1139,7 @@ export default function OpportunityMatrix({
                   placeholder="e.g. corn tortillas, guajillo chiles, cilantro"
                   value={customMissing}
                   onChange={(e) => setCustomMissing(e.target.value)}
-                  className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF]"
+                  className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF]"
                 />
               </div>
 
@@ -1142,12 +1150,12 @@ export default function OpportunityMatrix({
                   placeholder="Why run this special now? Prep complexity, line speed, or customer demand."
                   value={customRationale}
                   onChange={(e) => setCustomRationale(e.target.value)}
-                  className="w-full rounded-[4px] border border-neutral-300 p-2 text-neutral-950 outline-none focus:border-[#0047FF]"
+                  className="w-full bg-white rounded-[4px] border border-neutral-300 p-2 text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-[#0047FF] focus:ring-1 focus:ring-[#0047FF]"
                 />
               </div>
             </div>
 
-            <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2">
+            <div className="pt-3 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowProposeModal(false)}
@@ -1163,7 +1171,8 @@ export default function OpportunityMatrix({
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
