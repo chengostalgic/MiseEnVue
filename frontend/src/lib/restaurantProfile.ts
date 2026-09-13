@@ -1,4 +1,7 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { timezoneForState } from "@/lib/restaurantTimezone";
+
+export { timezoneForState };
 
 const LOCAL_PROFILE_KEY = "miseenvue.kitchen-profile";
 
@@ -66,26 +69,6 @@ type KitchenInput = {
   goal: string;
 };
 
-export function timezoneForState(state: string) {
-  switch ((state || "").toUpperCase()) {
-    case "NY":
-    case "NJ":
-    case "MA":
-    case "PA":
-    case "FL":
-    case "GA":
-      return "America/New_York";
-    case "CO":
-    case "AZ":
-      return "America/Denver";
-    case "CA":
-    case "WA":
-    case "OR":
-      return "America/Los_Angeles";
-    default:
-      return "America/Chicago";
-  }
-}
 
 export function isProfileComplete(row: RestaurantProfile | null | undefined): row is RestaurantProfile {
   if (!row) return false;
@@ -122,10 +105,15 @@ export function explainKitchenError(error: { code?: string; message?: string; de
   if (/JWT|expired|session|not authenticated|Auth/i.test(blob)) {
     return "Please sign in again.";
   }
-  if (/PGRST204|schema cache|column/i.test(blob)) {
-    return "The local database is missing a field. In the backend folder run: supabase db reset";
+  if (/row-level security|42501|permission denied|not allowed/i.test(blob)) {
+    return "This login cannot write that kitchen. Sign out and sign in with the account that owns it.";
   }
-  return "Could not save. Sign out, sign in, and try once more.";
+  if (/PGRST204|schema cache|column/i.test(blob)) {
+    return "The database is missing a kitchen field. Save again — we will write only the fields that exist.";
+  }
+  const trimmed = blob.replace(/\s+/g, " ").trim();
+  if (trimmed && !/Could not save/i.test(trimmed)) return trimmed.slice(0, 220);
+  return "Could not save the kitchen. Sign out, sign in, and try once more.";
 }
 
 function profileFromInput(input: KitchenInput, id: string): RestaurantProfile {
@@ -250,82 +238,27 @@ export async function saveRestaurantProfile(input: KitchenInput) {
   if (!isSupabaseConfigured()) return saveLocalProfile(input);
 
   const supabase = getSupabaseClient();
-  const { data: auth, error: authError } = await supabase.auth.getUser();
-  if (authError || !auth.user) {
-    throw new Error("Please sign in again.");
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  const userId = sessionData.session?.user.id;
+  if (!token) throw new Error("Please sign in again.");
+
+  const response = await fetch("/api/kitchen", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { kitchen?: RestaurantProfile | null; error?: string }
+    | null;
+
+  if (!response.ok || !payload?.kitchen) {
+    throw new Error(payload?.error || "Could not save the kitchen. Sign out, sign in, and try once more.");
   }
 
-  const cuisine = input.cuisine.trim();
-  const neighborhood = input.neighborhood.trim() || input.city.trim();
-  const row = {
-    owner_id: auth.user.id,
-    name: input.name.trim(),
-    city: input.city.trim(),
-    state: input.state.trim().toUpperCase(),
-    neighborhood,
-    cuisine_type: cuisine,
-    pride_in: cuisine,
-    price_band: input.priceBand,
-    service_occasions: input.occasions,
-    never_serve: null as string | null,
-    restaurant_type: "casual_dining",
-    primary_goal: input.goal,
-    experiment_budget: null as number | null,
-    max_new_ingredients: 3,
-    timezone: timezoneForState(input.state),
-    profile_completed_at: new Date().toISOString(),
-  };
-
-  const existing = await supabase.from("restaurants").select("id").eq("owner_id", auth.user.id).limit(1).maybeSingle();
-  if (existing.error && !/PGRST116/.test(existing.error.message)) {
-    // keep going — insert/update below will surface a clearer error
-  }
-
-  const kitchenId = existing.data?.id ?? null;
-  const write = (
-    fields: typeof row | Omit<typeof row, "restaurant_type" | "primary_goal" | "experiment_budget" | "max_new_ingredients">,
-    columns = "id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve",
-  ) => {
-    if (kitchenId) {
-      const { owner_id: _owner, ...update } = fields;
-      return supabase.from("restaurants").update(update).eq("id", kitchenId).select(columns).maybeSingle();
-    }
-    return supabase.from("restaurants").insert(fields).select(columns).maybeSingle();
-  };
-
-  let result = await write(row);
-
-  if (result.error && /column|schema cache|PGRST204|restaurant_type|primary_goal|experiment_budget|max_new_ingredients/i.test(result.error.message)) {
-    const { restaurant_type: _t, primary_goal: _g, experiment_budget: _b, max_new_ingredients: _m, ...core } = row;
-    result = await write(core);
-  }
-
-  if (result.error && /409|duplicate|conflict|23505/i.test(`${result.error.code} ${result.error.message}`)) {
-    const again = await supabase.from("restaurants").select("id").eq("owner_id", auth.user.id).limit(1).maybeSingle();
-    if (again.data?.id) {
-      const { owner_id: _owner, ...updateFields } = row;
-      let update = await supabase.from("restaurants").update(updateFields).eq("id", again.data.id).select(PROFILE_SELECT).maybeSingle();
-      if (update.error && /column|schema cache|PGRST204/i.test(update.error.message)) {
-        update = await supabase
-          .from("restaurants")
-          .update(updateFields)
-          .eq("id", again.data.id)
-          .select("id, name, city, state, neighborhood, cuisine_type")
-          .maybeSingle();
-      }
-      if (update.error) throw new Error(explainKitchenError(update.error));
-      if (!update.data) throw new Error("Updated, but we could not read the kitchen back. Refresh the page.");
-      return update.data as RestaurantProfile;
-    }
-  }
-
-  if (result.error && /column|schema cache|PGRST204/i.test(result.error.message || "")) {
-    result = await write(row, "id, name, city, state, neighborhood, cuisine_type");
-  }
-
-  if (result.error) throw new Error(explainKitchenError(result.error));
-
-  const saved = (result.data as RestaurantProfile | null) ?? profileFromInput(input, kitchenId ?? "res-local");
-  cacheLocalProfile(saved, auth.user.id);
-  return saved;
+  cacheLocalProfile(payload.kitchen, userId);
+  return payload.kitchen;
 }

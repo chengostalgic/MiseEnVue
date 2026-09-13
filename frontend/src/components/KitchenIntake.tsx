@@ -63,7 +63,7 @@ export default function KitchenIntake({
       });
       onSaved(row);
     } catch (err) {
-      setError(explainKitchenError(err));
+      setError(err instanceof Error && err.message.trim() ? err.message : explainKitchenError(err));
     } finally {
       setLoading(false);
     }
