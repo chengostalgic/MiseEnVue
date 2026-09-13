@@ -10,10 +10,28 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [restaurantCity, setRestaurantCity] = useState<string | null>(null);
-  const [checking, setChecking] = useState(isSupabaseConfigured());
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
+      // Local development fallback: automatically provide demo session so user can test locally
+      setSession({
+        access_token: "local-demo-token",
+        token_type: "bearer",
+        expires_in: 3600,
+        refresh_token: "local-demo-refresh",
+        user: {
+          id: "demo-operator-01",
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          email: "owner@miseenvue.test",
+        },
+      });
+      setRestaurantName(null);
+      setRestaurantCity(null);
+      setChecking(false);
       return;
     }
 

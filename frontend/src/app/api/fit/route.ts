@@ -13,18 +13,26 @@ export async function POST(req: NextRequest) {
     }
 
     const dishIngredientsMap: Record<string, string[]> = {
-      falafel: ["chickpeas", "herbs", "garlic", "pita", "tahini", "oil", "greens"],
-      feta: ["feta", "honey", "chili", "pistachio", "pita", "olive oil", "thyme"],
-      wings: ["wings", "chicken", "honey", "chili crisp", "garlic", "butter", "oil"],
-      burger: ["ground beef", "buns", "cheese", "onions", "pickles", "sauce"],
-      matcha: ["matcha", "milk", "oat milk", "vanilla", "ice", "honey", "syrup"],
-      honey: ["chicken", "honey", "bun", "pickles", "chili"],
+      wings: ["chicken wings", "honey", "chili crisp", "butter", "all-purpose flour"],
+      honey: ["chicken wings", "honey", "chili crisp", "butter"],
+      birria: ["smoked brisket", "cheddar cheese", "pickles", "hot sauce", "waffle fries"],
+      cucumber: ["kale", "pickles", "honey", "hot sauce"],
+      cookie: ["all-purpose flour", "butter", "chocolate chips", "honey"],
+      kunafa: ["butter", "chocolate chips", "honey", "pistachio"],
+      mala: ["chicken thigh", "brioche bun", "buttermilk", "all-purpose flour", "hot sauce"],
+      ricotta: ["brioche bun", "honey", "butter", "kale"],
+      fish: ["pickles", "brioche bun", "butter"],
+      corn: ["sweet corn", "cotija cheese", "butter", "hot sauce"],
+      cheesecake: ["cheddar cheese", "butter", "chocolate chips", "honey"],
+      falafel: ["chickpeas", "herbs", "garlic", "pita", "tahini"],
+      burger: ["ground beef", "brioche bun", "cheddar cheese", "pickles"],
+      matcha: ["matcha powder", "oat milk", "honey", "cold brew concentrate"],
     };
 
     const dishKey =
       Object.keys(dishIngredientsMap).find((key) =>
         trendingDish.name?.toLowerCase().includes(key),
-      ) || "falafel";
+      ) || "wings";
 
     const requiredIngredients = dishIngredientsMap[dishKey];
     const inventoryText = inventoryItems

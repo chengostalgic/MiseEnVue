@@ -145,6 +145,9 @@ export async function GET(_req: NextRequest) {
         source: e.source || "web",
         display_value: e.engagement ? `${(e.engagement / 1000).toFixed(1)}k engagement` : "+42% spike",
         description: e.excerpt || e.description || "Social media trend velocity signal",
+        sentiment: e.sentiment || "neutral",
+        engagement: e.engagement != null ? Number(e.engagement) : null,
+        url: e.url || null,
       }));
 
       if (evidenceList.length === 0) {
