@@ -17,18 +17,30 @@ function isPlaceholder(value: string) {
   return /replace-with|your-publishable|changeme/i.test(value);
 }
 
+export function isLocalApp() {
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1"].includes(window.location.hostname);
+}
+
+function supabaseUrlIsLocal(url: string) {
+  return /127\.0\.0\.1|localhost/.test(url);
+}
+
 export function isSupabaseConfigured() {
   const url = getSupabaseUrl();
   const key = getSupabaseKey();
   if (!url || !key || isPlaceholder(url) || isPlaceholder(key)) return false;
 
-  if (typeof window !== "undefined") {
-    const appIsLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-    const supabaseIsLocal = /127\.0\.0\.1|localhost/.test(url);
-    if (supabaseIsLocal && !appIsLocal) return false;
+  if (supabaseUrlIsLocal(url)) {
+    if (process.env.VERCEL) return false;
+    if (typeof window !== "undefined" && !isLocalApp()) return false;
   }
 
   return true;
+}
+
+export function isLocalDemo() {
+  return isLocalApp() && !isSupabaseConfigured();
 }
 
 let client: SupabaseClient<Database> | undefined;

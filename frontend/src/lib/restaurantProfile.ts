@@ -89,14 +89,7 @@ export function timezoneForState(state: string) {
 
 export function isProfileComplete(row: RestaurantProfile | null | undefined): row is RestaurantProfile {
   if (!row) return false;
-  return Boolean(
-    row.profile_completed_at &&
-      row.name?.trim() &&
-      row.city?.trim() &&
-      row.cuisine_type?.trim() &&
-      row.price_band &&
-      (row.service_occasions?.length ?? 0) > 0,
-  );
+  return Boolean(row.name?.trim() && row.city?.trim() && row.cuisine_type?.trim());
 }
 
 export function explainKitchenError(error: { code?: string; message?: string; details?: string } | Error | unknown) {
@@ -161,16 +154,27 @@ export async function loadRestaurantProfile() {
   if (!isSupabaseConfigured()) return loadLocalProfile();
 
   const supabase = getSupabaseClient();
-  const result = await supabase.from("restaurants").select(PROFILE_SELECT).limit(1).maybeSingle();
-  if (!result.error) return (result.data as RestaurantProfile | null) ?? null;
+  const selects = [
+    PROFILE_SELECT,
+    "id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve, profile_completed_at",
+    "id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve",
+    "id, name, city, state, neighborhood, cuisine_type",
+  ];
 
-  const fallback = await supabase
-    .from("restaurants")
-    .select("id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve, profile_completed_at")
-    .limit(1)
-    .maybeSingle();
-  if (fallback.error) throw fallback.error;
-  return (fallback.data as RestaurantProfile | null) ?? null;
+  let lastError: { message?: string } | null = null;
+  for (const columns of selects) {
+    const result = await supabase.from("restaurants").select(columns).limit(1).maybeSingle();
+    if (!result.error) return (result.data as RestaurantProfile | null) ?? null;
+    lastError = result.error;
+    if (!/PGRST204|schema cache|column|does not exist/i.test(result.error.message || "")) {
+      break;
+    }
+  }
+
+  if (lastError && /JWT|expired|not authenticated|Auth session/i.test(lastError.message || "")) {
+    throw new Error("Please sign in again.");
+  }
+  return null;
 }
 
 export async function saveRestaurantProfile(input: KitchenInput) {
@@ -209,12 +213,15 @@ export async function saveRestaurantProfile(input: KitchenInput) {
   }
 
   const kitchenId = existing.data?.id ?? null;
-  const write = (fields: typeof row | Omit<typeof row, "restaurant_type" | "primary_goal" | "experiment_budget" | "max_new_ingredients">) => {
+  const write = (
+    fields: typeof row | Omit<typeof row, "restaurant_type" | "primary_goal" | "experiment_budget" | "max_new_ingredients">,
+    columns = "id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve",
+  ) => {
     if (kitchenId) {
       const { owner_id: _owner, ...update } = fields;
-      return supabase.from("restaurants").update(update).eq("id", kitchenId).select(PROFILE_SELECT).maybeSingle();
+      return supabase.from("restaurants").update(update).eq("id", kitchenId).select(columns).maybeSingle();
     }
-    return supabase.from("restaurants").insert(fields).select(PROFILE_SELECT).maybeSingle();
+    return supabase.from("restaurants").insert(fields).select(columns).maybeSingle();
   };
 
   let result = await write(row);
@@ -228,11 +235,23 @@ export async function saveRestaurantProfile(input: KitchenInput) {
     const again = await supabase.from("restaurants").select("id").eq("owner_id", auth.user.id).limit(1).maybeSingle();
     if (again.data?.id) {
       const { owner_id: _owner, ...updateFields } = row;
-      const update = await supabase.from("restaurants").update(updateFields).eq("id", again.data.id).select(PROFILE_SELECT).maybeSingle();
+      let update = await supabase.from("restaurants").update(updateFields).eq("id", again.data.id).select(PROFILE_SELECT).maybeSingle();
+      if (update.error && /column|schema cache|PGRST204/i.test(update.error.message)) {
+        update = await supabase
+          .from("restaurants")
+          .update(updateFields)
+          .eq("id", again.data.id)
+          .select("id, name, city, state, neighborhood, cuisine_type")
+          .maybeSingle();
+      }
       if (update.error) throw new Error(explainKitchenError(update.error));
       if (!update.data) throw new Error("Updated, but we could not read the kitchen back. Refresh the page.");
       return update.data as RestaurantProfile;
     }
+  }
+
+  if (result.error && /column|schema cache|PGRST204/i.test(result.error.message || "")) {
+    result = await write(row, "id, name, city, state, neighborhood, cuisine_type");
   }
 
   if (result.error) throw new Error(explainKitchenError(result.error));
