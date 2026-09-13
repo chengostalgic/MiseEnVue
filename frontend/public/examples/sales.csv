@@ -1,0 +1,13 @@
+menu_item,sold_at,quantity,revenue,channel
+Crispy Chicken Sandwich,2026-09-10T12:15:00-05:00,26,351.00,in_store
+Crispy Chicken Sandwich,2026-09-10T18:40:00-05:00,29,391.50,in_store
+Nashville Hot Chicken Sandwich,2026-09-10T12:10:00-05:00,13,185.25,online
+Nashville Hot Chicken Sandwich,2026-09-10T18:20:00-05:00,19,270.75,in_store
+Smoked Brisket Sandwich,2026-09-10T12:20:00-05:00,7,112.00,online
+Smoked Brisket Sandwich,2026-09-10T19:05:00-05:00,9,144.00,in_store
+Buffalo Wings (8 pc),2026-09-10T18:10:00-05:00,14,182.00,in_store
+Street Corn Elote Cup,2026-09-11T12:00:00-05:00,8,52.00,doordash
+Matcha Latte,2026-09-11T11:30:00-05:00,12,69.00,in_store
+Horchata Cold Brew,2026-09-11T16:45:00-05:00,7,36.75,in_store
+Loaded Waffle Fries,2026-09-11T18:15:00-05:00,21,173.25,in_store
+Brown Butter Chocolate Chip Cookie,2026-09-11T20:00:00-05:00,16,60.00,in_store

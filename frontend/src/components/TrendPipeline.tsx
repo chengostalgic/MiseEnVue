@@ -28,6 +28,13 @@ import {
 } from "lucide-react";
 import type { ScrapedDish } from "@/lib/contractTypes";
 import { compactNumber } from "@/lib/format";
+import {
+  enqueueGeneration,
+  jobBusy,
+  setAnalysis,
+  setPlaybook,
+  useGenerationJobs,
+} from "@/lib/generationJobs";
 
 type Engine = "gemini" | "backboard";
 
@@ -154,29 +161,43 @@ export default function TrendPipeline({
   dishes,
   selectedDish,
   scrapeMeta,
+  restaurantCity,
+  cuisine,
   onSelectDish,
   onUseInKitchen,
   onNavigateToCampaign,
   onNavigateToDiscover,
+  onRefresh,
   activeMode = "discover",
 }: {
   dishes: ScrapedDish[];
   selectedDish: ScrapedDish | null;
-  scrapeMeta: { fixture?: boolean; sourcesUsed?: string[] };
+  scrapeMeta: {
+    fixture?: boolean;
+    source?: string;
+    cuisine?: string | null;
+    queries?: string[];
+    sourcesUsed?: string[];
+    market?: { city?: string; county?: string; region_name?: string; state?: string };
+  };
+  restaurantCity?: string | null;
+  cuisine?: string | null;
   onSelectDish: (dish: ScrapedDish) => void;
   onUseInKitchen: () => void;
   onNavigateToCampaign?: () => void;
   onNavigateToDiscover?: () => void;
+  onRefresh?: () => void;
   activeMode?: "discover" | "campaign";
 }) {
+  const generation = useGenerationJobs();
   const [engine, setEngine] = useState<Engine>("gemini");
   const [customKey, setCustomKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [analysisMap, setAnalysisMap] = useState<Record<string, string>>({});
-  const [playbookMap, setPlaybookMap] = useState<Record<string, string>>({});
+  const isAnalyzing = jobBusy("analyze", generation);
+  const isGenerating = jobBusy("campaign", generation);
+  const analysisMap = generation.analyses;
+  const playbookMap = generation.playbooks;
   const [enrichedSignalsMap, setEnrichedSignalsMap] = useState<Record<string, any[]>>({});
   const [enrichNotice, setEnrichNotice] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -232,7 +253,7 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
 #### 4. Local Foodie Influencer DM Pitch
 • "${editDmPitch}"
 `;
-    setPlaybookMap((prev) => ({ ...prev, [topic]: updated }));
+    setPlaybook(topic, updated);
     setCampaignViewMode("cards");
   }
 
@@ -294,17 +315,18 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
     }
   }
 
-  async function runAnalysis() {
+  function runAnalysis() {
     if (!selectedDish) return;
-    setIsAnalyzing(true);
-    try {
+    const dish = selectedDish;
+    const dishTopic = dish.name;
+    enqueueGeneration("analyze", async () => {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic,
-          signals: (selectedDish.evidence || []).map((item, index) => ({
-            id: `${selectedDish.id}-${index}`,
+          topic: dishTopic,
+          signals: (dish.evidence || []).map((item, index) => ({
+            id: `${dish.id}-${index}`,
             platform: item.source,
             caption: item.excerpt,
             views: item.engagement || 0,
@@ -314,37 +336,32 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setAnalysisMap((prev) => ({ ...prev, [topic]: data.analysisText }));
-      }
-    } finally {
-      setIsAnalyzing(false);
-    }
+      if (!data.success) throw new Error(data.error || "Analyze failed");
+      setAnalysis(dishTopic, data.analysisText);
+    });
   }
 
-  async function generateCampaign() {
-    setIsGenerating(true);
-    try {
+  function generateCampaign() {
+    const dishTopic = topic;
+    const analysisText =
+      currentAnalysis ||
+      `Demand for ${dishTopic} is surging across social channels with high viral engagement. Feasible on existing line with minimal ingredient expansion.`;
+    enqueueGeneration("campaign", async () => {
       const res = await fetch("/api/campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic,
-          analysisText:
-            currentAnalysis ||
-            `Demand for ${topic} is surging across social channels with high viral engagement. Feasible on existing line with minimal ingredient expansion.`,
+          topic: dishTopic,
+          analysisText,
           engine,
           apiKey: customKey || undefined,
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setPlaybookMap((prev) => ({ ...prev, [topic]: data.playbookText }));
-      }
+      if (!data.success) throw new Error(data.error || "Campaign failed");
+      setPlaybook(dishTopic, data.playbookText);
       onNavigateToCampaign?.();
-    } finally {
-      setIsGenerating(false);
-    }
+    });
   }
 
   function downloadReport() {
@@ -405,13 +422,25 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                 What’s moving this week
               </h2>
               <p className="text-xs text-neutral-500 mt-1 max-w-2xl font-light">
-                Ranked from YouTube, TikTok, and Google Trends. Select a dish to inspect scrape evidence, run kitchen margin analysis, or deploy a 4-channel viral launch playbook.
-                {scrapeMeta.fixture ? " (Currently showing sample contract fixture)" : ""}
+                {[cuisine || scrapeMeta.cuisine, scrapeMeta.market?.city || restaurantCity].filter(Boolean).join(" · ") ||
+                  "Ranked from live YouTube and kitchen scrape."}
+                {scrapeMeta.source === "live" ? " · Live pull" : ""}
+                {scrapeMeta.fixture ? " · Sample fixture" : ""}
               </p>
             </div>
 
             {/* Action Controls */}
             <div className="flex items-center gap-2 self-start md:self-end">
+              {onRefresh ? (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  className="border border-neutral-300 rounded-[4px] px-3 py-1.5 text-xs text-neutral-900 bg-white hover:bg-neutral-50 transition shadow-2xs font-sans inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-[#0047FF]" />
+                  <span>Refresh scrape</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void enrichLive()}
@@ -429,8 +458,21 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                 className="rounded-[4px] bg-[#0047FF] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#0038df] transition shadow-xs flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{isAnalyzing ? "Analyzing…" : "Run Analysis"}</span>
+                <span>
+                  {generation.jobs.analyze.status === "queued"
+                    ? "Queued…"
+                    : isAnalyzing
+                      ? "Analyzing…"
+                      : "Run Analysis"}
+                </span>
               </button>
+              {generation.jobs.analyze.status === "queued" || generation.jobs.analyze.status === "running" ? (
+                <span className="text-[11px] text-[#0047FF]">
+                  {generation.jobs.analyze.status === "queued"
+                    ? "Queued — leave anytime, the write-up stays."
+                    : "Running — leave anytime, the write-up stays."}
+                </span>
+              ) : null}
 
               <button
                 type="button"
@@ -477,36 +519,38 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                 )}
                 {filteredDishes.map((dish, index) => {
                   const active = selectedDish?.id === dish.id;
+                  const thumb = dish.evidence?.find((item) => item.image)?.image;
                   return (
                     <button
                       key={dish.id}
                       type="button"
                       onClick={() => onSelectDish(dish)}
-                      className={`w-full text-left px-4 py-3.5 transition flex flex-col gap-1 ${
+                      className={`w-full text-left px-3 py-3 transition ${
                         active
                           ? "bg-blue-50/50 border-l-2 border-l-[#0047FF] text-neutral-950"
                           : "hover:bg-neutral-50/80 text-neutral-700"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-sans text-neutral-400 tabular-nums">
-                          #{String(index + 1).padStart(2, "0")}
-                        </span>
-                        <span className="text-xs font-sans font-semibold text-[#0047FF] tabular-nums">
-                          Score {dish.trend_score.toFixed(0)}
-                        </span>
-                      </div>
-                      <div className="text-sm font-medium text-neutral-950 truncate">
-                        {dish.name}
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] font-sans text-neutral-500">
-                        <span className="capitalize">{dish.momentum}</span>
-                        {dish.metrics?.mention_count != null && (
-                          <>
-                            <span>·</span>
-                            <span className="tabular-nums">{dish.metrics.mention_count} mentions</span>
-                          </>
-                        )}
+                      <div className="flex gap-3">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="w-[72px] h-[54px] rounded-md object-cover bg-neutral-100 shrink-0" />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-sans text-neutral-400 tabular-nums">
+                              #{String(index + 1).padStart(2, "0")}
+                            </span>
+                            <span className="text-xs font-sans font-semibold text-[#0047FF] tabular-nums">
+                              {dish.trend_score.toFixed(0)}
+                            </span>
+                          </div>
+                          <div className="text-sm font-medium text-neutral-950 leading-snug">
+                            {dish.name}
+                          </div>
+                          {dish.description ? (
+                            <p className="text-[11px] text-neutral-500 leading-snug line-clamp-2 mt-1">{dish.description}</p>
+                          ) : null}
+                        </div>
                       </div>
                     </button>
                   );
@@ -537,7 +581,13 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                       className="rounded-[4px] bg-[#0047FF] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#0038df] transition shadow-xs flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>{isGenerating ? "Generating…" : "Generate Launch Campaign →"}</span>
+                      <span>
+                        {generation.jobs.campaign.status === "queued"
+                          ? "Queued…"
+                          : isGenerating
+                            ? "Generating…"
+                            : "Generate Launch Campaign →"}
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -562,12 +612,49 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                     {enrichError}
                   </div>
                 )}
+                {generation.jobs.analyze.error ? (
+                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 font-sans">
+                    {generation.jobs.analyze.error}
+                  </div>
+                ) : null}
+                {generation.jobs.campaign.error ? (
+                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 font-sans">
+                    {generation.jobs.campaign.error}
+                  </div>
+                ) : null}
 
-                {selectedDish.why_trending?.summary && (
+                {(selectedDish.description || selectedDish.why_trending?.summary) && (
                   <p className="text-sm text-neutral-600 leading-relaxed font-light">
-                    {selectedDish.why_trending.summary}
+                    {selectedDish.description || selectedDish.why_trending?.summary}
                   </p>
                 )}
+
+                {selectedDish.recipe &&
+                (selectedDish.recipe.ingredients.length || selectedDish.recipe.method.length) ? (
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-4">
+                    <div className="text-[11px] font-sans uppercase tracking-wider text-neutral-400">Recipe</div>
+                    {selectedDish.recipe.ingredients.length ? (
+                      <div>
+                        <div className="text-xs text-neutral-500 mb-2">Ingredients</div>
+                        <ul className="space-y-1 text-sm text-neutral-800">
+                          {selectedDish.recipe.ingredients.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {selectedDish.recipe.method.length ? (
+                      <div>
+                        <div className="text-xs text-neutral-500 mb-2">Method</div>
+                        <ol className="space-y-1.5 text-sm text-neutral-800 list-decimal pl-4">
+                          {selectedDish.recipe.method.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {/* 4 Micro Metric Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -687,6 +774,13 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
               <p className="text-xs text-neutral-500 mt-1 max-w-2xl font-light">
                 High-velocity creative playbooks formatted for TikTok <span className="text-[#0047FF] font-semibold tabular-nums">9s</span> fast cuts, Instagram ASMR hooks, hyper-local Facebook ads, and VIP influencer outreach.
               </p>
+              {generation.jobs.campaign.status === "queued" ? (
+                <p className="text-xs text-[#0047FF] mt-2">Campaign is queued. You can leave this tab — the playbook will be here when it finishes.</p>
+              ) : generation.jobs.campaign.status === "running" ? (
+                <p className="text-xs text-[#0047FF] mt-2">Writing the playbook. You can leave this tab and come back for the output.</p>
+              ) : generation.jobs.campaign.error ? (
+                <p className="text-xs text-rose-600 mt-2">{generation.jobs.campaign.error}</p>
+              ) : null}
             </div>
 
             {/* Action Buttons Toolbar */}
@@ -803,7 +897,13 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
                 className="rounded-[4px] bg-[#0047FF] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#0038df] transition shadow-xs flex items-center gap-1.5"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? "animate-spin" : ""}`} />
-                <span>{isGenerating ? "Generating…" : "Regenerate"}</span>
+                <span>
+                  {generation.jobs.campaign.status === "queued"
+                    ? "Queued…"
+                    : isGenerating
+                      ? "Generating…"
+                      : "Regenerate"}
+                </span>
               </button>
             </div>
           </div>

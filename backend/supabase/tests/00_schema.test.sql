@@ -18,8 +18,9 @@ select tables_are('public', array[
   'menu_items', 'ingredients', 'menu_item_ingredients', 'inventory_counts', 'sales', 'uploads',
   'ingest_runs', 'raw_signals', 'trends', 'trend_signals',
   'opportunities', 'opportunity_evidence',
-  'campaigns', 'campaign_assets', 'experiments', 'experiment_results'
-], 'the 17 tables from schema.md §9 exist, and nothing else');
+  'campaigns', 'campaign_assets', 'experiments', 'experiment_results',
+  'kitchen_collection'
+], 'the schema.md tables plus kitchen_collection exist, and nothing else');
 
 select views_are('public', array[
   'current_inventory', 'menu_item_daily_sales', 'menu_item_baselines'
@@ -115,6 +116,8 @@ select has_index('public', 'raw_signals', 'raw_signals_unprocessed_idx',
   'the ingestion backlog has its partial index -- this is the queue');
 select has_index('public', 'menu_items', 'menu_items_name_key',
   'the lowered-name unique index that makes menu CSV upserts safe exists');
+select has_index('public', 'restaurants', 'restaurants_owner_key',
+  'one kitchen per account so the intake form updates instead of inserting again');
 
 select is(
   (select indnullsnotdistinct from pg_index where indexrelid = 'opportunities_unique_pairing'::regclass),

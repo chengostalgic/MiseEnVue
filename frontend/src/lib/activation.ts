@@ -1,32 +1,53 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import type { OpportunityCard, OpportunityRun, OpportunityStatus } from "@/lib/opportunities";
 
+function dishNameKey(name: string) {
+  return `name:${name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}`;
+}
+
+export function rememberBoardCard(card: OpportunityCard) {
+  if (typeof window === "undefined") return;
+  try {
+    const key = "miseenvue_opportunity_board";
+    const board = JSON.parse(localStorage.getItem(key) || "[]") as OpportunityCard[];
+    const next = [card, ...board.filter((row) => row.id !== card.id)];
+    localStorage.setItem(key, JSON.stringify(next.slice(0, 40)));
+  } catch {
+    // ignore
+  }
+}
+
 export async function updateOpportunityStatus(
   opportunityId: string,
   status: OpportunityStatus,
+  dishName?: string,
 ) {
   // Local persistence layer for immediate, offline-ready UI responsiveness
   if (typeof window !== "undefined") {
     try {
       const saved = JSON.parse(localStorage.getItem("miseenvue_opportunity_statuses") || "{}");
       saved[opportunityId] = status;
+      if (dishName) saved[dishNameKey(dishName)] = status;
       localStorage.setItem("miseenvue_opportunity_statuses", JSON.stringify(saved));
+      const board = JSON.parse(localStorage.getItem("miseenvue_opportunity_board") || "[]") as OpportunityCard[];
+      const updated = board.map((row) =>
+        row.id === opportunityId || (dishName && row.dishName === dishName) ? { ...row, status } : row,
+      );
+      localStorage.setItem("miseenvue_opportunity_board", JSON.stringify(updated));
     } catch (e) {
       console.warn("Could not save to localStorage:", e);
     }
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      const { error } = await getSupabaseClient()
-        .from("opportunities")
-        .update({ status })
-        .eq("id", opportunityId);
-
-      if (error) throw error;
-    } catch (err) {
-      console.warn("Supabase update error:", err);
-    }
+  if (isSupabaseConfigured() && !opportunityId.startsWith("opp-")) {
+    void getSupabaseClient()
+      .from("opportunities")
+      .update({ status })
+      .eq("id", opportunityId)
+      .then(({ error }) => {
+        if (error) console.warn("Supabase update error:", error);
+      })
+      .catch((err) => console.warn("Supabase update error:", err));
   }
 }
 
@@ -101,47 +122,50 @@ export async function startOpportunityRun(opportunity: OpportunityCard): Promise
     try {
       const savedRuns = JSON.parse(localStorage.getItem("miseenvue_opportunity_runs") || "{}");
       savedRuns[opportunity.id] = mockRun;
+      savedRuns[dishNameKey(opportunity.dishName)] = mockRun;
       localStorage.setItem("miseenvue_opportunity_runs", JSON.stringify(savedRuns));
     } catch (e) {
       console.warn("Could not save run to localStorage:", e);
     }
   }
 
-  await updateOpportunityStatus(opportunity.id, "testing");
+  await updateOpportunityStatus(opportunity.id, "testing", opportunity.dishName);
+  rememberBoardCard({ ...opportunity, status: "testing", run: mockRun });
 
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = getSupabaseClient();
-      const { data: campaign, error: campaignError } = await supabase
-        .from("campaigns")
-        .insert({
-          restaurant_id: opportunity.restaurantId,
-          opportunity_id: opportunity.id,
-          name: opportunity.dishName,
-          offer,
-          start_date: now.toISOString(),
-          end_date: end.toISOString(),
-          status: "scheduled",
-        })
-        .select("id")
-        .single();
+  if (isSupabaseConfigured() && !opportunity.id.startsWith("opp-")) {
+    void (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: campaign, error: campaignError } = await supabase
+          .from("campaigns")
+          .insert({
+            restaurant_id: opportunity.restaurantId,
+            opportunity_id: opportunity.id,
+            name: opportunity.dishName,
+            offer,
+            start_date: now.toISOString(),
+            end_date: end.toISOString(),
+            status: "scheduled",
+          })
+          .select("id")
+          .single();
 
-      if (!campaignError && campaign) {
-        await supabase.from("experiments").insert({
-          campaign_id: campaign.id,
-          restaurant_id: opportunity.restaurantId,
-          baseline_start: baselineStart.toISOString(),
-          baseline_end: now.toISOString(),
-          experiment_start: now.toISOString(),
-          experiment_end: end.toISOString(),
-          target_metric: "revenue",
-          status: "planned",
-        });
-        return campaign.id as string;
+        if (!campaignError && campaign) {
+          await supabase.from("experiments").insert({
+            campaign_id: campaign.id,
+            restaurant_id: opportunity.restaurantId,
+            baseline_start: baselineStart.toISOString(),
+            baseline_end: now.toISOString(),
+            experiment_start: now.toISOString(),
+            experiment_end: end.toISOString(),
+            target_metric: "revenue",
+            status: "planned",
+          });
+        }
+      } catch (err) {
+        console.warn("Supabase run creation error:", err);
       }
-    } catch (err) {
-      console.warn("Supabase run creation error:", err);
-    }
+    })();
   }
 
   return campaignId;
@@ -150,23 +174,26 @@ export async function startOpportunityRun(opportunity: OpportunityCard): Promise
 export async function concludeOpportunityRun(
   opportunityId: string,
   graduateToMenu: boolean = true,
+  dishName?: string,
 ) {
   const status: OpportunityStatus = graduateToMenu ? "completed" : "rejected";
-  await updateOpportunityStatus(opportunityId, status);
+  await updateOpportunityStatus(opportunityId, status, dishName);
 
   if (typeof window !== "undefined") {
     try {
       const savedRuns = JSON.parse(localStorage.getItem("miseenvue_opportunity_runs") || "{}");
-      if (savedRuns[opportunityId]) {
-        savedRuns[opportunityId].status = graduateToMenu ? "graduated" : "concluded";
-        savedRuns[opportunityId].experimentStatus = graduateToMenu ? "graduated" : "concluded";
-        if (savedRuns[opportunityId].result) {
-          savedRuns[opportunityId].result.recommendation = graduateToMenu
+      const keys = [opportunityId, dishName ? dishNameKey(dishName) : ""].filter(Boolean);
+      for (const key of keys) {
+        if (!savedRuns[key]) continue;
+        savedRuns[key].status = graduateToMenu ? "graduated" : "concluded";
+        savedRuns[key].experimentStatus = graduateToMenu ? "graduated" : "concluded";
+        if (savedRuns[key].result) {
+          savedRuns[key].result.recommendation = graduateToMenu
             ? "Test completed successfully! Graduated to permanent core menu with +38% sustained margin lift."
             : "Test concluded and archived into restaurant P&L history.";
         }
-        localStorage.setItem("miseenvue_opportunity_runs", JSON.stringify(savedRuns));
       }
+      localStorage.setItem("miseenvue_opportunity_runs", JSON.stringify(savedRuns));
     } catch (e) {
       console.warn("Could not conclude run in localStorage:", e);
     }

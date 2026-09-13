@@ -6,11 +6,12 @@ trend_score combines four components, weighted from config.yaml:
             breakout ratio against channel baselines, plus whether creators
             framed it as trend coverage. This is what separates a trend from
             a recipe two channels happened to post in the same fortnight.
-  reach     total audience the dish reached -- log-scaled views summed across
-            its posts. This is the dominant component and it measures DEMAND.
-  volume    how many posts mention the dish, relative to the top dish. Measures
-            SUPPLY, so it is weighted low: eleven small channels copying each
-            other's SEO produces high volume and almost no audience.
+  reach     audience that actually evidence the dish -- log-scaled views,
+            downweighted for celebrity interviews and ordinary big-channel
+            uploads so a 4M-view talk-show mention cannot beat a real breakout.
+  volume    distinct creators, not raw posts. Two cuts of the same Food
+            Network segment are one voice.
+  local     share of local-scope posts, only when the run found any.
   velocity  audience trajectory. Derived from the dish's own videos --
             breakout against channel baselines and views/day -- with Google
             Trends used only as optional enrichment when it is reachable.
@@ -30,11 +31,13 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ingestion.extract import DishCluster
 from ingestion.schema import Dish, Evidence, Metrics
 from ingestion.trends import Velocity
+
+if TYPE_CHECKING:
+    from ingestion.extract import DishCluster
 
 MAX_EVIDENCE = 6
 
@@ -70,16 +73,21 @@ def score_all(
         print(f"  [score] {len(clusters) - len(eligible)} single-mention dishes dropped")
     clusters = eligible
 
-    peak_volume = max(len(c.posts) for c in clusters)
+    peak_volume = max(len(_creators(c.posts)) for c in clusters) or 1
     peak_breadth = max(len(_source_scopes(c)) for c in clusters) or 1
-    peak_reach = max(_total_views(c.posts) for c in clusters) or 1
+    peak_reach = max(_effective_views(c.posts) for c in clusters) or 1
     peak_views_per_day = max(
         (max((p.views_per_day or 0) for p in c.posts) for c in clusters), default=0
     ) or 1
+    peak_local = max(_local_mentions(c.posts) for c in clusters)
+    peak_restaurants = max((_local_restaurants(c.posts) for c in clusters), default=0)
 
     dishes = [
-        _to_dish(c, window_days, peak_volume, peak_breadth, peak_reach,
-                 peak_views_per_day, weights, scoring, velocities.get(c.name))
+        _to_dish(
+            c, window_days, peak_volume, peak_breadth, peak_reach,
+            peak_views_per_day, peak_local, peak_restaurants, weights, scoring,
+            velocities.get(c.name),
+        )
         for c in clusters
     ]
     dishes.sort(key=lambda d: d.trend_score, reverse=True)
@@ -93,6 +101,8 @@ def _to_dish(
     peak_breadth: int,
     peak_reach: int,
     peak_views_per_day: int,
+    peak_local: int,
+    peak_restaurants: int,
     weights: dict,
     scoring: dict,
     velocity: Velocity | None,
@@ -100,12 +110,22 @@ def _to_dish(
     posts = cluster.posts
 
     components: dict[str, float] = {
-        "virality": _virality(posts),
         "reach": _reach(posts, peak_reach),
-        "volume": len(posts) / peak_volume if peak_volume else 0.0,
+        "volume": len(_creators(posts)) / peak_volume if peak_volume else 0.0,
         "breadth": len(_source_scopes(cluster)) / peak_breadth,
         "recency": _recency(posts, scoring.get("recency_halflife_days", 3)),
     }
+    # Maps-only clusters have no breakout ratio. Treating that as virality=0
+    # would bury the county signal under YouTube's weight. Missing is not bad.
+    if any(p.source == "youtube" and p.breakout_ratio is not None for p in posts):
+        components["virality"] = _virality(posts)
+    if peak_local > 0:
+        # Only score local presence when the run actually found local posts.
+        # Otherwise every dish would be 0 and the weight would just flatten
+        # the other components after renormalization.
+        components["local"] = _local_mentions(posts) / peak_local
+    if peak_restaurants > 0:
+        components["local_spike"] = _local_restaurants(posts) / peak_restaurants
     if velocity is not None and velocity.computable:
         components["velocity"] = _velocity_component(velocity)
     else:
@@ -155,6 +175,10 @@ def _momentum(cluster: DishCluster, velocity: Velocity | None, scoring: dict) ->
         return velocity.momentum
 
     ratios = [p.breakout_ratio for p in cluster.posts if p.breakout_ratio is not None]
+    restaurants = _local_restaurants(cluster.posts)
+    if restaurants >= scoring.get("rising_local_restaurants", 4) and not ratios:
+        return "rising"
+
     if not ratios:
         return "steady"
 
@@ -206,6 +230,48 @@ def _total_views(posts: list) -> int:
     return sum(p.engagement or 0 for p in posts)
 
 
+def _effective_views(posts: list) -> int:
+    """Views that count as evidence the *dish* is trending.
+
+    Celebrity interviews and ordinary uploads on huge channels produce raw
+    view counts that drown real breakouts. Those views still count, but at
+    a fraction, so a 4M-view 'Sam Smith loves Hooters' feature cannot beat
+    a 200k-view dish that actually broke out.
+    """
+    total = 0.0
+    for post in posts:
+        views = float(post.engagement or 0)
+        if post.is_evergreen:
+            views *= 0.1
+        elif (
+            post.breakout_ratio is not None
+            and post.breakout_ratio < 1.2
+            and not post.trend_marker
+            and not post.is_viral
+        ):
+            views *= 0.35
+        total += views
+    return int(total)
+
+
+def _creators(posts: list) -> set[str]:
+    """Distinct channels. Two cuts of the same Food Network segment are one voice."""
+    return {(p.location or p.id) for p in posts}
+
+
+def _local_mentions(posts: list) -> int:
+    return sum(1 for p in posts if p.scope == "local")
+
+
+def _local_restaurants(posts: list) -> int:
+    """Distinct Maps restaurants (or other local places) naming the dish."""
+    return len({
+        p.location
+        for p in posts
+        if p.location and (p.source == "google_maps" or p.scope == "local" and p.source != "youtube")
+    })
+
+
 def _virality(posts: list) -> float:
     """How much of this dish's coverage genuinely broke out, 0-1.
 
@@ -218,14 +284,15 @@ def _virality(posts: list) -> float:
     Breakout is capped at 4x before scaling -- one runaway video should lift a
     dish clearly without letting a single outlier saturate the component.
     """
-    if not posts:
+    useful = [p for p in posts if not p.is_evergreen]
+    if not useful:
         return 0.0
 
-    ratios = [p.breakout_ratio for p in posts if p.breakout_ratio is not None]
+    ratios = [p.breakout_ratio for p in useful if p.breakout_ratio is not None]
     breakout = (
         min(1.0, (sum(ratios) / len(ratios)) / 4.0) if ratios else 0.0
     )
-    marked = sum(1 for p in posts if p.trend_marker) / len(posts)
+    marked = sum(1 for p in useful if p.trend_marker) / len(useful)
     return 0.65 * breakout + 0.35 * marked
 
 
@@ -238,7 +305,7 @@ def _reach(posts: list, peak_reach: int) -> float:
     into a one-hot vector. Log keeps the ordering while leaving the rest of
     the field distinguishable.
     """
-    total = _total_views(posts)
+    total = _effective_views(posts)
     if total <= 0 or peak_reach <= 0:
         return 0.0
     return min(1.0, math.log10(1 + total) / math.log10(1 + peak_reach))
@@ -283,6 +350,9 @@ def _metrics(
         mention_count=len(posts),
         by_source=by_source,
         total_engagement=sum(p.engagement or 0 for p in posts),
+        local_mention_count=_local_mentions(posts),
+        local_restaurant_count=_local_restaurants(posts),
+        creator_count=len(_creators(posts)),
         sentiment={k: round(v / total, 2) for k, v in counts.items()},
         negative_theme=cluster.negative_theme,
     )

@@ -5,12 +5,12 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, signals, engine = "gemini", apiKey } = await req.json();
+    const { topic, signals, engine = "gemini", variation = 0 } = await req.json();
     if (!topic || !Array.isArray(signals)) {
       return NextResponse.json({ error: "Missing topic or signals" }, { status: 400 });
     }
 
-    const result = await analyzeTrendSignals(topic, signals, { engine, apiKey });
+    const result = await analyzeTrendSignals(topic, signals, { engine, variation });
     return NextResponse.json({
       success: true,
       topic,

@@ -1,6 +1,5 @@
 # Cached raw source pulls — large, regenerable, and often API-ToS-sensitive.
-# NOTE: data/out/ and data/fixtures/ are deliberately NOT ignored. trends.json is
-# the Part 1 -> Part 2 contract and fixtures are the offline demo safety net.
+# Kitchen CSVs under data/fixtures/ stay committed. trends.json is generated.
 data/raw/
 
 # Python

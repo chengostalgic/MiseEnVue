@@ -1,4 +1,4 @@
-import { generateGeminiText } from "./gemini";
+import { generateLiveText } from "./generate";
 import { analysisPrompt, BACKBOARD_ANALYSIS_FALLBACK } from "./prompts";
 import type { Engine } from "./keys";
 import type { RealtimeSignal } from "./types";
@@ -6,21 +6,22 @@ import type { RealtimeSignal } from "./types";
 export async function analyzeTrendSignals(
   topic: string,
   signals: RealtimeSignal[],
-  options?: { engine?: Engine; apiKey?: string },
+  options?: { engine?: Engine; apiKey?: string; variation?: number },
 ) {
   const engine = options?.engine ?? "gemini";
+  const variation = options?.variation ?? 0;
   if (engine !== "gemini") {
     return { analysisText: BACKBOARD_ANALYSIS_FALLBACK, engineUsed: engine };
   }
 
   try {
-    const { text } = await generateGeminiText(analysisPrompt(topic, signals), {
+    const { text, engine: liveEngine } = await generateLiveText(analysisPrompt(topic, signals, variation), {
       apiKey: options?.apiKey,
-      temperature: 0.7,
+      temperature: Math.min(1, 0.55 + variation * 0.12),
       maxOutputTokens: 2500,
     });
 
-    return { analysisText: text, engineUsed: engine };
+    return { analysisText: text, engineUsed: liveEngine };
   } catch (err) {
     console.warn("Live Gemini analysis fallback triggered:", err instanceof Error ? err.message : err);
     return {

@@ -27,15 +27,20 @@ import {
 import {
   concludeOpportunityRun,
   createCustomOpportunity,
+  rememberBoardCard,
   startOpportunityRun,
   updateOpportunityStatus,
 } from "@/lib/activation";
 import type { BudgetContract, ScrapedDish } from "@/lib/contractTypes";
+import { hasResearchEvidence } from "@/lib/discoverFeed";
 import { money } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import {
+  applySavedOpportunityState,
   fetchRestaurantOpportunities,
+  hasOpportunityResearch,
   inboxGroup,
+  opportunityFromDish,
   type OpportunityCard,
   type OpportunityStatus,
 } from "@/lib/opportunities";
@@ -49,6 +54,33 @@ function moneyOrNull(value: number | null | undefined, digits = 0) {
 
 function evidenceValue(opp: OpportunityCard, type: string) {
   return opp.evidence.find((item) => item.evidence_type === type)?.display_value ?? null;
+}
+
+function evidenceHost(url?: string | null) {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function youtubeThumbFromUrl(url?: string | null) {
+  if (!url) return null;
+  const id = url.match(/[?&]v=([\w-]{11})/)?.[1] || url.match(/youtu\.be\/([\w-]{11})/)?.[1];
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+function primaryVideo(opp: OpportunityCard) {
+  const item =
+    opp.evidence.find((row) => row.image || /youtube\.com\/watch|youtu\.be\//i.test(row.url || "")) ??
+    opp.evidence[0];
+  if (!item) return null;
+  return {
+    url: item.url || null,
+    image: item.image || youtubeThumbFromUrl(item.url),
+    label: item.description,
+  };
 }
 
 function formatDate(value: string | null) {
@@ -91,6 +123,14 @@ function parseEvidenceMeta(item: OpportunityCard["evidence"][number]) {
     return {
       tag: "Friction",
       fillPct: numericK ? Math.min(100, Math.round((numericK / 5) * 100)) : 14,
+      isSpike: false,
+    };
+  }
+
+  if (item.source === "news" || /news\.google|eater|infatuation|timeout|houstonchronicle/i.test(item.url || "")) {
+    return {
+      tag: "News",
+      fillPct: 62,
       isSpike: false,
     };
   }
@@ -214,23 +254,34 @@ export default function OpportunityMatrix({
   const [customRationale, setCustomRationale] = useState("");
 
   async function load() {
-    const { restaurant, opportunities: rows } = await fetchRestaurantOpportunities();
+    const { restaurant } = await fetchRestaurantOpportunities();
     setCity(restaurant?.city ?? null);
-    setOpportunities(rows);
-    return rows;
+    const live = trendingDishes
+      .filter(hasResearchEvidence)
+      .map((dish, index) => opportunityFromDish(dish, index));
+    const rows = applySavedOpportunityState(live);
+    const researched = rows.filter(hasOpportunityResearch);
+    setOpportunities(researched);
+    return researched;
   }
+
+  const trendKey = trendingDishes.map((dish) => dish.id).join("|");
 
   useEffect(() => {
     let cancelled = false;
     void load()
       .then((rows) => {
         if (cancelled) return;
-        const firstInbox = rows.find((row) => inboxGroup(row.status) === "inbox") ?? rows[0];
-        if (firstInbox) {
-          setSelectedId(firstInbox.id);
-          const cleanId = firstInbox.id.replace(/^opp-/, "");
-          onSelectDishId?.(cleanId);
-        }
+        setSelectedId((current) => {
+          const keep = current ? rows.find((row) => row.id === current) : null;
+          const next = keep ?? rows.find((row) => inboxGroup(row.status) === "inbox") ?? rows[0] ?? null;
+          if (next) {
+            const cleanId = next.id.replace(/^opp-/, "");
+            onSelectDishId?.(cleanId);
+            return next.id;
+          }
+          return null;
+        });
       })
       .catch((err) => {
         if (!cancelled) {
@@ -243,7 +294,7 @@ export default function OpportunityMatrix({
     return () => {
       cancelled = true;
     };
-  }, [onSelectDishId]);
+  }, [trendKey, onSelectDishId]);
 
   async function handleProposeCustom(e: React.FormEvent) {
     e.preventDefault();
@@ -291,7 +342,7 @@ export default function OpportunityMatrix({
     onSelectDishId?.(cleanId);
     if (opp.status !== "new") return;
     try {
-      await updateOpportunityStatus(opp.id, "viewed");
+      await updateOpportunityStatus(opp.id, "viewed", opp.dishName);
       setOpportunities((current) =>
         current.map((row) => (row.id === opp.id ? { ...row, status: "viewed" } : row)),
       );
@@ -310,20 +361,15 @@ export default function OpportunityMatrix({
     setPending("pass");
     setError(null);
     try {
-      await updateOpportunityStatus(selectedOpp.id, "rejected");
-      if (isSupabaseConfigured()) {
-        const rows = await load();
-        setFilter("passed");
-        setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
-      } else {
-        setOpportunities((current) =>
-          current.map((row) =>
-            row.id === selectedOpp.id ? { ...row, status: "rejected" } : row,
-          ),
-        );
-        setFilter("passed");
-        setSelectedId(selectedOpp.id);
-      }
+      await updateOpportunityStatus(selectedOpp.id, "rejected", selectedOpp.dishName);
+      rememberBoardCard({ ...selectedOpp, status: "rejected" });
+      setOpportunities((current) =>
+        current.map((row) =>
+          row.id === selectedOpp.id ? { ...row, status: "rejected" } : row,
+        ),
+      );
+      setFilter("passed");
+      setSelectedId(selectedOpp.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not pass this opportunity");
     } finally {
@@ -337,19 +383,15 @@ export default function OpportunityMatrix({
     setError(null);
     try {
       await startOpportunityRun(selectedOpp);
-      if (isSupabaseConfigured()) {
-        const rows = await load();
-        setFilter("running");
-        setSelectedId(rows.find((row) => row.id === selectedOpp.id)?.id ?? selectedOpp.id);
-      } else {
-        setOpportunities((current) =>
+      setOpportunities((current) =>
+        applySavedOpportunityState(
           current.map((row) =>
             row.id === selectedOpp.id ? { ...row, status: "testing" } : row,
           ),
-        );
-        setFilter("running");
-        setSelectedId(selectedOpp.id);
-      }
+        ),
+      );
+      setFilter("running");
+      setSelectedId(selectedOpp.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start this run");
     } finally {
@@ -357,9 +399,9 @@ export default function OpportunityMatrix({
     }
   }
 
-  const canDecide =
-    selectedOpp != null &&
-    (selectedOpp.status === "new" || selectedOpp.status === "viewed");
+  const selectedGroup = selectedOpp ? inboxGroup(selectedOpp.status) : null;
+  const canRun = selectedGroup === "inbox" || selectedGroup === "passed";
+  const canPass = selectedGroup === "inbox" || selectedGroup === "running";
 
   return (
     <div className="space-y-6">
@@ -371,8 +413,8 @@ export default function OpportunityMatrix({
           What is worth running
         </h2>
         <p className="text-sm text-neutral-500 mt-1 max-w-2xl">
-          Pair a scraped trend with a dish you already cook. Economics come from
-          menu, sales, and inventory
+          Only dishes with a video, article, or attention trail. Invented plates
+          stay on Ideas. Economics come from menu, sales, and inventory
           {budget?.constraints?.max_trial_ingredient_spend != null
             ? ` — trials stay under ${money(budget.constraints.max_trial_ingredient_spend)}`
             : ""}
@@ -408,14 +450,23 @@ export default function OpportunityMatrix({
       )}
 
       {error && (
-        <div className="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-sm text-rose-200">
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-sm text-rose-700">
           {error}
         </div>
       )}
 
       {loading && (
-        <div className="border border-stone-800 rounded-xl p-12 text-center text-sm text-stone-400">
+        <div className="border border-neutral-200 rounded-xl p-12 text-center text-sm text-neutral-400">
           Loading this week&apos;s pairings…
+        </div>
+      )}
+
+      {!loading && opportunities.length === 0 && (
+        <div className="border border-neutral-200 rounded-xl p-10 text-center space-y-2">
+          <p className="text-sm text-neutral-800">No researched dishes yet</p>
+          <p className="text-sm text-neutral-500 max-w-md mx-auto">
+            Decide only shows plates with a video, article, or attention trail. Invent something new on Ideas, or wait for the next live pull.
+          </p>
         </div>
       )}
 
@@ -429,7 +480,11 @@ export default function OpportunityMatrix({
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setFilter(key)}
+                    onClick={() => {
+                      setFilter(key);
+                      const first = opportunities.find((row) => inboxGroup(row.status) === key);
+                      setSelectedId(first?.id ?? null);
+                    }}
                     className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-semibold capitalize transition ${
                       filter === key
                         ? "bg-white text-neutral-950 shadow-xs"
@@ -457,35 +512,42 @@ export default function OpportunityMatrix({
                   Nothing in {filter}.
                 </p>
               )}
-              {filtered.map((opp) => (
+              {filtered.map((opp) => {
+                const video = primaryVideo(opp);
+                return (
                 <button
                   key={opp.id}
                   type="button"
                   onClick={() => void selectOpportunity(opp)}
-                  className={`w-full text-left p-3.5 rounded-lg border transition ${
+                  className={`w-full text-left p-3 rounded-lg border transition ${
                     selectedOpp?.id === opp.id
                       ? "bg-blue-50/40 text-neutral-950 border-[#0047FF] shadow-xs"
                       : "bg-white hover:bg-neutral-50 border-neutral-200"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-medium truncate text-neutral-950">{opp.dishName}</h4>
-                      <p className={`text-[11px] mt-0.5 truncate ${selectedOpp?.id === opp.id ? "text-neutral-600" : "text-neutral-500"}`}>
-                        {opp.menuItemName ? `Extends ${opp.menuItemName}` : "No menu match"}
+                  <div className="flex items-start gap-3">
+                    {video?.image ? (
+                      <img
+                        src={video.image}
+                        alt=""
+                        className="w-[72px] h-[54px] rounded-md object-cover bg-neutral-100 shrink-0"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-sm font-medium text-neutral-950 leading-snug">{opp.dishName}</h4>
+                        <span className="text-[10px] uppercase tracking-wider text-neutral-400 shrink-0 font-medium">
+                          {statusLabel(opp.status)}
+                        </span>
+                      </div>
+                      <p className={`text-[11px] mt-1 line-clamp-2 ${selectedOpp?.id === opp.id ? "text-neutral-600" : "text-neutral-500"}`}>
+                        {video?.label || (opp.menuItemName ? `Extends ${opp.menuItemName}` : "One source video")}
                       </p>
                     </div>
-                    <span className="text-[10px] uppercase tracking-wider text-neutral-400 shrink-0 font-medium">
-                      {statusLabel(opp.status)}
-                    </span>
                   </div>
-                  <p className="text-[11px] text-[#0047FF] font-semibold mt-2 tabular-nums">
-                    {opp.economics.incrementalProfit != null
-                      ? `+${moneyOrNull(opp.economics.incrementalProfit)} profit`
-                      : "No sales baseline"}
-                  </p>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -519,8 +581,22 @@ export default function OpportunityMatrix({
                   <h3 className="text-2xl sm:text-3xl font-light tracking-tight text-neutral-950">
                     {selectedOpp.dishName}
                   </h3>
-                  <div className="mt-2 text-xs text-neutral-600 leading-relaxed font-light">
-                    {buildBrief(selectedOpp, city)}
+                  {primaryVideo(selectedOpp)?.image ? (
+                    <a
+                      href={primaryVideo(selectedOpp)?.url || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 block overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50"
+                    >
+                      <img
+                        src={primaryVideo(selectedOpp)!.image!}
+                        alt={selectedOpp.dishName}
+                        className="w-full aspect-video object-cover"
+                      />
+                    </a>
+                  ) : null}
+                  <div className="mt-3 text-xs text-neutral-600 leading-relaxed font-light">
+                    {primaryVideo(selectedOpp)?.label || buildBrief(selectedOpp, city)}
                   </div>
                 </div>
 
@@ -536,9 +612,15 @@ export default function OpportunityMatrix({
                 )}
 
                 {/* Action Buttons & Pipeline Links */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-neutral-100">
-                  {canDecide ? (
-                    <div className="flex flex-wrap gap-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-neutral-100">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {selectedGroup === "running" ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium font-sans">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        Live in Market (14-day test)
+                      </span>
+                    ) : null}
+                    {canRun ? (
                       <button
                         type="button"
                         disabled={pending != null}
@@ -546,8 +628,10 @@ export default function OpportunityMatrix({
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-[4px] bg-[#0047FF] hover:bg-[#0038df] text-white font-medium text-xs shadow-xs transition"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        {pending === "run" ? "Starting Test…" : "Run 2 weeks"}
+                        {pending === "run" ? "Starting Test…" : selectedGroup === "passed" ? "Run anyway" : "Run 2 weeks"}
                       </button>
+                    ) : null}
+                    {canPass ? (
                       <button
                         type="button"
                         disabled={pending != null}
@@ -555,19 +639,23 @@ export default function OpportunityMatrix({
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-[4px] border border-black text-neutral-900 bg-white hover:bg-neutral-50 font-medium text-xs transition shadow-2xs"
                       >
                         <Minus className="w-3.5 h-3.5" />
-                        {pending === "pass" ? "Saving…" : "Pass"}
+                        {pending === "pass" ? "Saving…" : selectedGroup === "running" ? "Pass instead" : "Pass"}
                       </button>
-                    </div>
-                  ) : selectedOpp.status === "rejected" ? (
-                    <div className="flex items-center gap-2.5">
+                    ) : null}
+                    {selectedGroup === "passed" ? (
                       <button
                         type="button"
                         disabled={pending != null}
                         onClick={async () => {
                           setPending("run");
                           try {
-                            await updateOpportunityStatus(selectedOpp.id, "viewed");
-                            const rows = await load();
+                            await updateOpportunityStatus(selectedOpp.id, "viewed", selectedOpp.dishName);
+                            rememberBoardCard({ ...selectedOpp, status: "viewed" });
+                            setOpportunities((current) =>
+                              current.map((row) =>
+                                row.id === selectedOpp.id ? { ...row, status: "viewed" } : row,
+                              ),
+                            );
                             setFilter("inbox");
                             setSelectedId(selectedOpp.id);
                           } finally {
@@ -577,17 +665,10 @@ export default function OpportunityMatrix({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border border-neutral-300 text-neutral-800 bg-white hover:bg-neutral-50 font-medium text-xs transition shadow-2xs"
                       >
                         <RotateCcw className="w-3 h-3 text-[#0047FF]" />
-                        <span>Reconsider candidate</span>
+                        <span>Back to inbox</span>
                       </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium font-sans">
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        Live in Market (14-day test)
-                      </span>
-                    </div>
-                  )}
+                    ) : null}
+                  </div>
 
                   <button
                     type="button"
@@ -742,9 +823,27 @@ export default function OpportunityMatrix({
                             </span>
                           </div>
 
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt=""
+                              className="w-full h-24 rounded-md object-cover bg-neutral-100"
+                            />
+                          ) : null}
                           <p className="text-xs text-neutral-700 leading-snug font-sans">
                             &ldquo;{item.description}&rdquo;
                           </p>
+                          {item.url ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] text-[#0047FF] hover:underline"
+                            >
+                              {evidenceHost(item.url) || "Open source"}
+                              <ArrowUpRight className="w-3 h-3" />
+                            </a>
+                          ) : null}
 
                           {/* Horizontal line with blue square (0 on dotted line, moves right as value increases) */}
                           <div className="pt-1">
@@ -818,8 +917,14 @@ export default function OpportunityMatrix({
                           onClick={async () => {
                             setPending("run");
                             try {
-                              await concludeOpportunityRun(selectedOpp.id, true);
-                              await load();
+                              await concludeOpportunityRun(selectedOpp.id, true, selectedOpp.dishName);
+                              rememberBoardCard({ ...selectedOpp, status: "completed" });
+                              setOpportunities((current) =>
+                                current.map((row) =>
+                                  row.id === selectedOpp.id ? { ...row, status: "completed" } : row,
+                                ),
+                              );
+                              setFilter("passed");
                             } finally {
                               setPending(null);
                             }
@@ -835,8 +940,14 @@ export default function OpportunityMatrix({
                           onClick={async () => {
                             setPending("run");
                             try {
-                              await concludeOpportunityRun(selectedOpp.id, false);
-                              await load();
+                              await concludeOpportunityRun(selectedOpp.id, false, selectedOpp.dishName);
+                              rememberBoardCard({ ...selectedOpp, status: "rejected" });
+                              setOpportunities((current) =>
+                                current.map((row) =>
+                                  row.id === selectedOpp.id ? { ...row, status: "rejected" } : row,
+                                ),
+                              );
+                              setFilter("passed");
                             } finally {
                               setPending(null);
                             }

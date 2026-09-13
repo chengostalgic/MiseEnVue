@@ -2,7 +2,7 @@
 
     python -m ingestion.pipeline                 # live pull, 7-day window
     python -m ingestion.pipeline --since 14      # wider window
-    python -m ingestion.pipeline --offline       # replay cache/fixtures, no network
+    python -m ingestion.pipeline --offline       # replay last cached pull, no network
     python -m ingestion.pipeline --dry-run       # print, don't overwrite trends.json
 
 Writes data/out/trends.json -- the Part 1 -> Part 2 contract.
@@ -19,19 +19,24 @@ from pathlib import Path
 
 import yaml
 
+from ingestion.connectors.maps import GoogleMapsConnector
 from ingestion.connectors.youtube import YouTubeConnector
 from ingestion.extract import extract
+from ingestion.location import market_label, resolve_location
 from ingestion.normalize import dedupe, normalize, within_window
+from ingestion.queries import build_discovery_queries
 from ingestion.schema import build_output
 from ingestion.score import score_all
-from ingestion.trends import fetch_velocity
+from ingestion.trends import discover_rising_terms, fetch_velocity
 
 CONFIG_PATH = Path("ingestion/config.yaml")
 OUT_PATH = Path("data/out/trends.json")
 ENV_PATH = Path(".env")
 
 # Add connectors here as they land. Order is display order only.
-CONNECTORS = [YouTubeConnector]
+# Maps is after YouTube so a browser scrape failure cannot starve the
+# channel pull — each connector is isolated in fetch().
+CONNECTORS = [YouTubeConnector, GoogleMapsConnector]
 
 
 def load_env(path: Path = ENV_PATH) -> None:
@@ -60,17 +65,60 @@ def _is_hand_written(path: Path) -> bool:
         return False
 
 
-def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> int:
+def run(
+    since_days: int,
+    offline: bool,
+    dry_run: bool,
+    force: bool = False,
+    city: str | None = None,
+    region: str | None = None,
+    state: str | None = None,
+    neighborhood: str | None = None,
+    county: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    cuisine: str | None = None,
+) -> int:
     load_env()
     config = yaml.safe_load(CONFIG_PATH.read_text())
+    loc = resolve_location(
+        config,
+        city=city,
+        region=region,
+        state=state,
+        neighborhood=neighborhood,
+        county=county,
+        latitude=latitude,
+        longitude=longitude,
+    )
+    if cuisine:
+        loc["cuisine"] = cuisine
+    config["location"] = loc
 
-    print(f"Window: {since_days}d | offline: {offline} | market: US (national)")
+    print(f"Window: {since_days}d | offline: {offline} | market: {market_label(loc)}"
+          f"{f' | cuisine: {cuisine}' if cuisine else ''}")
+
+    rising = discover_rising_terms(config, offline=offline)
+    discovery_queries = build_discovery_queries(
+        city=loc.get("city"),
+        cuisine=cuisine or loc.get("cuisine"),
+        neighborhood=loc.get("neighborhood"),
+        region=loc.get("region_name"),
+        rising_terms=rising,
+    )
+    print("  [queries] " + ", ".join(query for query, _scope in discovery_queries))
 
     posts = []
     sources_used = []
+    if rising:
+        sources_used.append("google_trends")
     for cls in CONNECTORS:
         # Location is global config, not per-connector, but connectors need it.
-        cfg = {**config.get(cls.name, {}), **config.get("location", {})}
+        cfg = {**config.get(cls.name, {}), **loc}
+        cfg["discovery_queries"] = discovery_queries
+        cfg["seed_queries"] = [query for query, _scope in discovery_queries]
+        if cuisine:
+            cfg.setdefault("food_types", [cuisine])
         connector = cls(cfg)
         fetched = connector.fetch(since_days, offline=offline)
         if fetched:
@@ -118,7 +166,8 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     terms = [c.name for c in ranked[: config.get("output", {}).get("max_dishes", 20)]]
     velocities = fetch_velocity(terms, config, offline=offline)
     if velocities:
-        sources_used.append("google_trends")
+        if "google_trends" not in sources_used:
+            sources_used.append("google_trends")
         computable = sum(1 for v in velocities.values() if v.computable)
         print(f"  [trends] velocity for {computable}/{len(terms)} dishes")
 
@@ -133,6 +182,7 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
         window_end=now,
         sources_used=sources_used,
         fixture=offline,
+        market=loc,
     )
 
     for d in output["dishes"]:
@@ -159,6 +209,9 @@ def run(since_days: int, offline: bool, dry_run: bool, force: bool = False) -> i
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(output, indent=2) + "\n")
     print(f"\nWrote {OUT_PATH}")
+    from ingestion.signal_lab import write_signal_lab
+
+    write_signal_lab()
     return 0
 
 
@@ -168,7 +221,7 @@ def main() -> int:
     ap.add_argument(
         "--offline",
         action="store_true",
-        help="replay cached/fixture data instead of hitting the network",
+        help="replay the last cached pull instead of hitting the network",
     )
     ap.add_argument(
         "--dry-run",
@@ -180,8 +233,22 @@ def main() -> int:
         action="store_true",
         help="allow overwriting the hand-written contract sample",
     )
+    ap.add_argument("--city", help="restaurant city (e.g. Houston, Chicago). Sets local YouTube queries, Trends DMA, and Maps pin.")
+    ap.add_argument("--neighborhood", help="finer than city (e.g. East Austin, Williamsburg). Overrides the county-seat pin when known.")
+    ap.add_argument("--region", help="state or region name used in regional YouTube queries")
+    ap.add_argument("--state", help="two-letter state code (e.g. TX, IL)")
+    ap.add_argument("--county", help="county name for Maps queries (e.g. Harris County)")
+    ap.add_argument("--lat", type=float, dest="latitude", help="override Maps geolocation latitude")
+    ap.add_argument("--lon", type=float, dest="longitude", help="override Maps geolocation longitude")
+    ap.add_argument("--cuisine", help="kitchen cuisine — drives search instead of a fixed dish list")
     args = ap.parse_args()
-    return run(args.since, args.offline, args.dry_run, args.force)
+    return run(
+        args.since, args.offline, args.dry_run, args.force,
+        city=args.city, region=args.region, state=args.state,
+        neighborhood=args.neighborhood, county=args.county,
+        latitude=args.latitude, longitude=args.longitude,
+        cuisine=args.cuisine,
+    )
 
 
 if __name__ == "__main__":

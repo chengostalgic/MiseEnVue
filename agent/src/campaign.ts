@@ -1,25 +1,26 @@
-import { generateGeminiText } from "./gemini";
+import { generateLiveText } from "./generate";
 import { campaignPrompt, BACKBOARD_CAMPAIGN_FALLBACK } from "./prompts";
 import type { Engine } from "./keys";
 
 export async function generateCampaignPlaybook(
   topic: string,
   analysisText: string,
-  options?: { engine?: Engine; apiKey?: string },
+  options?: { engine?: Engine; apiKey?: string; variation?: number },
 ) {
   const engine = options?.engine ?? "gemini";
+  const variation = options?.variation ?? 0;
   if (engine !== "gemini") {
     return { playbookText: BACKBOARD_CAMPAIGN_FALLBACK, engineUsed: engine };
   }
 
   try {
-    const { text } = await generateGeminiText(campaignPrompt(topic, analysisText), {
+    const { text, engine: liveEngine } = await generateLiveText(campaignPrompt(topic, analysisText, variation), {
       apiKey: options?.apiKey,
-      temperature: 0.7,
+      temperature: Math.min(1, 0.55 + variation * 0.12),
       maxOutputTokens: 2500,
     });
 
-    return { playbookText: text, engineUsed: engine };
+    return { playbookText: text, engineUsed: liveEngine };
   } catch (err) {
     console.warn("Live Gemini campaign generation fallback triggered:", err instanceof Error ? err.message : err);
     return {

@@ -15,9 +15,14 @@ of the window vs first half), so the normalization cancels out and the number
 means the same thing for every dish. That is the only Trends figure this
 module exposes for cross-dish comparison.
 
-Each dish is queried twice -- nationally and at the client's DMA -- because the
-gap is the interesting part: rising nationally but flat locally means the trend
-has not reached this market yet, which is either the opening or the warning.
+Each dish is queried nationally and at the client's DMA -- the gap is the
+interesting part: rising nationally but flat locally means the trend has not
+reached this market yet, which is either the opening or the warning.
+
+Discovery is a separate job. Velocity can only score dishes YouTube already
+found. Rising food searches (daily trends + related queries at the DMA) seed
+YouTube so a term this market is searching for still gets a look even if no
+curated channel has covered it yet.
 """
 
 from __future__ import annotations
@@ -30,7 +35,28 @@ from pathlib import Path
 from typing import Any
 
 CACHE_DIR = Path("data/raw/google_trends")
+RISING_CACHE = CACHE_DIR / "rising_latest.json"
 BATCH_SIZE = 5  # Google's per-request term limit
+
+# Daily trending searches are mostly news. Keep a term only when it looks like
+# something a restaurant could cook, or when it came from a food seed query.
+FOOD_HINTS = (
+    "recipe", "food", "taco", "pizza", "burger", "pasta", "ramen",
+    "sushi", "chicken", "cake", "cookie", "dessert", "sandwich",
+    "salad", "bbq", "dumpling", "noodle", "bagel", "toast",
+    "chocolate", "matcha", "latte", "bowl", "wings", "cook",
+    "bake", "brunch", "eats", "dish", "soup", "steak", "donut",
+    "croissant", "birria", "bao", "kebab", "gyro", "honey",
+    "chili crisp", "kataifi", "tiramisu", "custard", "sando",
+    "chopped cheese", "smash", "hot honey", "dubai",
+    "tiktok", "viral", "cafe", "boba", "street", "snack", "rice",
+    "corn", "pickle", "cronut", "crookie", "kunafa", "pistachio",
+)
+
+_NEWS = (
+    "election", "trump", "biden", "stock", "nfl", "nba", "mlb",
+    "dies", "arrest", "vs ", "score", "highlights",
+)
 
 
 @dataclass
@@ -62,8 +88,8 @@ def fetch_velocity(
 
     cfg = config.get("google_trends", {})
     loc = config.get("location", {})
-    geo_local = ""
-    geo_region = ""
+    geo_local = loc.get("trends_geo") or ""
+    geo_region = loc.get("trends_geo_region") or ""
     timeframe = cfg.get("timeframe", "now 7-d")
 
     cached = _load_cache() if offline else None
@@ -100,8 +126,8 @@ def fetch_velocity(
             v.regional_pct, reg_weak = _change(regional.get(term))
             v.local_pct, loc_weak = _change(local.get(term))
             v.computable = any(
-                p is not None for p in (v.national_pct, v.regional_pct, v.national_pct)
-            ) or v.local_pct is not None
+                p is not None for p in (v.national_pct, v.regional_pct, v.local_pct)
+            )
             basis, pct, weak = _basis(v, nat_weak, reg_weak, loc_weak)
             v.momentum_basis, v.low_confidence = basis, weak
             v.momentum = _momentum(pct, cfg)
@@ -231,6 +257,111 @@ def _attach_rising(pytrends, results: dict[str, Velocity], timeframe, geo, cfg) 
             continue
 
 
+def discover_rising_terms(config: dict[str, Any], offline: bool = False) -> list[str]:
+    """Food-related rising searches to seed YouTube.
+
+    Two cheap asks: what the country is searching today, and what this DMA
+    searches around 'recipe' / 'tiktok food'. Filtered to food-like terms so
+    a news spike does not burn YouTube quota.
+    """
+    cfg = config.get("google_trends", {})
+    if not cfg.get("discover", True):
+        return []
+
+    if offline:
+        cached = _load_rising_cache()
+        if cached:
+            print(f"  [trends] replaying {len(cached)} rising terms")
+        return cached
+
+    try:
+        from pytrends.request import TrendReq
+    except ImportError:
+        print("  [trends] pytrends not installed; skipping discovery")
+        return []
+
+    loc = config.get("location", {})
+    geo_local = loc.get("trends_geo") or loc.get("trends_geo_region") or "US"
+    timeframe = cfg.get("timeframe", "now 7-d")
+    limit = cfg.get("discover_limit", 6)
+    pytrends = TrendReq(hl="en-US", tz=360)
+    state = {"tripped": False}
+    found: list[str] = []
+
+    found.extend(_daily_food_trends(pytrends, state))
+    if not state["tripped"]:
+        found.extend(_related_food_terms(
+            pytrends,
+            ["recipe", "tiktok food", "viral food", "cafe", "street food"],
+            timeframe,
+            geo_local,
+            cfg,
+            state,
+        ))
+
+    # Preserve order, drop dupes, cap.
+    seen: set[str] = set()
+    rising: list[str] = []
+    for term in found:
+        key = term.lower().strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        rising.append(term.strip())
+        if len(rising) >= limit:
+            break
+
+    if rising:
+        _write_rising_cache(rising)
+        print(f"  [trends] discovered {len(rising)} rising food terms: {', '.join(rising)}")
+    elif state["tripped"]:
+        print("  [trends] discovery rate-limited; YouTube will run without Trends seeds")
+    return rising
+
+
+def _looks_like_food(term: str) -> bool:
+    blob = term.lower()
+    if any(token in blob for token in _NEWS):
+        return False
+    return any(hint in blob for hint in FOOD_HINTS)
+
+
+def _daily_food_trends(pytrends, state: dict) -> list[str]:
+    if state["tripped"]:
+        return []
+    try:
+        frame = pytrends.trending_searches(pn="united_states")
+    except Exception as exc:  # noqa: BLE001
+        if "TooManyRequests" in type(exc).__name__ or "429" in str(exc):
+            state["tripped"] = True
+        return []
+    if frame is None or frame.empty:
+        return []
+    terms = [str(v) for v in frame.iloc[:, 0].tolist()]
+    return [t for t in terms if _looks_like_food(t)]
+
+
+def _related_food_terms(
+    pytrends, seeds: list[str], timeframe: str, geo: str, cfg: dict, state: dict
+) -> list[str]:
+    """Rising related queries around food seeds, at the restaurant's geo."""
+    out: list[str] = []
+    for seed in seeds:
+        if state["tripped"]:
+            break
+        try:
+            pytrends.build_payload([seed], timeframe=timeframe, geo=geo)
+            related = pytrends.related_queries().get(seed, {}) or {}
+            rising = related.get("rising")
+            if rising is not None and len(rising):
+                out.extend(str(q) for q in rising["query"].head(6).tolist())
+        except Exception as exc:  # noqa: BLE001
+            if "TooManyRequests" in type(exc).__name__ or "429" in str(exc):
+                state["tripped"] = True
+            continue
+    return [t for t in out if not any(token in t.lower() for token in _NEWS)]
+
+
 # --------------------------------------------------------------------------
 # Cache
 # --------------------------------------------------------------------------
@@ -266,3 +397,18 @@ def _to_dict(v: Velocity) -> dict:
 
 def _from_dict(d: dict) -> Velocity:
     return Velocity(**d)
+
+
+def _write_rising_cache(terms: list[str]) -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    RISING_CACHE.write_text(json.dumps(terms, indent=2))
+
+
+def _load_rising_cache() -> list[str]:
+    if not RISING_CACHE.is_file():
+        return []
+    try:
+        payload = json.loads(RISING_CACHE.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+    return [str(t) for t in payload] if isinstance(payload, list) else []

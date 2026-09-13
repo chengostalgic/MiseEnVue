@@ -39,6 +39,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from ingestion.local_pack import detect_spikes, spike_context
+from ingestion.normalize import select_for_extract
 from ingestion.schema import Post, WhyTrending
 
 # Clustering is high-volume classification and synthesis is short-form
@@ -82,9 +84,9 @@ class Batch(BaseModel):
 
 
 class Reasoning(BaseModel):
-    summary: str = Field(description="2-3 sentences on why this is trending")
-    drivers: list[str] = Field(description="3-4 short phrases")
-    audience: str = Field(description="age band + dining occasion")
+    summary: str = Field(description="one sentence on the signal, no advice")
+    drivers: list[str] = Field(description="1-2 evidence facts")
+    audience: str = Field(description="short phrase or empty")
     negative_theme: str = Field(description="what critics say; empty string if nobody complained")
 
 
@@ -117,27 +119,23 @@ A dish is something an owner could put on a menu and a campaign could be built \
 around. "Chili crisp hot honey wings" is a dish. "Chili crisp" is an ingredient. \
 "Air fryer" is a technique. "Girl dinner" is a format.
 
+Omit celebrity interviews, talk-show appearances, and brand features where a \
+dish is mentioned in passing ("X loves Hooters wings", "joins to talk about \
+food"). Keep a post only when the video is making, tasting, or reviewing the \
+dish as its subject.
+
 Ingredient, technique, and format trends are real signals but are NOT dishes. If \
 a post is about one and names no dish, omit the post entirely. Omitting is \
 correct and expected -- much of the input is vlogs, hauls, and general food \
 content with no dish in it. Do not force an assignment.
 
 MARKET RELEVANCE
-The audience is an independent restaurant in the United States deciding what to \
-put on its menu. Omit a post when the dish would not plausibly work there.
+Keep a nameable dish from anywhere people are making it, lining up for it, or \
+filming it. Seoul cafe desserts, Tokyo convenience-store snacks, Mexico City \
+street food, and a US smash burger are the same job. Do not drop a post because \
+it is not aimed at a US restaurant, or because the cuisine is "too foreign".
 
-Omit regional home cooking aimed at a non-US audience -- everyday subcontinental, \
-regional Chinese, or other home-kitchen staples being cooked for viewers in those \
-markets. These are real dishes with real audiences and they are not the question \
-being asked.
-
-Keep a dish from any cuisine when it is being cooked or eaten as a US food \
-trend: birria, qishta, gochujang desserts, and smashed cucumber salad are all \
-non-American in origin and all valid. The test is not where the dish comes from, \
-it is whether a US restaurant could put it on a menu and have customers order it.
-
-When genuinely unsure, keep the dish. Scoring will drop it if it has no \
-independent repetition behind it.
+When genuinely unsure, keep the dish.
 
 MATCHING
 You are given the dishes found so far. If a post is about a dish already on that \
@@ -149,10 +147,19 @@ Match on the dish, not the wording: "hot honey wings", "chili crisp wings", and 
 in aliases. But keep genuinely different dishes apart: "birria tacos" and \
 "birria grilled cheese" are different menu items even though both are birria.
 
+LOCAL MAPS REVIEWS
+Some posts are recent Google Maps reviews from restaurants in the restaurant's \
+county, not videos. A review that names a dish is a mention. If several \
+independent restaurants' newest reviews name the same dish, that is a \
+county-level trend even if no YouTube video covered it. Reuse a dish_id from \
+the national list when the review is about the same dish -- a national viral \
+item showing up in local reviews is the strongest signal in the pipeline.
+
 SENTIMENT
 Judge sentiment from the COMMENTS only. Titles and descriptions are written by \
 the creator promoting their own video and are always positive -- they tell you \
-what the dish is, not what people think of it.
+what the dish is, not what people think of it. For a Maps review the review \
+text itself is the comment.
 
 positive = commenters like the dish, made it, want it
 negative = commenters dislike it, find it overrated, overpriced, or are tired of it
@@ -161,28 +168,23 @@ neutral  = technique talk, questions, off-topic, or no clear opinion
 If a post has no comments, use neutral. Do not infer sentiment from the title."""
 
 REASON_SYSTEM = """\
-You explain why a specific dish is trending, for a restaurant owner deciding \
-whether to put it on their menu.
+Write a short discover card for this dish. Facts only, from the evidence.
 
-Ground every claim in the posts and comments provided. Do not add facts about \
-the dish from general knowledge -- if the evidence does not support a claim, \
-leave it out. An owner is going to spend money on this.
+Do not advise the kitchen. Do not say whether they should run it, how it \
+fits a menu, or what a campaign should do. Do not invent facts from \
+general knowledge.
 
-summary: 2-3 sentences. What is driving interest, and what it means for a \
-restaurant. Be concrete and specific to this dish.
+When Maps reviews are present, name how many restaurants mentioned the dish \
+and the window. One restaurant is not a local trend.
 
-drivers: 3-4 short phrases naming what is pushing the trend. This is where an \
-ingredient or technique trend belongs -- "chili crisp is having a broad moment" \
-is a driver of the wings, not a dish of its own. Operational facts an owner \
-would care about (no new equipment, cheap ingredient swap) belong here too.
+summary: one sentence. Who is talking about it and how big the signal is.
 
-audience: an age band and a dining occasion, e.g. "18-34, casual dining and \
-late-night".
+drivers: 1-2 evidence facts (view counts, restaurant count, search lift). \
+No operational advice.
 
-negative_theme: what the critics actually say, in one sentence. This is the most \
-useful field in the record -- it tells the kitchen what to avoid and gives the \
-marketing a thing to differentiate against. If genuinely nobody complained, \
-return an empty string rather than inventing a criticism."""
+audience: a short phrase, or empty.
+
+negative_theme: one sentence of what critics said, or empty."""
 
 
 # --------------------------------------------------------------------------
@@ -200,8 +202,12 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
     if client is None:
         return []
 
-    posts = _select(posts, cfg)
-    clusters = _cluster(client, posts, cfg)
+    posts = select_for_extract(posts, cfg)
+    maps_posts = [p for p in posts if p.source == "google_maps"]
+    other_posts = [p for p in posts if p.source != "google_maps"]
+    clusters = _cluster(client, other_posts, cfg) if other_posts else {}
+    if maps_posts:
+        _cluster_local_reviews(client, maps_posts, clusters, cfg, config)
     print(f"  [extract] {len(clusters)} dishes from {len(posts)} posts")
 
     # Explain only the dishes that will survive ranking -- synthesis is one
@@ -219,22 +225,6 @@ def extract(posts: list[Post], config: dict[str, Any]) -> list[DishCluster]:
         list(pool.map(lambda c: _explain(client, c, cfg), to_explain))
 
     return list(clusters.values())
-
-
-def _select(posts: list[Post], cfg: dict) -> list[Post]:
-    """Cap how many posts reach the model, keeping the most-engaged.
-
-    The cap is normally set above the expected corpus size so nothing is
-    dropped; it exists as a guard against a runaway pull turning into a
-    hundred clustering calls.
-    """
-    cap = cfg.get("max_posts", 300)
-    if len(posts) <= cap:
-        return posts
-
-    selected = sorted(posts, key=lambda p: p.engagement_pct or 0, reverse=True)[:cap]
-    print(f"  [extract] {len(posts)} posts -> {len(selected)} sampled by engagement")
-    return selected
 
 
 def _client():
@@ -308,6 +298,97 @@ def _cluster(client, posts: list[Post], cfg: dict) -> dict[str, DishCluster]:
     return clusters
 
 
+LOCAL_REVIEW_SYSTEM = """\
+You identify dishes local diners are ordering right now, from Google Maps reviews.
+
+Each post is one recent review of one restaurant in the target county. A dish \
+is a nameable menu item. "hot honey smash burger" is a dish. "great service" \
+is not. "New" or a review from the last two weeks is stronger evidence than \
+an undated blurb.
+
+You are also given LOCAL SPIKES: phrases that already appeared at several \
+independent restaurants this window. Those are county-level trends. Assign \
+the matching reviews to one dish_id and reuse a dish from the national list \
+when it is the same item. Only coin a new dish_id when the local reviews are \
+about something YouTube never covered.
+
+Omit a review that names no dish. Sentiment comes from the review text itself."""
+
+
+def _cluster_local_reviews(
+    client,
+    posts: list[Post],
+    clusters: dict[str, DishCluster],
+    cfg: dict,
+    config: dict[str, Any],
+) -> None:
+    """Second clustering pass: county reviews, with national dishes in context."""
+    maps_cfg = config.get("google_maps") or {}
+    loc = config.get("location") or {}
+    reviews = [
+        {
+            "restaurant": p.location or "",
+            "text": p.comments[0] if p.comments else p.text,
+            "created_at": p.created_at,
+        }
+        for p in posts
+    ]
+    spikes = detect_spikes(
+        reviews,
+        min_restaurants=int(maps_cfg.get("min_restaurants_for_spike", 4)),
+        window_days=int(maps_cfg.get("review_window_days", 14)),
+    )
+    hint = spike_context(spikes, loc.get("county") or loc.get("city"))
+    by_id = {p.id: p for p in posts}
+    batch_size = min(int(cfg.get("maps_batch_size", 30)), 40)
+    assigned = 0
+
+    for start in range(0, len(posts), batch_size):
+        batch = posts[start : start + batch_size]
+        prompt = (
+            f"{hint}\n\n{_known_dishes(clusters)}\n\n"
+            f"REVIEWS TO ASSIGN\n\n" + "\n\n".join(_render(p) for p in batch)
+        )
+        model = cfg.get("cluster_model", CLUSTER_MODEL)
+        try:
+            response = client.messages.parse(
+                model=model,
+                max_tokens=8000,
+                **_model_params(model, cfg.get("effort", "medium")),
+                system=[{
+                    "type": "text",
+                    "text": LOCAL_REVIEW_SYSTEM,
+                    "cache_control": {"type": "ephemeral"},
+                }],
+                messages=[{"role": "user", "content": prompt}],
+                output_format=Batch,
+            )
+        except Exception as exc:  # noqa: BLE001
+            print(f"  [extract] maps batch {start // batch_size + 1} failed ({exc}); skipping")
+            continue
+
+        for assignment in response.parsed_output.assignments:
+            post = by_id.get(assignment.post_id)
+            if post is None:
+                continue
+            dish_id = _slug(assignment.dish_id)
+            cluster = clusters.get(dish_id)
+            if cluster is None:
+                cluster = DishCluster(
+                    id=dish_id, name=assignment.dish_name, cuisine_tags=assignment.cuisine_tags
+                )
+                clusters[dish_id] = cluster
+            for alias in assignment.aliases:
+                if alias.lower() != cluster.name.lower() and alias not in cluster.aliases:
+                    cluster.aliases.append(alias)
+            if post not in cluster.posts:
+                cluster.posts.append(post)
+                cluster.sentiments[post.id] = assignment.sentiment
+                assigned += 1
+
+    print(f"  [extract] maps reviews: {assigned}/{len(posts)} assigned, {len(spikes)} spikes")
+
+
 def _explain(client, cluster: DishCluster, cfg: dict) -> None:
     """Pass 2: synthesize why_trending for one dish from its own evidence."""
     evidence = "\n\n".join(_render(p) for p in cluster.posts[:12])
@@ -350,6 +431,14 @@ def _render(post: Post) -> str:
     Comments are labelled separately from the title so the sentiment rule in
     the system prompt has something to point at.
     """
+    if post.source == "google_maps":
+        lines = [
+            f"[{post.id}] (local/google_maps)",
+            f"RESTAURANT: {post.location or 'unknown'}",
+            f"REVIEW: {(post.comments[0] if post.comments else post.text)[:400]}",
+        ]
+        return "\n".join(lines)
+
     lines = [f"[{post.id}] ({post.scope})", f"TITLE: {post.text[:400]}"]
     if post.comments:
         lines.append("COMMENTS:")

@@ -1,6 +1,6 @@
 # MiseEnVue Backend — Index
 
-MiseEnVue turns external food trends into revenue for individual restaurants. It scrapes public signals (Reddit, Google Trends, local events), compares them against a restaurant's actual menu, sales history, and inventory, then recommends specific menu items to launch and generates the ads to promote them — and measures afterward whether the launch actually made money.
+MiseEnVue turns external food trends into revenue for individual restaurants. It scrapes public signals (food media, Maps reviews, search), compares them against a restaurant's actual menu, sales history, and inventory, then recommends specific menu items to launch and generates the ads to promote them — and measures afterward whether the launch actually made money. Nearby demand is one factor. A working take from another city or country still counts if this kitchen can run it.
 
 The backend exists to answer one question, repeatedly:
 

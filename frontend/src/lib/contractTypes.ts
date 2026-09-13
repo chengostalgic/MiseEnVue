@@ -5,13 +5,25 @@ export type ScrapedEvidence = {
   engagement?: number | null;
   sentiment?: string;
   observed_at?: string;
+  image?: string | null;
+};
+
+export type DishRecipe = {
+  ingredients: string[];
+  method: string[];
 };
 
 export type ScrapedDish = {
   id: string;
   name: string;
+  lane?: "county" | "kitchen" | "national";
+  whyHere?: string;
+  kitchenScore?: number;
+  kitchenFit?: string;
   aliases?: string[];
   cuisine_tags?: string[];
+  description?: string;
+  recipe?: DishRecipe;
   trend_score: number;
   momentum: string;
   metrics?: {
@@ -20,6 +32,8 @@ export type ScrapedDish = {
     by_source?: Record<string, number>;
     total_engagement?: number;
     local_mention_count?: number;
+    local_restaurant_count?: number;
+    creator_count?: number;
     sentiment?: { positive?: number; negative?: number; neutral?: number };
     negative_theme?: string;
   };
@@ -36,11 +50,21 @@ export type TrendsContract = {
   generated_at?: string;
   window?: { days?: number; start?: string; end?: string };
   sources_used?: string[];
+  market?: {
+    city?: string;
+    county?: string;
+    region_name?: string;
+    state?: string;
+    region_code?: string;
+    latitude?: number;
+    longitude?: number;
+  };
   dishes: ScrapedDish[];
 };
 
 export type BudgetContract = {
   health?: { band?: string };
+  ratios?: { food_cost_pct?: number };
   allocation?: {
     monthly_revenue?: number;
     total_budget?: {
@@ -67,6 +91,7 @@ export type BudgetContract = {
       avg_check?: number;
     };
     split?: Record<string, number>;
+    breakeven?: { avg_check?: number };
   };
   constraints?: {
     max_trial_ingredient_spend?: number;
