@@ -7,7 +7,6 @@ import KitchenIntake from "@/components/KitchenIntake";
 import ProductShell from "@/components/ProductShell";
 import { getSupabaseClient, isLocalDemo, isSupabaseConfigured } from "@/lib/supabase";
 import {
-  isProfileComplete,
   loadLocalProfile,
   loadRestaurantProfile,
   type RestaurantProfile,
@@ -137,7 +136,7 @@ export default function Home() {
     );
   }
 
-  if (!isProfileComplete(profile) && !editing) {
+  if (!profile && !editing) {
     return (
       <KitchenIntake
         existing={profile}
