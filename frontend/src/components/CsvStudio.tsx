@@ -11,22 +11,77 @@ import {
   Trash2,
   AlertCircle,
   Sparkles,
-  Search,
-  X,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  AlertTriangle,
+  ChevronDown,
+  Check,
+  Plus,
 } from "lucide-react";
 
 interface CsvStudioProps {
   currentTrendingDish?: { name: string; aliases?: string[] };
+  allDishes?: Array<{ id: string; name: string }>;
+  onSelectDish?: (dishId: string) => void;
 }
 
-export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
+// Authentic Ember & Rye Datasets
+const EMBER_RYE_INVENTORY_CSV = `ingredient,unit,quantity_on_hand,unit_cost
+chicken thigh,lb,48.0000,3.2500
+chicken wings,lb,32.0000,2.8500
+brioche bun,each,240.0000,0.5500
+pickles,gal,3.5000,12.0000
+honey,lb,6.0000,4.7500
+buttermilk,gal,4.0000,6.4000
+all-purpose flour,lb,50.0000,0.6200
+hot sauce,gal,2.0000,18.5000
+ground beef,lb,36.0000,5.1000
+cheddar cheese,lb,18.0000,4.9500
+smoked brisket,lb,22.0000,9.8000
+waffle fries,lb,60.0000,1.4500
+sweet corn,lb,25.0000,1.2000
+cotija cheese,lb,8.0000,6.2500
+kale,lb,12.0000,2.3000
+matcha powder,oz,16.0000,3.9000
+oat milk,gal,5.0000,7.2500
+cold brew concentrate,gal,3.0000,22.0000
+butter,lb,20.0000,4.4000
+chocolate chips,lb,9.0000,5.6000`;
+
+const EMBER_RYE_MENU_CSV = `name,description,category,price,estimated_cost
+Crispy Chicken Sandwich,"Buttermilk-brined thigh, pickles, herb mayo, brioche.",Sandwiches,13.50,4.10
+Nashville Hot Chicken Sandwich,"Cayenne-lacquered thigh, slaw, brioche.",Sandwiches,14.25,4.45
+Buttermilk Fried Chicken Tenders,"Three tenders, honey mustard.",Plates,11.75,3.60
+Classic Cheeseburger,"Quarter-pound patty, cheddar, griddled onion.",Sandwiches,12.50,4.20
+Smoked Brisket Sandwich,"Twelve-hour brisket, pickles, white bread.",Sandwiches,16.00,6.10
+Loaded Waffle Fries,"Queso, scallion, pickled jalapeno.",Sides,8.25,2.05
+Buffalo Wings (8 pc),"Fried wings tossed in buffalo, ranch on the side.",Plates,13.00,4.80
+Street Corn Elote Cup,"Charred corn, cotija, lime, chili salt.",Sides,6.50,1.65
+Kale Caesar Salad,"Tuscan kale, parmesan, sourdough crumb.",Salads,10.50,2.90
+Matcha Latte,"Ceremonial-grade matcha, oat milk.",Drinks,5.75,1.35
+Horchata Cold Brew,"Cold brew cut with cinnamon rice milk.",Drinks,5.25,1.10
+Brown Butter Chocolate Chip Cookie,"Browned butter, sea salt, bittersweet chocolate.",Desserts,3.75,0.72`;
+
+const EMBER_RYE_SALES_CSV = `menu_item,date,channel,units_sold,gross_revenue
+Crispy Chicken Sandwich,2026-09-11,in_store,42,567.00
+Buffalo Wings (8 pc),2026-09-11,in_store,38,494.00
+Classic Cheeseburger,2026-09-11,in_store,31,387.50
+Nashville Hot Chicken Sandwich,2026-09-11,online,26,370.50
+Smoked Brisket Sandwich,2026-09-11,in_store,19,304.00
+Loaded Waffle Fries,2026-09-11,in_store,44,363.00
+Street Corn Elote Cup,2026-09-11,doordash,22,143.00
+Kale Caesar Salad,2026-09-11,in_store,18,189.00
+Matcha Latte,2026-09-11,in_store,24,138.00
+Horchata Cold Brew,2026-09-11,doordash,19,99.75
+Brown Butter Chocolate Chip Cookie,2026-09-11,in_store,35,131.25`;
+
+export default function CsvStudio({
+  currentTrendingDish,
+  allDishes = [],
+  onSelectDish,
+}: CsvStudioProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -35,9 +90,7 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
 
   const [columns, setColumns] = useState<string[]>([]);
   const [parsedData, setParsedData] = useState<any[]>([]);
-  const [summaryEntries, setSummaryEntries] = useState<Array<{ key: string; value: string }>>([]);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +99,18 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
   // Fit Analysis state
   const [fitResult, setFitResult] = useState<any>(null);
   const [isAnalyzingFit, setIsAnalyzingFit] = useState(false);
+  const [selectedDishName, setSelectedDishName] = useState(
+    currentTrendingDish?.name || "Chili crisp hot honey wings",
+  );
+  const [procureNotice, setProcureNotice] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (currentTrendingDish?.name) {
+      setSelectedDishName(currentTrendingDish.name);
+    }
+  }, [currentTrendingDish?.name]);
+
+  const activeDishName = selectedDishName;
 
   function formatFileSize(bytes: number) {
     if (bytes === 0) return "0 B";
@@ -67,21 +132,6 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
       style: "currency",
       currency: "USD",
     }).format(num);
-  }
-
-  function getStatusBadgeClass(val: any) {
-    if (!val) return "bg-neutral-800 border-neutral-700 text-neutral-300";
-    const str = String(val).toLowerCase();
-    if (str.includes("completed") || str.includes("income") || str.includes("success") || str.includes("active")) {
-      return "bg-emerald-950/60 border-emerald-800/60 text-emerald-400";
-    }
-    if (str.includes("progress") || str.includes("pending") || str.includes("review")) {
-      return "bg-amber-950/60 border-amber-800/60 text-amber-400";
-    }
-    if (str.includes("expense") || str.includes("fail") || str.includes("error") || str.includes("86") || str.includes("urgent")) {
-      return "bg-rose-950/60 border-rose-800/60 text-rose-400";
-    }
-    return "bg-neutral-800 border-neutral-700 text-neutral-300";
   }
 
   function triggerUpload() {
@@ -106,7 +156,7 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
   function processFile(file: File) {
     setErrorMessage("");
     if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt") && !file.name.endsWith(".tsv")) {
-      setErrorMessage("Please upload a CSV or delimited text file (.csv).");
+      setErrorMessage("Please upload a CSV or delimited text file (.csv, .tsv).");
       return;
     }
 
@@ -126,26 +176,7 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
 
   function parseCsvString(csvString: string, meta: { name: string; sizeFormatted: string }) {
     setErrorMessage("");
-    const summaries: Array<{ key: string; value: string }> = [];
-
-    let mainCsv = csvString;
-    const summaryDividerIdx = csvString.search(/\n\s*---.*---\s*\n/);
-    if (summaryDividerIdx !== -1) {
-      mainCsv = csvString.slice(0, summaryDividerIdx);
-      const summarySection = csvString.slice(summaryDividerIdx);
-      const summaryLines = summarySection.split("\n").filter((l) => l.trim() && !l.includes("---"));
-      summaryLines.forEach((line) => {
-        const parts = line.split(",");
-        if (parts.length >= 2) {
-          summaries.push({
-            key: parts[0].trim(),
-            value: parts.slice(1).join(",").trim(),
-          });
-        }
-      });
-    }
-
-    Papa.parse(mainCsv, {
+    Papa.parse(csvString.trim(), {
       header: true,
       skipEmptyLines: "greedy",
       dynamicTyping: false,
@@ -159,10 +190,8 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
         setColumns(rawCols.filter((c: string) => c && c.trim()));
         setParsedData(results.data);
         setDelimiter(results.meta.delimiter || ",");
-        setSummaryEntries(summaries);
         setFileDetails(meta);
         setCurrentPage(1);
-        setSearchQuery("");
         setSortCol(null);
         setFitResult(null);
       },
@@ -176,27 +205,26 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
     setParsedData([]);
     setColumns([]);
     setFileDetails(null);
-    setSummaryEntries([]);
-    setSearchQuery("");
     setErrorMessage("");
     setFitResult(null);
   }
 
   // Fit Analysis (Part 2)
-  async function runFitAnalysis() {
-    if (parsedData.length === 0) return;
-    if (!currentTrendingDish?.name) {
-      setErrorMessage("Pick a scraped dish in Discover before running kitchen fit.");
-      return;
-    }
+  async function runFitAnalysis(dishNameToTest?: string, dataOverride?: any[]) {
+    const dataToUse = dataOverride || parsedData;
+    if (dataToUse.length === 0) return;
+    const targetDish = dishNameToTest || selectedDishName;
     setIsAnalyzingFit(true);
     try {
       const res = await fetch("/api/fit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inventoryItems: parsedData,
-          trendingDish: currentTrendingDish,
+          inventoryItems: dataToUse,
+          trendingDish: {
+            name: targetDish,
+            aliases: currentTrendingDish?.name === targetDish ? currentTrendingDish.aliases : undefined,
+          },
         }),
       });
       const data = await res.json();
@@ -208,6 +236,25 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
     } finally {
       setIsAnalyzingFit(false);
     }
+  }
+
+  function quickProcureIngredient(ingName: string) {
+    const newRow: Record<string, any> = {
+      ingredient: ingName,
+      unit: "lb",
+      quantity_on_hand: "12.0000",
+      unit_cost: "3.7500",
+    };
+    for (const col of columns) {
+      if (!(col in newRow)) {
+        newRow[col] = ingName;
+      }
+    }
+    const updated = [newRow, ...parsedData];
+    setParsedData(updated);
+    setProcureNotice(`Stocked "${ingName}" into inventory. Re-evaluated recipe fit.`);
+    setTimeout(() => setProcureNotice(null), 4000);
+    void runFitAnalysis(selectedDishName, updated);
   }
 
   function toggleSort(col: string) {
@@ -223,13 +270,7 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
     }
   }
 
-  const filteredData = parsedData
-    .filter((row) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase().trim();
-      return Object.values(row).some((val) => String(val || "").toLowerCase().includes(q));
-    })
-    .sort((a, b) => {
+  const filteredData = [...parsedData].sort((a, b) => {
       if (!sortCol) return 0;
       const valA = a[sortCol] ?? "";
       const valB = b[sortCol] ?? "";
@@ -247,43 +288,24 @@ export default function CsvStudio({ currentTrendingDish }: CsvStudioProps) {
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
   const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  function loadSampleFinancialReport() {
-    const sample = `ID,Transaction Name,Timestamp,Category,Type,Amount,Status
-tx-1,"Baldor Specialty Foods (Organic Produce & Microgreens)","Today, 09:42","Kitchen COGS",expense,-482.5,In progress
-tx-2,"US Foods Direct (Prime Ribeye & Dairy Restock)","Yesterday, 14:10","Food Inventory",expense,-1240,Completed
-tx-3,"Toast POS Daily Settlement (Dinner Rush)","Yesterday, 23:59","POS Revenue",income,3842.5,Completed
-tx-4,"Southern Glazer's Wine & Spirits (Pinot & Bar Restock)","Oct 24, 11:20","Cellar Restock",expense,-680,Completed
-tx-5,"Ecolab Commercial Dishwasher & Chemical Lease","Oct 22, 08:30","BOH Sanitation",expense,-215,Completed
-tx-6,"Cintas Linen & Chef Uniform Laundry","Oct 20, 10:15","Linen & Floor",expense,-165.4,Completed
-
---- FINANCIAL SUMMARY ---
-Current Treasury Balance,$12,680.42
-Food & Ingredients COGS,$604.36
-Wine & Spirits Float,$296.65
-Front-of-House Labor,$206.48
-Ad Spend & Promos,$182.44
-Uncovered Margin Profit,$0.00
-Active Settlement Batches,1`;
-
-    parseCsvString(sample, {
-      name: "miseen_financial_report_2026-09-12.csv",
-      sizeFormatted: "951 B",
+  function loadInventoryFixture() {
+    parseCsvString(EMBER_RYE_INVENTORY_CSV, {
+      name: "ember_and_rye_inventory.csv",
+      sizeFormatted: "652 B",
     });
   }
 
-  function loadSampleInventory() {
-    const sample = `Item Code,Item Name,Category,Current Stock,Par Level,Unit,Unit Cost,Margin %,Reorder Alert
-INV-001,Dayboat Halibut Fillet,Fresh Seafood,4.5,14.0,kg,$24.50,78%,URGENT
-INV-002,Prime Angus Ribeye,Fresh Butcher,12.0,20.0,kg,$32.00,82%,Normal
-INV-003,Heirloom Baby Greens,Organic Produce,2.1,8.0,kg,$6.80,85%,Low
-INV-004,Organic Greek Feta,Dairy & Cheese,8.0,10.0,kg,$11.20,80%,Normal
-INV-005,Cold Pressed Extra Virgin Oil,Dry Pantry,24.0,30.0,L,$14.00,74%,Normal
-INV-006,Skin-Contact Pinot Grigio,Cellar Bar,18.0,24.0,Bottles,$19.50,84%,Normal
-INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
+  function loadMenuFixture() {
+    parseCsvString(EMBER_RYE_MENU_CSV, {
+      name: "ember_and_rye_menu.csv",
+      sizeFormatted: "1.0 KB",
+    });
+  }
 
-    parseCsvString(sample, {
-      name: "perishable_inventory_pars.csv",
-      sizeFormatted: "640 B",
+  function loadSalesFixture() {
+    parseCsvString(EMBER_RYE_SALES_CSV, {
+      name: "ember_and_rye_sales_30d.csv",
+      sizeFormatted: "820 B",
     });
   }
 
@@ -310,30 +332,61 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
   }
 
   return (
-    <div className="space-y-4 flex-1 flex flex-col">
+    <div className="space-y-6 flex-1 flex flex-col select-none">
       <input
         ref={fileInputRef}
         type="file"
-        accept=".csv,text/csv,text/plain"
+        accept=".csv,text/csv,text/plain,.tsv"
         className="hidden"
         onChange={handleFileInput}
       />
 
+      {/* TOP HEADER */}
+      <div className="pb-4 border-b border-neutral-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-sans uppercase tracking-wider text-neutral-500">
+            <span className="text-[#0047FF] font-semibold">Walk-In &amp; Menu Studio</span>
+            <span> · </span>
+            <span>Recipe Feasibility</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-light tracking-tight text-neutral-950 mt-1">
+            Inventory
+          </h2>
+          <p className="text-xs text-neutral-500 mt-1 max-w-2xl font-light">
+            Match restaurant inventory and active menus against viral food trends. Fit analysis currently active for &ldquo;{activeDishName}&rdquo;.
+          </p>
+        </div>
+
+        {/* Quick Loaders Header Toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={loadInventoryFixture}
+            className="px-3 py-1.5 rounded-[4px] border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-sans transition shadow-2xs"
+          >
+            Load Inventory
+          </button>
+          <button
+            type="button"
+            onClick={loadMenuFixture}
+            className="px-3 py-1.5 rounded-[4px] border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-sans transition shadow-2xs"
+          >
+            Load Menu
+          </button>
+          <button
+            type="button"
+            onClick={loadSalesFixture}
+            className="px-3 py-1.5 rounded-[4px] border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-sans transition shadow-2xs"
+          >
+            Load Sales
+          </button>
+        </div>
+      </div>
+
       {/* Dropzone if no file uploaded */}
       {!fileDetails && parsedData.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center my-auto py-12">
+        <div className="flex-1 flex flex-col items-center justify-center my-auto py-8">
           <div className="w-full max-w-2xl space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-semibold text-stone-50 tracking-tight">
-                Kitchen files
-              </h1>
-              <p className="text-sm text-stone-400 max-w-md mx-auto">
-                {currentTrendingDish
-                  ? `Fit check will use “${currentTrendingDish.name}” from this week’s scrape.`
-                  : "Upload inventory or a P&L. Discover picks the dish this file is scored against."}
-              </p>
-            </div>
-
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -345,82 +398,91 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
               }}
               onDrop={handleDrop}
               onClick={triggerUpload}
-              className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center ${
+              className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition flex flex-col items-center justify-center ${
                 isDragging
-                  ? "border-cyan-400 bg-cyan-950/20 scale-[1.01]"
-                  : "border-neutral-750 hover:border-neutral-600 bg-neutral-900/40 hover:bg-neutral-900/70"
+                  ? "border-[#0047FF] bg-blue-50/50 shadow-sm"
+                  : "border-[#0047FF] hover:border-[#0038df] bg-blue-50/20 hover:bg-blue-50/30"
               }`}
             >
-              <div className="w-16 h-16 rounded-2xl bg-neutral-800/80 border border-neutral-700/80 flex items-center justify-center mb-4 text-cyan-400 group-hover:scale-105 group-hover:border-cyan-500/50 transition-all shadow-xl">
-                <UploadCloud className="w-8 h-8" />
+              <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 flex items-center justify-center mb-3 text-[#0047FF] shadow-xs">
+                <UploadCloud className="w-6 h-6" />
               </div>
 
-              <h3 className="text-lg font-semibold text-white mb-1">
+              <h3 className="text-base font-medium text-neutral-950 mb-1">
                 Drag and drop your CSV here
               </h3>
-              <p className="text-xs sm:text-sm text-neutral-400 mb-5">
-                Supports standard <span className="text-neutral-300 font-mono">.csv</span> or delimited files
+              <p className="text-xs text-neutral-500 mb-4">
+                Supports standard <span className="font-sans font-medium text-neutral-700">.csv</span> or tab-delimited exports
               </p>
 
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-semibold text-sm transition shadow-lg shadow-cyan-500/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[4px] bg-[#0047FF] hover:bg-[#0038df] text-white font-medium text-xs shadow-xs transition"
               >
-                <FileUp className="w-4 h-4" />
+                <FileUp className="w-3.5 h-3.5" />
                 Choose File
               </button>
 
-              <div className="mt-6 flex items-center gap-2 text-[11px] text-neutral-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>Client-side parsing • Ready for Part 2 Inventory Fit Matching</span>
+              <div className="mt-4 text-[11px] font-sans text-neutral-400">
+                Client-side parsing · Automatic ingredient &amp; margin fit matching
               </div>
             </div>
 
             {errorMessage && (
-              <div className="p-4 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-sm flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-rose-400" />
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                 <div>
-                  <p className="font-medium">Failed to parse file</p>
-                  <p className="text-xs text-rose-300/80 mt-0.5">{errorMessage}</p>
+                  <p className="font-semibold">Failed to parse file</p>
+                  <p className="text-neutral-600 mt-0.5">{errorMessage}</p>
                 </div>
               </div>
             )}
 
-            <div className="pt-4 border-t border-neutral-800/60">
-              <div className="flex items-center justify-between mb-3 text-xs text-neutral-400 font-medium">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Or load sample data:</span>
-                </div>
+            {/* Authentic Datasets Quick Cards */}
+            <div className="pt-4 border-t border-neutral-100">
+              <div className="text-[11px] font-sans uppercase tracking-wider text-neutral-400 mb-3">
+                Or inspect sample data:
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
-                  onClick={loadSampleFinancialReport}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-neutral-900/60 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-left transition group"
+                  type="button"
+                  onClick={loadInventoryFixture}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 text-left transition shadow-2xs flex flex-col justify-between"
                 >
-                  <div className="p-2 rounded-lg bg-neutral-800 group-hover:bg-cyan-950 text-cyan-400 transition">
-                    <FileSpreadsheet className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-[#0047FF]" />
+                    <span className="text-xs font-semibold text-neutral-900">Walk-In Inventory</span>
                   </div>
-                  <div>
-                    <div className="text-xs font-semibold text-neutral-200 group-hover:text-white">
-                      Restaurant Financial Report
-                    </div>
-                    <div className="text-[11px] text-neutral-500 mt-0.5">COGS, settlements, vendor orders & treasury</div>
+                  <div className="text-[11px] text-neutral-500 mt-2 font-sans tabular-nums">
+                    20 ingredients, quantities on hand &amp; unit costs
                   </div>
                 </button>
 
                 <button
-                  onClick={loadSampleInventory}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-neutral-900/60 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-left transition group"
+                  type="button"
+                  onClick={loadMenuFixture}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 text-left transition shadow-2xs flex flex-col justify-between"
                 >
-                  <div className="p-2 rounded-lg bg-neutral-800 group-hover:bg-emerald-950 text-emerald-400 transition">
-                    <FileText className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#0047FF]" />
+                    <span className="text-xs font-semibold text-neutral-900">Active Menu Items</span>
                   </div>
-                  <div>
-                    <div className="text-xs font-semibold text-neutral-200 group-hover:text-white">
-                      Daily Perishable Pars
-                    </div>
-                    <div className="text-[11px] text-neutral-500 mt-0.5">Inventory stock, unit costs, pars & shelf life</div>
+                  <div className="text-[11px] text-neutral-500 mt-2 font-sans tabular-nums">
+                    12 current dishes, retail prices &amp; recipe costs
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={loadSalesFixture}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 text-left transition shadow-2xs flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-[#0047FF]" />
+                    <span className="text-xs font-semibold text-neutral-900">30-Day POS Sales</span>
+                  </div>
+                  <div className="text-[11px] text-neutral-500 mt-2 font-sans tabular-nums">
+                    Order volume across in-store, online &amp; delivery
                   </div>
                 </button>
               </div>
@@ -432,74 +494,100 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
       {/* CSV Loaded View */}
       {fileDetails && parsedData.length > 0 && (
         <div className="space-y-4 flex-1 flex flex-col">
-          {/* Top Banner with File details + Fit Analysis Button */}
-          <div className="bg-neutral-900/70 border border-neutral-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Top Banner with File details + Actions */}
+          <div className="bg-white border border-neutral-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-cyan-950/60 border border-cyan-800/50 flex items-center justify-center text-cyan-400">
-                <FileSpreadsheet className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-[#0047FF]">
+                <FileSpreadsheet className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white text-sm sm:text-base truncate max-w-[280px] sm:max-w-md">
+                  <span className="font-semibold text-neutral-950 text-sm truncate max-w-[280px] sm:max-w-md">
                     {fileDetails.name}
                   </span>
-                  <span className="text-[11px] text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded font-mono">
-                    {fileDetails.sizeFormatted}
+                  <span className="text-xs text-neutral-400 font-sans tabular-nums">
+                    ({fileDetails.sizeFormatted})
                   </span>
                 </div>
-                <div className="text-xs text-neutral-400 mt-0.5 flex items-center gap-3">
+                <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-2 font-sans tabular-nums">
                   <span>
-                    <strong className="text-neutral-200">{parsedData.length}</strong> rows
+                    <strong className="text-neutral-900 font-semibold">{parsedData.length}</strong> rows
                   </span>
-                  <span>•</span>
+                  <span>·</span>
                   <span>
-                    <strong className="text-neutral-200">{columns.length}</strong> columns
-                  </span>
-                  <span>•</span>
-                  <span className="font-mono text-[10px] text-neutral-500">
-                    delimiter: '{delimiter === "\t" ? "\\t" : delimiter}'
+                    <strong className="text-neutral-900 font-semibold">{columns.length}</strong> columns
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {allDishes.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={selectedDishName}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setSelectedDishName(newName);
+                      const matched = allDishes.find((d) => d.name === newName);
+                      if (matched) onSelectDish?.(matched.id);
+                      if (parsedData.length > 0) {
+                        void runFitAnalysis(newName);
+                      }
+                    }}
+                    className="appearance-none bg-white border border-neutral-300 rounded-[4px] pl-2.5 pr-7 py-1.5 text-xs text-neutral-800 font-sans focus:outline-none focus:border-[#0047FF] shadow-2xs"
+                  >
+                    {allDishes.map((d) => (
+                      <option key={d.id} value={d.name}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              )}
+
               <button
-                onClick={runFitAnalysis}
+                type="button"
+                onClick={() => void runFitAnalysis()}
                 disabled={isAnalyzingFit}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-neutral-950 transition shadow-lg shadow-emerald-500/20"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-[4px] bg-[#0047FF] hover:bg-[#0038df] text-white transition shadow-xs"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{isAnalyzingFit ? "Matching..." : "Match Against Viral Trends"}</span>
+                <span>{isAnalyzingFit ? "Matching…" : "Match Against Viral Trends"}</span>
               </button>
 
               <button
+                type="button"
                 onClick={triggerUpload}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans rounded-[4px] bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 transition"
               >
-                <FileUp className="w-3.5 h-3.5 text-cyan-400" />
+                <FileUp className="w-3.5 h-3.5" />
                 <span>Replace</span>
               </button>
 
               <button
+                type="button"
                 onClick={exportCsv}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans rounded-[4px] bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 transition"
               >
-                <Download className="w-3.5 h-3.5 text-neutral-400" />
+                <Download className="w-3.5 h-3.5" />
                 <span>CSV</span>
               </button>
 
               <button
+                type="button"
                 onClick={exportJson}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans rounded-[4px] bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 transition"
               >
-                <Download className="w-3.5 h-3.5 text-neutral-400" />
+                <Download className="w-3.5 h-3.5" />
                 <span>JSON</span>
               </button>
 
               <button
+                type="button"
                 onClick={resetData}
-                className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 rounded-lg transition"
+                className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded transition"
                 title="Clear table"
               >
                 <Trash2 className="w-4 h-4" />
@@ -507,157 +595,140 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
             </div>
           </div>
 
+          {procureNotice && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-[#0047FF] font-sans flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#0047FF] shrink-0" />
+              <span>{procureNotice}</span>
+            </div>
+          )}
+
           {/* Part 2: Fit Analysis Results Card */}
           {fitResult && (
-            <div className="bg-neutral-900/90 border border-emerald-800/60 rounded-xl p-4 sm:p-5 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                  <h4 className="text-sm font-bold text-white">
-                    Inventory Fit Match: {fitResult.dishName}
+            <div className="bg-white border border-neutral-200 rounded-xl p-5 space-y-3 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-100">
+                <div>
+                  <div className="text-[11px] font-sans text-neutral-400 uppercase tracking-wider">
+                    Kitchen Feasibility Diagnosis
+                  </div>
+                  <h4 className="text-base font-medium text-neutral-950 mt-0.5">
+                    {fitResult.dishName}
                   </h4>
                 </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
-                  {fitResult.coveragePercent}% Ingredient Coverage
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 text-xs">
-                  <div className="text-neutral-400">On-Hand Ingredients ({fitResult.matchedIngredients?.length})</div>
-                  <div className="text-emerald-400 font-semibold mt-1 truncate">
-                    {fitResult.matchedIngredients?.join(", ") || "None"}
+                <div className="text-right">
+                  <div className="text-xl font-medium text-[#0047FF] font-sans tabular-nums">
+                    {fitResult.coveragePercent}%
                   </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 text-xs">
-                  <div className="text-neutral-400">Missing Ingredients ({fitResult.missingIngredients?.length})</div>
-                  <div className="text-amber-400 font-semibold mt-1 truncate">
-                    {fitResult.missingIngredients?.length ? fitResult.missingIngredients.join(", ") : "100% Stocked"}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 text-xs">
-                  <div className="text-neutral-400">Unit Margin Economics</div>
-                  <div className="text-white font-mono font-semibold mt-1">
-                    Cost: ${fitResult.financials?.estimatedPlateCost} • Retail: ${fitResult.financials?.suggestedPrice} ({fitResult.financials?.projectedMargin})
+                  <div className="text-[10px] font-sans text-neutral-500 uppercase">
+                    {fitResult.isFeasible ? "Feasible with Existing Stock" : "Requires Vendor Procurement"}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Financial Summary detected in CSV */}
-          {summaryEntries.length > 0 && (
-            <div className="bg-neutral-900/40 border border-neutral-800/80 rounded-xl p-4">
-              <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>CSV Key Summary Figures</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {summaryEntries.map((item, idx) => (
-                  <div key={idx} className="bg-neutral-950/60 border border-neutral-800/60 rounded-lg p-3">
-                    <div className="text-[11px] text-neutral-400 truncate">{item.key}</div>
-                    <div className="text-sm sm:text-base font-semibold text-white font-mono mt-0.5 truncate">
-                      {item.value}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 font-sans text-xs">
+                <div className="p-3 rounded-lg bg-neutral-50/70 border border-neutral-200/80">
+                  <div className="text-neutral-500 text-[10px] uppercase">
+                    On-Hand Ingredients ({fitResult.matchedIngredients?.length || 0})
+                  </div>
+                  <div className="text-neutral-900 font-semibold mt-1">
+                    {fitResult.matchedIngredients?.length ? fitResult.matchedIngredients.join(", ") : "None matched"}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-neutral-50/70 border border-neutral-200/80">
+                  <div className="text-neutral-500 text-[10px] uppercase">
+                    Missing Ingredients ({fitResult.missingIngredients?.length || 0})
+                  </div>
+                  {fitResult.missingIngredients?.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {fitResult.missingIngredients.map((ing: string) => (
+                        <button
+                          key={ing}
+                          type="button"
+                          onClick={() => quickProcureIngredient(ing)}
+                          className="inline-flex items-center gap-1 text-[11px] font-sans px-2 py-0.5 rounded border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-900 transition hover:border-[#0047FF] shadow-2xs"
+                          title={`Stock ${ing} into walk-in inventory`}
+                        >
+                          <span>{ing}</span>
+                          <Plus className="w-2.5 h-2.5 text-[#0047FF]" />
+                        </button>
+                      ))}
                     </div>
+                  ) : (
+                    <div className="text-emerald-700 font-semibold mt-1">100% In Stock</div>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-lg bg-neutral-50/70 border border-neutral-200/80">
+                  <div className="text-neutral-500 text-[10px] uppercase">
+                    P&amp;L Envelope Fit
                   </div>
-                ))}
+                  <div className="text-[#0047FF] font-semibold mt-1">
+                    Within $2,016 Menu Trials Cap
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Search & Pagination Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search across all columns..."
-                className="w-full pl-9 pr-8 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-xs sm:text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-cyan-500 transition"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+          {/* Table Header Controls */}
+          <div className="flex items-center justify-between gap-3 pt-1 text-xs font-sans text-neutral-500">
+            <div>
+              Showing <strong className="text-neutral-900 font-semibold tabular-nums">{paginatedData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}</strong>–<strong className="text-neutral-900 font-semibold tabular-nums">{Math.min(currentPage * pageSize, filteredData.length)}</strong> of <span className="tabular-nums">{parsedData.length}</span> rows
             </div>
 
-            <div className="flex items-center gap-3 justify-between sm:justify-end text-xs text-neutral-400">
-              <div className="flex items-center gap-2">
-                <span>Show:</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-cyan-500"
-                >
-                  <option value={10}>10 rows</option>
-                  <option value={25}>25 rows</option>
-                  <option value={50}>50 rows</option>
-                  <option value={100}>100 rows</option>
-                  <option value={1000}>All</option>
-                </select>
-              </div>
-
-              <div className="text-xs text-neutral-400">
-                Showing <span className="text-neutral-200 font-medium">{filteredData.length}</span> of {parsedData.length}
-              </div>
+            <div className="flex items-center gap-2">
+              <span>Rows:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded px-2 py-1 text-xs text-neutral-800 focus:outline-none focus:border-[#0047FF]"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
             </div>
           </div>
 
           {/* Interactive Table */}
-          <div className="border border-neutral-800 rounded-xl overflow-hidden bg-neutral-900/30 flex-1 flex flex-col shadow-xl">
+          <div className="border border-neutral-200 rounded-xl overflow-hidden bg-white flex-1 flex flex-col shadow-2xs">
             <div className="overflow-x-auto flex-1 max-h-[580px] overflow-y-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-neutral-900/90 text-neutral-300 font-semibold border-b border-neutral-800 sticky top-0 z-10 backdrop-blur-sm">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead className="bg-neutral-50 text-neutral-500 font-medium border-b border-neutral-200 sticky top-0 z-10">
                   <tr>
-                    <th className="py-3 px-3.5 w-12 text-center text-neutral-500 font-mono text-[11px]">#</th>
+                    <th className="py-2.5 px-3 w-10 text-center text-neutral-400 text-[11px]">#</th>
                     {columns.map((col) => (
                       <th
                         key={col}
                         onClick={() => toggleSort(col)}
-                        className="py-3 px-3.5 select-none cursor-pointer hover:bg-neutral-800/80 transition group whitespace-nowrap"
+                        className="py-2.5 px-3 select-none cursor-pointer hover:bg-neutral-100 transition whitespace-nowrap text-[11px] uppercase tracking-wider text-neutral-600"
                       >
                         <div className="flex items-center gap-1.5">
                           <span>{col}</span>
-                          <span className="text-neutral-500 group-hover:text-neutral-300 transition">
-                            {sortCol === col && sortAsc && <ArrowUp className="w-3.5 h-3.5 text-cyan-400" />}
-                            {sortCol === col && !sortAsc && <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />}
-                            {sortCol !== col && <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-100" />}
+                          <span className="text-neutral-400">
+                            {sortCol === col && sortAsc && <ArrowUp className="w-3 h-3 text-[#0047FF]" />}
+                            {sortCol === col && !sortAsc && <ArrowDown className="w-3 h-3 text-[#0047FF]" />}
+                            {sortCol !== col && <ArrowUpDown className="w-3 h-3 opacity-30" />}
                           </span>
                         </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800/60 font-sans">
+                <tbody className="divide-y divide-neutral-100">
                   {paginatedData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-neutral-800/40 transition group">
-                      <td className="py-2.5 px-3.5 text-center text-neutral-500 font-mono text-[11px]">
+                    <tr key={idx} className="hover:bg-neutral-50/70 transition">
+                      <td className="py-2 px-3 text-center text-neutral-400 text-[11px] tabular-nums">
                         {(currentPage - 1) * pageSize + idx + 1}
                       </td>
                       {columns.map((col) => (
                         <td
                           key={col}
-                          className={`py-2.5 px-3.5 whitespace-nowrap text-neutral-200 ${
-                            isNumeric(row[col]) ? "font-mono" : ""
-                          }`}
+                          className="py-2 px-3 whitespace-nowrap text-neutral-800 text-xs"
                         >
-                          {col.toLowerCase() === "status" || col.toLowerCase() === "type" || col.toLowerCase() === "reorder alert" ? (
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${getStatusBadgeClass(
-                                row[col]
-                              )}`}
-                            >
-                              {row[col]}
-                            </span>
-                          ) : col.toLowerCase() === "amount" && isNumeric(row[col]) ? (
-                            <span className={Number(row[col]) < 0 ? "text-rose-400 font-medium" : "text-emerald-400 font-medium"}>
+                          {col.toLowerCase() === "amount" && isNumeric(row[col]) ? (
+                            <span className={Number(row[col]) < 0 ? "text-rose-600 font-medium tabular-nums" : "text-neutral-900 font-medium tabular-nums"}>
                               {formatCurrency(row[col])}
                             </span>
                           ) : (
@@ -672,8 +743,8 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
 
                   {paginatedData.length === 0 && (
                     <tr>
-                      <td colSpan={columns.length + 1} className="py-12 text-center text-neutral-500">
-                        <p className="text-sm">No rows matching your search filter.</p>
+                      <td colSpan={columns.length + 1} className="py-12 text-center text-neutral-400">
+                        <p className="text-xs font-sans">No matching records found.</p>
                       </td>
                     </tr>
                   )}
@@ -682,27 +753,29 @@ INV-007,San Marzano Tomatoes (DOP),Dry Pantry,36.0,40.0,Cans,$4.20,86%,Normal`;
             </div>
 
             {/* Pagination Controls */}
-            <div className="border-t border-neutral-800/80 bg-neutral-900/60 px-4 py-3 flex items-center justify-between text-xs text-neutral-400">
+            <div className="border-t border-neutral-100 bg-neutral-50 px-4 py-2.5 flex items-center justify-between text-xs font-sans text-neutral-500">
               <div>
-                Page <span className="text-neutral-200 font-semibold">{currentPage}</span> of{" "}
-                <span className="text-neutral-200 font-semibold">{totalPages || 1}</span>
+                Page <strong className="text-neutral-900 tabular-nums">{currentPage}</strong> of{" "}
+                <strong className="text-neutral-900 tabular-nums">{totalPages || 1}</strong>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
-                  className="p-1.5 rounded-lg border border-neutral-700/80 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent transition text-neutral-300"
+                  className="p-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 disabled:opacity-30 transition text-neutral-700"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="p-1.5 rounded-lg border border-neutral-700/80 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent transition text-neutral-300"
+                  className="p-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 disabled:opacity-30 transition text-neutral-700"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

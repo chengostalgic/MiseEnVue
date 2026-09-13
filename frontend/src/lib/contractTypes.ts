@@ -42,7 +42,30 @@ export type TrendsContract = {
 export type BudgetContract = {
   health?: { band?: string };
   allocation?: {
-    total_budget?: { amount?: number };
+    monthly_revenue?: number;
+    total_budget?: {
+      amount?: number;
+      pct_of_revenue?: number;
+      binding_constraint?: string;
+      benchmark_ceiling?: number;
+      profit_ceiling?: number;
+    };
+    current_spend?: {
+      current_monthly?: number;
+      current_pct_of_revenue?: number;
+      recommended_monthly?: number;
+      delta?: number;
+      direction?: string;
+      multiple?: number;
+    };
+    breakeven?: {
+      computable?: boolean;
+      contribution_margin_pct?: number;
+      incremental_revenue_needed?: number;
+      incremental_covers_per_day?: number;
+      incremental_covers_needed?: number;
+      avg_check?: number;
+    };
     split?: Record<string, number>;
   };
   constraints?: {
@@ -52,4 +75,26 @@ export type BudgetContract = {
     capex_available?: number;
     min_dish_margin_pct?: number;
   };
+  summary?: {
+    revenue?: number;
+    total_expenses?: number;
+    net_profit?: number;
+    by_category?: Record<string, number>;
+  };
+  ratios?: {
+    food_cost_pct?: number;
+    labor_cost_pct?: number;
+    prime_cost_pct?: number;
+    occupancy_pct?: number;
+    marketing_pct?: number;
+    net_margin_pct?: number;
+  };
+  benchmarks?: Array<{
+    metric: string;
+    value: number;
+    target_low: number;
+    target_high: number;
+    status: string;
+  }>;
+  rationale?: string[];
 };

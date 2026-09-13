@@ -70,6 +70,9 @@ export type OpportunityCard = {
     source: string;
     display_value: string | null;
     description: string;
+    sentiment?: string | null;
+    engagement?: number | null;
+    url?: string | null;
   }>;
   run: OpportunityRun | null;
 };
@@ -252,9 +255,36 @@ async function fetchApiOpportunities() {
   if (!json.success || !Array.isArray(json.opportunities) || json.opportunities.length === 0) {
     return null;
   }
+
+  let opps = json.opportunities as OpportunityCard[];
+  if (typeof window !== "undefined") {
+    try {
+      const customOpps: OpportunityCard[] = JSON.parse(
+        localStorage.getItem("miseenvue_custom_opportunities") || "[]",
+      );
+      if (customOpps.length > 0) {
+        opps = [...customOpps, ...opps];
+      }
+
+      const savedStatuses = JSON.parse(localStorage.getItem("miseenvue_opportunity_statuses") || "{}");
+      const savedRuns = JSON.parse(localStorage.getItem("miseenvue_opportunity_runs") || "{}");
+      opps = opps.map((opp) => {
+        const customStatus = savedStatuses[opp.id];
+        const customRun = savedRuns[opp.id];
+        return {
+          ...opp,
+          status: customStatus || opp.status,
+          run: customRun !== undefined ? customRun : opp.run,
+        };
+      });
+    } catch (e) {
+      console.warn("Could not merge local opportunity storage:", e);
+    }
+  }
+
   return {
-    restaurant: { id: "res-local", name: "Local restaurant", city: null } satisfies RestaurantSummary,
-    opportunities: json.opportunities as OpportunityCard[],
+    restaurant: { id: "res-local", name: "MiseEnVue", city: null } satisfies RestaurantSummary,
+    opportunities: opps,
   };
 }
 
