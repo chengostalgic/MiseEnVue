@@ -128,6 +128,45 @@ values
     'Noodles', 'Chicago', 'IL', 'America/Chicago'
   );
 
+update restaurants set
+  neighborhood = 'The Heights',
+  pride_in = 'Smoked brisket and fried chicken that still tastes like a backyard cookout, not a chain.',
+  price_band = 'mid',
+  restaurant_type = 'fast_casual',
+  primary_goal = 'increase_revenue',
+  experiment_budget = 2016,
+  max_new_ingredients = 3,
+  service_occasions = array['lunch', 'dinner'],
+  never_serve = 'tasting menus, raw seafood towers',
+  profile_completed_at = now()
+where id = 'a0000000-0000-0000-0000-000000000001';
+
+update restaurants set
+  neighborhood = 'East Austin',
+  pride_in = 'Breakfast tacos and slow-cooked barbacoa, no fusion gimmicks.',
+  price_band = 'value',
+  restaurant_type = 'fast_casual',
+  primary_goal = 'increase_average_order_value',
+  experiment_budget = 400,
+  max_new_ingredients = 2,
+  service_occasions = array['brunch', 'lunch'],
+  never_serve = 'sushi, smash burgers',
+  profile_completed_at = now()
+where id = 'b0000000-0000-0000-0000-000000000001';
+
+update restaurants set
+  neighborhood = 'Logan Square',
+  pride_in = 'Late-night hand-pulled noodles that still slurp after last call.',
+  price_band = 'mid',
+  restaurant_type = 'fast_casual',
+  primary_goal = 'generate_social_buzz',
+  experiment_budget = 600,
+  max_new_ingredients = 3,
+  service_occasions = array['dinner', 'late_night'],
+  never_serve = 'brunch, dessert flights',
+  profile_completed_at = now()
+where id = 'd0000000-0000-0000-0000-000000000001';
+
 -- ===========================================================================
 -- 3. Layer 2 — uploads
 -- ===========================================================================

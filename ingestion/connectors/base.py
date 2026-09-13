@@ -20,7 +20,6 @@ from typing import Any
 from ingestion.schema import Post
 
 RAW_DIR = Path("data/raw")
-FIXTURE_DIR = Path("data/fixtures")
 
 # HTTP libraries put the full request URL in their exception text, and for a
 # key-in-querystring API that means the credential lands in logs, task output,
@@ -60,15 +59,14 @@ class Connector(ABC):
     def fetch(self, since_days: int, offline: bool = False) -> list[Post]:
         """Return Posts, from the network or from cache.
 
-        Offline mode prefers the newest cached pull and falls back to the
-        committed fixture. A connector that fails is logged and returns
-        nothing rather than taking the whole run down with it -- a partial
-        result still demos.
+        Offline mode replays the newest cached pull. A connector that fails
+        is logged and returns nothing rather than taking the whole run down
+        with it -- a partial result still demos.
         """
         if offline:
             raw = self._load_cached()
             if raw is None:
-                print(f"  [{self.name}] no cache or fixture, skipping")
+                print(f"  [{self.name}] no cached pull, skipping")
                 return []
             return self.parse(raw)
 
@@ -93,17 +91,11 @@ class Connector(ABC):
         print(f"  [{self.name}] cached {len(raw)} records -> {path}")
 
     def _load_cached(self) -> list[dict[str, Any]] | None:
-        """Newest cached pull, else the committed fixture, else None."""
+        """Newest cached pull, else None."""
         cache_dir = RAW_DIR / self.name
         if cache_dir.is_dir():
             pulls = sorted(cache_dir.glob("*.json"))
             if pulls:
                 print(f"  [{self.name}] replaying {pulls[-1]}")
                 return json.loads(pulls[-1].read_text())
-
-        fixture = FIXTURE_DIR / f"{self.name}.json"
-        if fixture.is_file():
-            print(f"  [{self.name}] replaying fixture {fixture}")
-            return json.loads(fixture.read_text())
-
         return None

@@ -2,6 +2,7 @@
 
 import type { Session } from "@supabase/supabase-js";
 import { FormEvent, useState } from "react";
+import AppHeader from "@/components/AppHeader";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 type Mode = "sign-in" | "sign-up";
@@ -71,12 +72,16 @@ export default function AuthPanel({
   }
 
   return (
-    <main className="page-shell">
+    <div className="min-h-screen flex flex-col bg-[#0c0b0a]">
+      <AppHeader />
+      <main className="page-shell intake-shell">
       <section className="auth-card">
-        <div className="eyebrow">MiseEnVue</div>
+        <div className="eyebrow">Welcome back</div>
         <h1>Sign in</h1>
         <p className="intro">
-          Demo: <code>owner@miseenvue.test</code> / <code>password123</code>
+          Demo kitchen: <code>owner@miseenvue.test</code> / <code>password123</code>
+          <br />
+          After a database reset, sign in again — an old tab will fail to save.
         </p>
 
         <div className="mode-switch" aria-label="Authentication mode">
@@ -131,6 +136,7 @@ export default function AuthPanel({
           </div>
         )}
       </section>
-    </main>
+      </main>
+    </div>
   );
 }

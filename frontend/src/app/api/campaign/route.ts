@@ -5,16 +5,17 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, analysisText, engine = "gemini", apiKey } = await req.json();
+    const { topic, analysisText, engine = "gemini", variation = 0 } = await req.json();
     if (!topic || !analysisText) {
       return NextResponse.json({ error: "Missing topic or analysisText" }, { status: 400 });
     }
 
-    const result = await generateCampaignPlaybook(topic, analysisText, { engine, apiKey });
+    const result = await generateCampaignPlaybook(topic, analysisText, { engine, variation });
     return NextResponse.json({
       success: true,
       topic,
       playbookText: result.playbookText,
+      engineUsed: result.engineUsed,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

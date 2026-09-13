@@ -3,14 +3,26 @@
 # Everything tunable lives here so nothing needs editing in Python at 2am
 # during the demo.
 
-# National-only. An earlier version carried three geographic tiers (metro DMA,
-# state, national) with city-templated queries and DMA-level Trends lookups.
-# It was dropped: metro search volume is frequently zero even for real trends,
-# the local YouTube content that exists is tiny channels, and the signal the
-# product actually needs is what is going viral nationally -- a dish blowing up
-# across US food media is a dish a restaurant in any city can act on.
+# Three tiers. Wider (national / abroad) answers "what is going viral
+# anywhere." Regional and local answer "is this already showing up here?"
+# Nearby is one factor, not a filter -- a 400-view Houston review is scored
+# on the local tier, not against Nick DiGiovanni, but a Seoul or LA plate
+# still belongs on the board. Override at run time with --city.
+#
+# Defaults match Ember & Rye (Houston). Night Owl Noodles is Chicago:
+#   python -m ingestion.pipeline --city Chicago
 location:
+  city: Houston
+  neighborhood: The Heights
+  county: Harris County
+  region_name: Texas
+  state: TX
   region_code: US
+  latitude: 29.7990              # The Heights, not downtown
+  longitude: -95.3984
+  timezone: America/Chicago
+  trends_geo: US-TX-618          # Houston DMA
+  trends_geo_region: US-TX
 
 youtube:
   # search.list costs 100 quota units per query against a 10,000/day budget, so
@@ -40,49 +52,11 @@ youtube:
   #
   # Add channels by @handle. Handle -> playlist mapping is cached on disk.
   # ---------------------------------------------------------------------------
-  channels:
-    # Trend reporters -- their beat IS viral food. These are the channels that
-    # cover Dubai chocolate, kataifi, cucumber salad etc. while it is happening.
-    - "@InsiderFood"
-    - "@Tastemade"
-    - "@thrillist"
-    - "@foodbeast"
-    - "@delish"
-    - "@BuzzFeedTasty"
-    - "@eater"
-    # Viral-forward creators -- they make "I tried the viral X" content, so a
-    # dish appearing across several of them is a confirmed trend.
-    - "@nickdigiovanni"
-    - "@CookingWithLynja"
-    - "@itsQCP"
-    - "@TheGoldenBalance"
-    - "@Cookingwithkian"
-    - "@dylanlemay"
-    - "@JoshuaWeissman"
-    - "@MythicalKitchen"
-    - "@thatdudecancook"
-    - "@AaronandClaire"
-    # Food media -- the Eater shape. These cover what is trending rather than
-    # publishing evergreen recipes, so a dish appearing across several of them
-    # is the clustering signal.
-    - "@bonappetit"
-    - "@Mashed"
-    - "@munchies"
-    - "@FoodNetwork"
-    - "@NYTCooking"
-    - "@seriouseats"
-    - "@FoodAndWine"
-    - "@Chowhound"
-    - "@SpoonUniversity"
-    - "@PureWow"
-    # Viral-food testers and reactors -- they cover a dish precisely because it
-    # is blowing up, which is the signal we want.
-    - "@ChefReactions"
-    - "@emmymade"
-    - "@MaxtheMeatGuy"
-    - "@SamTheCookingGuy"
-    - "@StephanieSoo"
-    - "@BerylShereshewsky"
+  # Empty on purpose. A fixed roster is someone else's taste — if you do not
+  # watch these people, their uploads should not be the board. Search is
+  # built from the kitchen (city / cuisine / rising terms) at run time.
+  # Paste handles here only if you want that extra cheap pull.
+  channels: []
   channel_videos_each: 50
   # Channels publish weekly, not daily, so a 14-day window caps out around 6
   # videos each. Channel pulls use their own wider window -- a dish several
@@ -94,21 +68,19 @@ youtube:
   # above costs ~2 units per channel; each search below costs 100. These exist
   # only to catch dishes trending outside the curated roster, so the list is
   # deliberately short.
-  queries:
-    - viral restaurant dish
-    - new menu item trend
-  # Local queries, templated with location.city. These return restaurant
-  # reviews and local food-scene coverage rather than recipe videos -- a
-  # different signal from the national set, and the one that says whether this
-  # market will actually turn up for a dish.
-  #
-  # Note: YouTube's location + locationRadius parameters were tested and are
-  # not worth using. They only match videos carrying explicit geotags, which
-  # is a small and unrepresentative slice, and the results mixed genuinely
-  # local content with generic food videos that happened to be tagged. Putting
+  # Query strings are built in ingestion/queries.py from the kitchen.
+  # Do not list dishes here.
+  # Used on local-scope search.list only. Geotagged uploads are scarce;
+  # city-in-query remains the main local YouTube path.
+  location_radius: 25km
 
-  # Regional queries sit between city and national. A metro alone is a thin
-  # slice of content; the surrounding state catches food-scene coverage that
+  # What's actually popular on YouTube in this country right now. 1 quota unit
+  # for 50 videos, then a food-title filter. This is the cheapest way to catch
+  # a dish the curated roster has not covered yet.
+  include_most_popular: true
+  most_popular_category: "26"    # Howto & Style -- cooking lives here
+  # Empty = the kitchen's own region_code only.
+  most_popular_regions: []
 
   results_per_query: 50
   # Comments carry the sentiment signal; titles and descriptions are marketing.
@@ -140,12 +112,14 @@ youtube:
   # It is unset on ~60% of channels; those pass through to the extraction
   # relevance gate rather than being dropped, since dropping on missing
   # metadata would take most of the legitimate US content with it.
-  allowed_channel_countries: [US]
+  # Empty on purpose. A US-only gate is why Seoul cafe desserts and
+  # Tokyo convenience-store plates never reached Discover.
+  allowed_channel_countries: []
 
   # Kept as a secondary filter only: it does catch honestly-declared non-English
   # audio (one pull dropped 299 videos on hi/ur/ta), but cannot be trusted
   # alone for the reason above.
-  allowed_audio_languages: [en]
+  allowed_audio_languages: []
 
   # ---------------------------------------------------------------------------
   # SHORTS PASS
@@ -164,10 +138,8 @@ youtube:
   # long-form-only ranking buried.
   shorts_results_per_query: 15
   # Typical genuine like rate is 4-8% of views; bait sits well below.
-  shorts_min_like_rate: 0.030
-  # Comments prove an audience engaged enough to talk, and are the only source
-  # of sentiment -- a Short with none is useless to us regardless of views.
-  shorts_min_comments: 25
+  shorts_min_like_rate: 0.015
+  shorts_min_comments: 8
 
   # A video nobody watched is not evidence of a trend. Applies to every video,
   # not just Shorts -- 75% of a relevance-only pull was under 1,000 views.
@@ -189,19 +161,13 @@ youtube:
     # Set true to keep ONLY videos that clear the virality bar. Off by default
     # so the bar can be tuned against real output before it starts discarding.
     viral_only: false
-    min_views: 50000
+    min_views: 15000
     breakout_ratio: 2.0       # >= 2x the channel's own median
-    min_views_per_day: 25000  # or still climbing fast
-    # Titles that signal the creator is covering a trend rather than posting an
-    # evergreen recipe. Safe as a positive signal now that the roster is
-    # curated -- the earlier problem was tiny SEO channels using these words,
-    # not the words themselves.
-    # Require BOTH a breakout and a trend-marked title. Breakout alone finds
-    # viral VIDEOS -- a Hot Ones celebrity interview broke out at 100x and has
-    # no dish in it. A trend marker alone finds creators using the word. The
-    # pair is the Dubai-chocolate signature: audience surge on a video the
-    # creator framed as covering a trend.
-    require_trend_marker: true
+    min_views_per_day: 15000  # long-form still climbing
+    min_views_per_day_shorts: 8000
+    # Markers are a scoring bonus, not a gate. Requiring them dropped real
+    # breakout recipes whose titles never said "viral".
+    require_trend_marker: false
     trend_markers:
       - viral
       - trending
@@ -212,13 +178,29 @@ youtube:
       - internet
       - famous
       - obsessed
+    # Celebrity interviews and brand features rack up views that are about the
+    # guest, not the dish. They stay in the corpus (extraction may still find
+    # a real dish) but scoring treats their reach as weak evidence.
+    evergreen_markers:
+      - " joins "
+      - "talks about"
+      - interview
+      - "loves "
+      - "everything food"
+      - "we tried every"
+      - "5 golden rules"
+      - "from the test kitchen"
 
 google_trends:
-  # Optional enrichment only -- Google rate-limits per IP at ~8-10 sessions an
-  # hour and blocks outright under load. Momentum comes from video velocity
-  # (see ingestion/score.py); a reachable Trends reading refines it. National
-  # only.
+  # Two jobs, not one. Discovery pulls rising food searches (national daily
+  # trends plus related queries at the restaurant's DMA) and seeds YouTube.
+  # Velocity then scores the dishes extraction already found, nationally and
+  # at the DMA, so a dish that is fading nationwide but climbing here is
+  # visible. pytrends is unofficial and Google throttles it; either job
+  # degrades to empty rather than failing the run.
   timeframe: now 7-d
+  discover: true
+  discover_limit: 12
   # Percent change (second half of window vs first) that flips momentum.
   rising_threshold_pct: 15
   fading_threshold_pct: -15
@@ -252,11 +234,14 @@ extraction:
   # of that. Haiku makes the extra calls cheap -- ~28 batches at batch_size 25.
   # Sampled per scope, not globally: local posts pull 20-900 views against
   # national's hundreds of thousands, so a global top-N cut would delete the
-  # local tier outright.
+  # local tier outright. source_floors do the same for Maps reviews, which
+  # have no view count that can compete with YouTube.
   max_posts: 700
   scope_floors:
-    local: 60
+    local: 80
     regional: 60
+  source_floors:
+    google_maps: 80
   # Posts per clustering call. Larger batches see more context at once (better
   # clustering) but each call gets slower and the running dish list grows.
   batch_size: 25
@@ -276,7 +261,7 @@ output:
   # singletons dominate the ranking purely by arriving: in a 180-post run,
   # 14 of the top 20 had a single mention and pushed a genuine 3-creator
   # cluster down to rank 12. Trends are defined by independent repetition.
-  min_mentions: 2
+  min_mentions: 1
 
 scoring:
   # virality is what separates a trend from a recipe. Two food-media channels
@@ -294,12 +279,14 @@ scoring:
   # views, while one chicken au poivre Short pulled 241,000 on its own. Ranking
   # on volume put the qishta cluster first, which was backwards.
   weights:
-    reach: 0.32
-    virality: 0.25
-    velocity: 0.18
+    reach: 0.18
+    virality: 0.26
+    velocity: 0.16
     volume: 0.10
     breadth: 0.08
     recency: 0.07
+    local: 0.08
+    local_spike: 0.07
   recency_halflife_days: 5
   # Momentum thresholds on mean breakout ratio, used when Google Trends is
   # unreachable (it rate-limits per IP at ~8-10 sessions/hour). A dish whose
@@ -307,3 +294,36 @@ scoring:
   # audience is seeking out.
   rising_breakout: 1.8
   fading_breakout: 0.7
+  # Maps-only dishes have no breakout ratio. This many distinct local
+  # restaurants in the review window is enough to call it rising.
+  rising_local_restaurants: 4
+
+# ---------------------------------------------------------------------------
+# GOOGLE MAPS — county-level diner signal.
+#
+# YouTube is national food media. Maps is what people in this county ordered
+# last week. Playwright opens Maps with the restaurant's GPS injected so
+# "food near me" is Harris County, not the scrape machine's IP.
+#
+# The trend unit is restaurants, not reviews: the same dish in newest reviews
+# at several independent places inside review_window_days.
+# ---------------------------------------------------------------------------
+google_maps:
+  enabled: true
+  headless: true
+  review_window_days: 14
+  max_places: 12
+  reviews_per_place: 8
+  max_queries: 4
+  scroll_steps: 4
+  timeout_ms: 45000
+  min_restaurants_for_spike: 2
+  queries:
+    - "restaurants in {county}, {state}"
+    - "best new restaurants in {city}"
+    - "food near me"
+    - "viral food {city}"
+    - "must try {city}"
+  food_type_queries:
+    - "{food_type} in {county}"
+  food_types: []

@@ -35,10 +35,30 @@ from typing import Any
 
 from ingestion.connectors.base import Connector
 from ingestion.connectors.channels import fetch_channel_uploads
-from ingestion.virality import annotate as annotate_virality
+from ingestion.queries import build_discovery_queries
 from ingestion.schema import Post
+from ingestion.virality import annotate as annotate_virality
 
 API = "https://www.googleapis.com/youtube/v3"
+
+# mostPopular category 26 is Howto & Style. Keep a video only when the title
+# or description looks like food; otherwise makeup and home DIY flood clustering.
+_FOOD_HINTS = (
+    "recipe", "cook", "food", "eat", "bake", "chef", "dish", "meal",
+    "taco", "pizza", "burger", "pasta", "ramen", "sushi", "chicken",
+    "cake", "cookie", "sandwich", "salad", "noodle", "dumpling",
+    "brunch", "dessert", "chocolate", "matcha", "wings", "soup",
+    "steak", "bread", "toast", "bagel", "grill", "fry", "sauce",
+    "spicy", "dinner", "lunch", "breakfast", "kitchen", "taste",
+    "restaurant", "menu", "street food", "cafe", "mukbang", "foodie",
+    "snack", "boba", "latte", "viral", "tiktok", "tasting", "review",
+    "street", "market", "night market", "konbini", "convenience",
+)
+
+
+def _looks_like_food(text: str) -> bool:
+    blob = text.lower()
+    return any(hint in blob for hint in _FOOD_HINTS)
 
 # Narrowest geographic scope wins when a video is found by several query sets.
 _SCOPE_RANK = {"local": 0, "regional": 1, "national": 2}
@@ -80,10 +100,7 @@ class YouTubeConnector(Connector):
         per_query = self.config.get("results_per_query", 25)
         comment_limit = self.config.get("comments_per_video", 20)
 
-        # National only. The earlier city/state tiers were dropped -- what the
-        # product needs is what is going viral across US food media, which a
-        # restaurant in any city can act on.
-        queries = [(q, "national") for q in self.config.get("queries", [])]
+        queries = self._scoped_queries()
 
         # Each query runs under BOTH orderings, because they select for
         # different failure modes:
@@ -117,6 +134,12 @@ class YouTubeConnector(Connector):
         if videos:
             print(f"  [{self.name}] {len(videos)} videos from curated channels")
 
+        trending = self._fetch_trending(requests, key)
+        for vid, video in trending.items():
+            videos.setdefault(vid, video)
+        if trending:
+            print(f"  [{self.name}] {len(trending)} videos from YouTube mostPopular")
+
         # Search is a SUPPLEMENT and fails routinely -- it costs 100 quota
         # units a call, so it is the first thing to 429 once the daily budget
         # runs down. A failure here must not discard the channel results
@@ -142,7 +165,8 @@ class YouTubeConnector(Connector):
         # counts, which the search response does not carry.
         shorts: dict[str, dict[str, Any]] = {}
         if self.config.get("include_shorts", True):
-            shorts = self._fetch_shorts(requests, key, published_after, queries)
+            national = [(q, s) for q, s in queries if s == "national"]
+            shorts = self._fetch_shorts(requests, key, published_after, national)
             for vid, video in shorts.items():
                 if vid not in videos:
                     videos[vid] = video
@@ -203,15 +227,6 @@ class YouTubeConnector(Connector):
             if before != len(videos):
                 print(f"  [{self.name}] language gate dropped {before - len(videos)} videos")
 
-        # Virality signals, computed against each channel's own baseline.
-        vcfg = self.config.get("virality", {})
-        if vcfg:
-            counts = annotate_virality(videos, vcfg)
-            print(
-                f"  [{self.name}] virality: {counts.get('viral',0)} viral "
-                f"({counts.get('breakout',0)} breakout, {counts.get('surging',0)} surging), "
-                f"{counts.get('trend_marker',0)} trend-marked titles"
-            )
         # Minimum-views floor, all videos. A 12-view upload is not evidence of
         # anything, and 75% of a relevance-ordered pull fell under 1,000.
         min_views = self.config.get("min_views", 0)
@@ -241,6 +256,73 @@ class YouTubeConnector(Connector):
 
         return list(videos.values())
 
+    def _scoped_queries(self) -> list[tuple[str, str]]:
+        """Search strings for this kitchen, not a hardcoded dish list."""
+        preset = self.config.get("discovery_queries")
+        if preset:
+            return [(query, scope) for query, scope in preset if query]
+        return build_discovery_queries(
+            city=self.config.get("city"),
+            cuisine=self.config.get("cuisine"),
+            neighborhood=self.config.get("neighborhood"),
+            region=self.config.get("region_name"),
+            rising_terms=self.config.get("seed_queries") or [],
+        )
+
+    def _fetch_trending(self, requests, key: str) -> dict[str, dict[str, Any]]:
+        """YouTube mostPopular charts, several countries, food-filtered.
+
+        One quota unit per region. US Howto is mostly makeup and weeknight
+        pasta. KR/JP/MX/TH charts are where new plates break first.
+        """
+        if not self.config.get("include_most_popular", True):
+            return {}
+        regions = self.config.get("most_popular_regions") or [
+            self.config.get("region_code") or "US"
+        ]
+        found: dict[str, dict[str, Any]] = {}
+        for region in regions:
+            try:
+                resp = requests.get(
+                    f"{API}/videos",
+                    params={
+                        "key": key,
+                        "chart": "mostPopular",
+                        "regionCode": region,
+                        "videoCategoryId": str(self.config.get("most_popular_category", "26")),
+                        "part": "snippet",
+                        "maxResults": 50,
+                    },
+                    timeout=30,
+                )
+                if resp.status_code != 200:
+                    continue
+            except Exception:  # noqa: BLE001 - chart is a supplement
+                continue
+
+            for item in resp.json().get("items", []):
+                snippet = item.get("snippet", {})
+                title = snippet.get("title", "")
+                description = snippet.get("description", "")
+                if not _looks_like_food(f"{title} {description}"):
+                    continue
+                vid = item["id"]
+                if vid in found:
+                    continue
+                found[vid] = {
+                    "id": vid,
+                    "title": title,
+                    "description": description,
+                    "channel": snippet.get("channelTitle", ""),
+                    "channel_id": snippet.get("channelId", ""),
+                    "published_at": snippet.get("publishedAt", ""),
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                    "matched_query": f"chart:mostPopular:{region}",
+                    "scope": "national",
+                    "from_trending": True,
+                }
+        return found
+
     def _search_into(
         self, videos: dict, requests, key: str, query: str, scope: str,
         order: str, published_after: str, per_query: int,
@@ -253,20 +335,32 @@ class YouTubeConnector(Connector):
         already collected, which are the main path and cost almost nothing.
         """
         try:
+            params = {
+                "key": key,
+                "q": query,
+                "part": "snippet",
+                "type": "video",
+                "publishedAfter": published_after,
+                "maxResults": per_query,
+                "relevanceLanguage": "en",
+                "regionCode": self.config.get("region_code", "US"),
+                "videoDuration": self.config.get("duration", "medium"),
+                "order": order,
+            }
+            # GPS-scoped search only on the local tier. locationRadius matches
+            # geotagged uploads, which is thin, but it is the official
+            # equivalent of the Maps geolocation pin and costs no extra quota
+            # on a search we were already running.
+            if (
+                scope == "local"
+                and self.config.get("latitude") is not None
+                and self.config.get("longitude") is not None
+            ):
+                params["location"] = f"{self.config['latitude']},{self.config['longitude']}"
+                params["locationRadius"] = self.config.get("location_radius", "25km")
             resp = requests.get(
                 f"{API}/search",
-                params={
-                    "key": key,
-                    "q": query,
-                    "part": "snippet",
-                    "type": "video",
-                    "publishedAfter": published_after,
-                    "maxResults": per_query,
-                    "relevanceLanguage": "en",
-                    "regionCode": self.config.get("region_code", "US"),
-                    "videoDuration": self.config.get("duration", "medium"),
-                    "order": order,
-                },
+                params=params,
                 timeout=30,
             )
             resp.raise_for_status()
@@ -424,6 +518,20 @@ class YouTubeConnector(Connector):
             return []
 
     def parse(self, raw: list[dict[str, Any]]) -> list[Post]:
+        # Recompute virality here so --offline picks up rule changes without
+        # a new network pull. fetch_raw used to annotate before caching, which
+        # froze the old require_trend_marker gate into every replay.
+        videos = {r["id"]: r for r in raw if r.get("id")}
+        vcfg = self.config.get("virality", {})
+        if vcfg and videos:
+            counts = annotate_virality(videos, vcfg)
+            print(
+                f"  [{self.name}] virality: {counts.get('viral', 0)} viral "
+                f"({counts.get('breakout', 0)} breakout, {counts.get('surging', 0)} surging), "
+                f"{counts.get('trend_marker', 0)} trend-marked, "
+                f"{counts.get('evergreen', 0)} evergreen/interview"
+            )
+
         posts = []
         for r in raw:
             text = " ".join(filter(None, [r.get("title"), r.get("description")])).strip()
@@ -449,6 +557,7 @@ class YouTubeConnector(Connector):
                     views_per_day=r.get("views_per_day"),
                     is_viral=bool(r.get("is_viral")),
                     trend_marker=bool(r.get("trend_marker")),
+                    is_evergreen=bool(r.get("is_evergreen")),
                 )
             )
         return posts

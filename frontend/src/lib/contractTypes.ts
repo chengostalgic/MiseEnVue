@@ -5,13 +5,25 @@ export type ScrapedEvidence = {
   engagement?: number | null;
   sentiment?: string;
   observed_at?: string;
+  image?: string | null;
+};
+
+export type DishRecipe = {
+  ingredients: string[];
+  method: string[];
 };
 
 export type ScrapedDish = {
   id: string;
   name: string;
+  lane?: "county" | "kitchen" | "national";
+  whyHere?: string;
+  kitchenScore?: number;
+  kitchenFit?: string;
   aliases?: string[];
   cuisine_tags?: string[];
+  description?: string;
+  recipe?: DishRecipe;
   trend_score: number;
   momentum: string;
   metrics?: {
@@ -20,6 +32,8 @@ export type ScrapedDish = {
     by_source?: Record<string, number>;
     total_engagement?: number;
     local_mention_count?: number;
+    local_restaurant_count?: number;
+    creator_count?: number;
     sentiment?: { positive?: number; negative?: number; neutral?: number };
     negative_theme?: string;
   };
@@ -36,13 +50,53 @@ export type TrendsContract = {
   generated_at?: string;
   window?: { days?: number; start?: string; end?: string };
   sources_used?: string[];
+  market?: {
+    city?: string;
+    county?: string;
+    region_name?: string;
+    state?: string;
+    region_code?: string;
+    latitude?: number;
+    longitude?: number;
+  };
   dishes: ScrapedDish[];
 };
 
 export type BudgetContract = {
   health?: { band?: string };
+  ratios?: {
+    food_cost_pct?: number;
+    labor_cost_pct?: number;
+    prime_cost_pct?: number;
+    occupancy_pct?: number;
+    marketing_pct?: number;
+    net_margin_pct?: number;
+  };
   allocation?: {
-    total_budget?: { amount?: number };
+    monthly_revenue?: number;
+    total_budget?: {
+      amount?: number;
+      pct_of_revenue?: number;
+      binding_constraint?: string;
+      benchmark_ceiling?: number;
+      profit_ceiling?: number;
+    };
+    current_spend?: {
+      current_monthly?: number;
+      current_pct_of_revenue?: number;
+      recommended_monthly?: number;
+      delta?: number;
+      direction?: string;
+      multiple?: number;
+    };
+    breakeven?: {
+      computable?: boolean;
+      contribution_margin_pct?: number;
+      incremental_revenue_needed?: number;
+      incremental_covers_per_day?: number;
+      incremental_covers_needed?: number;
+      avg_check?: number;
+    };
     split?: Record<string, number>;
   };
   constraints?: {
@@ -52,4 +106,18 @@ export type BudgetContract = {
     capex_available?: number;
     min_dish_margin_pct?: number;
   };
+  summary?: {
+    revenue?: number;
+    total_expenses?: number;
+    net_profit?: number;
+    by_category?: Record<string, number>;
+  };
+  benchmarks?: Array<{
+    metric: string;
+    value: number;
+    target_low: number;
+    target_high: number;
+    status: string;
+  }>;
+  rationale?: string[];
 };

@@ -1,7 +1,8 @@
 # MiseEnVue
 
 Turns viral food trends into menu and marketing decisions a restaurant can
-afford.
+afford. Inspiration can come from next door, another US city, or anywhere a
+plate is working. Nearby demand is one factor — not the fence.
 
 Two independent halves, each producing a JSON file that downstream parts read:
 
@@ -71,8 +72,9 @@ The `constraints` block in `budget.json` is what Parts 2 and 3 must enforce:
 
 ## Trend ingestion
 
-Finds dishes going viral across US food media, clusters mentions across
-creators, and explains why each is trending with evidence attached.
+Finds dishes going viral across food media, clusters mentions across
+creators, and explains why each is trending with evidence attached. Nearby
+reviews are one signal alongside city, US, and worldwide takes.
 
 ```
 python3 -m ingestion.pipeline --offline --dry-run   # free, replays cached data
@@ -80,9 +82,9 @@ python3 -m ingestion.pipeline --since 14            # live pull, writes output
 python3 -m ingestion.pipeline --offline --force     # overwrite from cache
 ```
 
-`--offline` replays the last cached pull. It costs no YouTube quota and needs no
-YouTube key, but still calls Claude for extraction. Use it for development and
-as the demo fallback.
+`--offline` replays the last cached pull in `data/raw/`. It costs no YouTube
+quota and needs no YouTube key, but still calls Claude for extraction. With no
+cache, that source is skipped.
 
 `--force` is required to overwrite `data/out/trends.json` while it carries
 `_meta.hand_written`, which guards the hand-authored contract sample.
@@ -94,17 +96,32 @@ as the demo fallback.
    channel rather than keyword search at 100.
 2. Filter: channel country, declared language, a minimum view floor, and an
    engagement gate on Shorts.
-3. Score virality per video. The key measure is breakout ratio, a video's views
+3. Optionally read nearby Maps reviews. Playwright can open Google Maps with
+   the restaurant's city injected so "food near me" is that market, not the
+   scrape machine's IP. The same dish named at several independent restaurants
+   in 14 days is useful nearby evidence — it does not disqualify a plate from
+   another city or country.
+4. Score virality per video. The key measure is breakout ratio, a video's views
    against its own channel's median, which separates a dish going viral from a
-   large channel posting something ordinary.
-4. Cluster posts into dishes with Claude, carrying the running dish list
-   forward so surface forms of the same dish merge.
-5. Synthesize why each dish is trending, grounded only in that dish's own posts
+   large channel posting something ordinary. Maps uses restaurant count.
+5. Cluster posts into dishes with Claude. YouTube titles and Maps reviews are
+   separate passes so a nearby spike is not buried under raw view counts, and
+   a Seoul or LA breakout is not dropped for lacking a local mention.
+6. Synthesize why each dish is trending, grounded only in that dish's own posts
    and comments.
-6. Score and rank on reach, virality, velocity, volume, breadth, and recency.
+7. Score and rank on reach, virality, velocity, volume, breadth, recency, and
+   nearby review spikes as one factor among them.
 
-A run takes three to five minutes and costs roughly 70 YouTube quota units and
-$0.35 in Claude calls.
+First Maps run needs a Chromium install:
+
+```
+playwright install chromium
+```
+
+A run takes three to five minutes plus the Maps pass, and costs roughly 70
+YouTube quota units and $0.35 in Claude calls. Maps uses no API quota. If
+Playwright is missing or Google blocks the session, Maps is skipped and the
+YouTube half still writes.
 
 ### Tuning
 
@@ -162,6 +179,13 @@ the answer is the same for every restaurant, so it should run once and be read
 many times rather than being triggered per request. Read `data/out/trends.json`
 directly, or serve it from `/api/trends`.
 
+When you are signed in, Decide POSTs `/api/sync`: it writes `trends.json`
+into the global `trends` table and scores each dish against that restaurant's
+menu, inventory, and sales. Ember & Rye and Night Owl Noodles therefore see
+different pairings from the same scrape. Add `SUPABASE_SERVICE_ROLE_KEY`
+(from `supabase status`) so those writes can land — layer 3 is service-role
+only. Without it, Decide still shows the seeded opportunities.
+
 The restaurant-specific filtering belongs in Part 2, which combines
 `trends.json` with the menu, inventory, and the `constraints` from
 `budget.json`.
@@ -180,6 +204,7 @@ Settings → Environment Variables from a hosted Supabase project (not
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
 GEMINI_API_KEY
 ```
 
@@ -191,5 +216,6 @@ GEMINI_API_KEY
   still takes precedence when present.
 - Reddit is not used. Self-service API registration closed under its Responsible
   Builder Policy, and unauthenticated endpoints return 403.
-- `data/raw/` is gitignored. `data/fixtures/` and `data/out/` are committed so
-  the pipeline runs offline from a fresh clone.
+- `data/raw/` is gitignored. Kitchen CSVs under `data/fixtures/` are example
+  uploads, not scrape results. `data/out/trends.json` is written by a live
+  pipeline run, not checked in as a frozen board.

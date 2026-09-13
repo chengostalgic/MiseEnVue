@@ -453,6 +453,7 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          analysis: Json
           created_at: string
           estimated_cost: number | null
           estimated_incremental_profit: number | null
@@ -476,6 +477,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          analysis?: Json
           created_at?: string
           estimated_cost?: number | null
           estimated_incremental_profit?: number | null
@@ -508,6 +510,7 @@ export type Database = {
           menu_fit_score?: number
           menu_item_id?: string | null
           missing_ingredients?: string[]
+          analysis?: Json
           operational_fit_score?: number
           overall_score?: number
           profitability_score?: number
@@ -639,9 +642,19 @@ export type Database = {
           created_at: string
           cuisine_type: string | null
           description: string | null
+          experiment_budget: number | null
           id: string
+          max_new_ingredients: number | null
           name: string
+          neighborhood: string | null
+          never_serve: string | null
           owner_id: string
+          pride_in: string | null
+          price_band: string | null
+          primary_goal: string | null
+          profile_completed_at: string | null
+          restaurant_type: string | null
+          service_occasions: string[]
           state: string | null
           timezone: string
           updated_at: string
@@ -651,9 +664,19 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           description?: string | null
+          experiment_budget?: number | null
           id?: string
+          max_new_ingredients?: number | null
           name: string
+          neighborhood?: string | null
+          never_serve?: string | null
           owner_id: string
+          pride_in?: string | null
+          price_band?: string | null
+          primary_goal?: string | null
+          profile_completed_at?: string | null
+          restaurant_type?: string | null
+          service_occasions?: string[]
           state?: string | null
           timezone?: string
           updated_at?: string
@@ -663,9 +686,19 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           description?: string | null
+          experiment_budget?: number | null
           id?: string
+          max_new_ingredients?: number | null
           name?: string
+          neighborhood?: string | null
+          never_serve?: string | null
           owner_id?: string
+          pride_in?: string | null
+          price_band?: string | null
+          primary_goal?: string | null
+          profile_completed_at?: string | null
+          restaurant_type?: string | null
+          service_occasions?: string[]
           state?: string | null
           timezone?: string
           updated_at?: string
@@ -1007,6 +1040,7 @@ export type Database = {
         | "local_events"
         | "news"
         | "manual"
+        | "youtube"
       target_metric:
         | "revenue"
         | "orders"
@@ -1202,6 +1236,7 @@ export const Constants = {
         "local_events",
         "news",
         "manual",
+        "youtube",
       ],
       target_metric: [
         "revenue",

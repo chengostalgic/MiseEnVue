@@ -115,7 +115,7 @@ Requires Docker running.
 cd backend
 
 supabase start          # Postgres + Auth + Storage + Studio + PostgREST
-supabase db reset       # apply 0001-0008, then seed.sql
+supabase db reset       # apply 0001-0009, then seed.sql
 supabase test db        # run the pgTAP suite
 ```
 

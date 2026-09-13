@@ -1,3 +1,5 @@
+import type { ScrapedDish } from "@/lib/contractTypes";
+import { isResearchUrl } from "@/lib/discoverFeed";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 export type OpportunityStatus =
@@ -70,6 +72,10 @@ export type OpportunityCard = {
     source: string;
     display_value: string | null;
     description: string;
+    sentiment?: string | null;
+    engagement?: number | null;
+    url?: string | null;
+    image?: string | null;
   }>;
   run: OpportunityRun | null;
 };
@@ -79,6 +85,51 @@ export type RestaurantSummary = {
   name: string;
   city: string | null;
 };
+
+export const OPPORTUNITY_SELECT = `
+  id,
+  restaurant_id,
+  suggested_name,
+  status,
+  recommendation,
+  missing_ingredients,
+  trend_score,
+  local_relevance_score,
+  menu_fit_score,
+  operational_fit_score,
+  profitability_score,
+  overall_score,
+  suggested_price,
+  estimated_cost,
+  estimated_incremental_revenue,
+  estimated_incremental_profit,
+  analysis,
+  menu_items ( name, price ),
+  trends ( name, region ),
+  campaigns (
+    id,
+    name,
+    offer,
+    start_date,
+    end_date,
+    status,
+    created_at,
+    campaign_assets ( channel, variant_label, headline, body, call_to_action ),
+    experiments (
+      status,
+      experiment_results (
+        baseline_value,
+        actual_value,
+        estimated_incremental_profit,
+        roi,
+        confidence_score,
+        recommendation,
+        computed_at
+      )
+    )
+  ),
+  opportunity_evidence ( evidence_type, source, display_value, description )
+`;
 
 type OpportunityRow = {
   id: string;
@@ -245,6 +296,173 @@ export function inboxGroup(status: OpportunityStatus) {
   return "inbox";
 }
 
+export function dishKey(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+export function dedupeOpportunities(rows: OpportunityCard[]) {
+  const seen = new Set<string>();
+  const out: OpportunityCard[] = [];
+  for (const row of rows) {
+    const key = dishKey(row.dishName);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
+export function opportunityFromDish(dish: ScrapedDish, index = 0): OpportunityCard {
+  const trend = Math.max(0, Math.min(99, Number(dish.trend_score || 0)));
+  const mentions = dish.metrics?.mention_count ?? dish.evidence?.length ?? 1;
+  const local = dish.metrics?.local_mention_count
+    ? Math.min(95, 70 + dish.metrics.local_mention_count * 4)
+    : Math.max(55, Math.min(80, 60 + mentions * 3));
+  const menuFit = 62;
+  const operational = 70;
+  const profitability = 68;
+  const overall = Math.round((trend * 0.35 + local * 0.15 + menuFit * 0.2 + operational * 0.15 + profitability * 0.15) * 10) / 10;
+
+  return {
+    id: `opp-${dish.id || index + 1}`,
+    restaurantId: "res-local",
+    dishName: dish.name,
+    status: "new",
+    recommendation:
+      dish.recipe?.ingredients.length
+        ? `${dish.description || dish.why_trending?.summary || dish.name}. Recipe: ${dish.recipe.ingredients.slice(0, 6).join(", ")}.`
+        : dish.description || dish.why_trending?.summary || null,
+    missingIngredients: [],
+    menuItemName: null,
+    menuItemPrice: null,
+    trendName: dish.name,
+    trendRegion: null,
+    scorecard: {
+      trendStrength: trend,
+      localRelevance: local,
+      menuFit,
+      operationalFit: operational,
+      profitability,
+      overallScore: overall,
+    },
+    economics: {
+      suggestedPrice: null,
+      estimatedCost: null,
+      proposedContribution: null,
+      incrementalRevenue: null,
+      incrementalProfit: null,
+      marginPercent: null,
+    },
+    evidence: (dish.evidence ?? [])
+      .filter((item) => isResearchUrl(item.url))
+      .map((item) => ({
+        evidence_type: item.source === "youtube" ? "social_signal" : item.source || "social_signal",
+        source: item.source || "youtube",
+        display_value: item.engagement != null ? String(item.engagement) : item.source === "google_trends" ? "Trends" : null,
+        description: item.excerpt,
+        sentiment: item.sentiment || null,
+        engagement: item.engagement ?? null,
+        url: item.url || null,
+        image: item.image || null,
+      })),
+    run: null,
+  };
+}
+
+export function isProposedOpportunity(row: OpportunityCard) {
+  return row.id.startsWith("opp-custom-") || row.trendName === "Chef Proposal";
+}
+
+const DEMO_SLUGS = new Set([
+  "chapli-kebab-chopped-cheese",
+  "hooters-breaded-wings",
+  "gnocchi-sausage-vodka-sauce",
+  "short-rib-sandwich",
+  "scones-strawberry-jam",
+  "texas-bbq-brisket",
+  "scrapple-sandwich",
+  "italian-pastina-soup",
+  "soy-glazed-eggplant-rice-bowl",
+  "mushroom-risotto",
+  "lemon-linguine",
+  "apple-bear-claws",
+  "chiles-rellenos",
+]);
+
+export function isDemoOpportunity(row: OpportunityCard) {
+  if (isProposedOpportunity(row)) return false;
+  if (/^[a-d]0000000-0000-0000-0000-/.test(row.id)) return true;
+  const slug = row.id.replace(/^opp-/, "");
+  return DEMO_SLUGS.has(slug);
+}
+
+export function hasOpportunityResearch(row: OpportunityCard) {
+  if (isDemoOpportunity(row)) return false;
+  if (isProposedOpportunity(row)) return true;
+  if (inboxGroup(row.status) !== "inbox") return true;
+  return row.evidence.some((item) => isResearchUrl(item.url));
+}
+
+export function applySavedOpportunityState(rows: OpportunityCard[]): OpportunityCard[] {
+  if (typeof window === "undefined") return rows;
+  try {
+    const savedStatuses = JSON.parse(localStorage.getItem("miseenvue_opportunity_statuses") || "{}") as Record<
+      string,
+      OpportunityStatus
+    >;
+    const savedRuns = JSON.parse(localStorage.getItem("miseenvue_opportunity_runs") || "{}") as Record<
+      string,
+      OpportunityCard["run"]
+    >;
+    const customOpps = JSON.parse(localStorage.getItem("miseenvue_custom_opportunities") || "[]") as OpportunityCard[];
+
+    const overlay = (row: OpportunityCard): OpportunityCard => {
+      const nameKey = `name:${dishKey(row.dishName)}`;
+      return {
+        ...row,
+        status: savedStatuses[row.id] || savedStatuses[nameKey] || row.status,
+        run: savedRuns[row.id] !== undefined ? savedRuns[row.id] : savedRuns[nameKey] !== undefined ? savedRuns[nameKey] : row.run,
+      };
+    };
+
+    const merged = rows.map(overlay);
+    const ids = new Set(merged.map((row) => row.id));
+    const extras = customOpps
+      .filter((row) => !ids.has(row.id) && !merged.some((item) => dishKey(item.dishName) === dishKey(row.dishName)))
+      .filter((row) => !isDemoOpportunity(row))
+      .map(overlay);
+    return dedupeOpportunities([...extras, ...merged].filter((row) => !isDemoOpportunity(row)));
+  } catch {
+    return rows;
+  }
+}
+
+export function mergeLiveInbox(live: OpportunityCard[], remote: OpportunityCard[]) {
+  const remoteByName = new Map(remote.map((row) => [dishKey(row.dishName), row]));
+  const liveKeys = new Set(live.map((row) => dishKey(row.dishName)));
+
+  const inbox = live.map((row) => {
+    const prior = remoteByName.get(dishKey(row.dishName));
+    if (!prior) return row;
+    return {
+      ...row,
+      status: prior.status,
+      run: prior.run,
+      menuItemName: prior.menuItemName ?? row.menuItemName,
+      menuItemPrice: prior.menuItemPrice ?? row.menuItemPrice,
+      economics: prior.economics.incrementalProfit != null ? prior.economics : row.economics,
+    };
+  });
+
+  const extras = remote.filter((row) => {
+    if (isDemoOpportunity(row)) return false;
+    if (liveKeys.has(dishKey(row.dishName))) return false;
+    return isProposedOpportunity(row);
+  });
+
+  return dedupeOpportunities([...inbox, ...extras]);
+}
+
 async function fetchApiOpportunities() {
   const res = await fetch("/api/opportunities");
   if (!res.ok) return null;
@@ -252,9 +470,25 @@ async function fetchApiOpportunities() {
   if (!json.success || !Array.isArray(json.opportunities) || json.opportunities.length === 0) {
     return null;
   }
+
+  let opps = json.opportunities as OpportunityCard[];
+  if (typeof window !== "undefined") {
+    try {
+      const customOpps: OpportunityCard[] = JSON.parse(
+        localStorage.getItem("miseenvue_custom_opportunities") || "[]",
+      );
+      if (customOpps.length > 0) {
+        opps = [...customOpps, ...opps];
+      }
+      opps = applySavedOpportunityState(opps);
+    } catch (e) {
+      console.warn("Could not merge local opportunity storage:", e);
+    }
+  }
+
   return {
-    restaurant: { id: "res-local", name: "Local restaurant", city: null } satisfies RestaurantSummary,
-    opportunities: json.opportunities as OpportunityCard[],
+    restaurant: { id: "res-local", name: "MiseEnVue", city: null } satisfies RestaurantSummary,
+    opportunities: opps,
   };
 }
 
@@ -272,51 +506,7 @@ export async function fetchRestaurantOpportunities() {
 
       const { data, error } = await supabase
         .from("opportunities")
-        .select(
-          `
-          id,
-          restaurant_id,
-          suggested_name,
-          status,
-          recommendation,
-          missing_ingredients,
-          trend_score,
-          local_relevance_score,
-          menu_fit_score,
-          operational_fit_score,
-          profitability_score,
-          overall_score,
-          suggested_price,
-          estimated_cost,
-          estimated_incremental_revenue,
-          estimated_incremental_profit,
-          menu_items ( name, price ),
-          trends ( name, region ),
-          campaigns (
-            id,
-            name,
-            offer,
-            start_date,
-            end_date,
-            status,
-            created_at,
-            campaign_assets ( channel, variant_label, headline, body, call_to_action ),
-            experiments (
-              status,
-              experiment_results (
-                baseline_value,
-                actual_value,
-                estimated_incremental_profit,
-                roi,
-                confidence_score,
-                recommendation,
-                computed_at
-              )
-            )
-          ),
-          opportunity_evidence ( evidence_type, source, display_value, description )
-        `,
-        )
+        .select(OPPORTUNITY_SELECT)
         .order("overall_score", { ascending: false });
 
       if (!error && data && data.length > 0) {

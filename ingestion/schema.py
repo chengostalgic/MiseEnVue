@@ -67,6 +67,7 @@ class Post:
     views_per_day: int | None = None
     is_viral: bool = False
     trend_marker: bool = False
+    is_evergreen: bool = False
 
 
 # --------------------------------------------------------------------------
@@ -91,6 +92,9 @@ class Metrics:
     by_source: dict[str, int]
     total_engagement: int
     sentiment: dict[str, float]
+    local_mention_count: int = 0
+    local_restaurant_count: int = 0
+    creator_count: int = 0
     negative_theme: str = ""
 
 
@@ -135,6 +139,7 @@ def build_output(
     window_end: datetime,
     sources_used: list[str],
     fixture: bool = False,
+    market: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Assemble the full trends.json envelope."""
     out: dict[str, Any] = {}
@@ -154,6 +159,15 @@ def build_output(
         "end": _iso(window_end),
     }
     out["sources_used"] = sources_used
+    if market:
+        out["market"] = {
+            key: market[key]
+            for key in (
+                "city", "county", "region_name", "state", "region_code",
+                "latitude", "longitude",
+            )
+            if market.get(key) not in (None, "")
+        }
     out["dishes"] = [d.to_dict() for d in dishes]
     return out
 

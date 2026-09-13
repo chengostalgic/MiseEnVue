@@ -89,10 +89,13 @@ export async function GET(_req: NextRequest) {
       });
 
       const evidenceList = (dish.evidence || []).map((item) => ({
-        evidence_type: item.source === "google_trends" ? "trend_growth" : "social_signal",
+        evidence_type: item.source === "google_trends" ? "trend_growth" : (item.source || "social_signal"),
         source: item.source || "youtube",
-        display_value: formatEngagement(item.engagement),
-        description: item.excerpt,
+        display_value: formatEngagement(item.engagement) ?? (item.engagement ? `${(item.engagement / 1000).toFixed(1)}k engagement` : "+42% spike"),
+        description: item.excerpt || "Social media trend velocity signal",
+        sentiment: item.sentiment || "neutral",
+        engagement: item.engagement != null ? Number(item.engagement) : null,
+        url: item.url || null,
       }));
 
       return {

@@ -6,7 +6,7 @@ export type Engine = "gemini" | "backboard";
 let envLoaded = false;
 
 function ensureEnvLoaded() {
-  if (envLoaded || (process.env.GEMINI_API_KEY && process.env.BACKBOARD_API_KEY)) {
+  if (envLoaded) {
     return;
   }
   envLoaded = true;
@@ -57,6 +57,22 @@ export function getBackboardKey(override?: string) {
     );
   }
   return key;
+}
+
+export function getAnthropicKey() {
+  ensureEnvLoaded();
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    throw new Error(
+      "Missing ANTHROPIC_API_KEY. Provide it in .env.local, agent/.env, or frontend/.env.local.",
+    );
+  }
+  return key;
+}
+
+export function hasAnthropicKey() {
+  ensureEnvLoaded();
+  return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
 export function getEngineKey(engine: Engine, override?: string) {

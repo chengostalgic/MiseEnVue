@@ -51,6 +51,48 @@ def within_window(posts: list[Post], since_days: int) -> list[Post]:
     return [p for p in posts if p.created_at >= cutoff]
 
 
+def select_for_extract(posts: list[Post], cfg: dict) -> list[Post]:
+    """Cap how many posts reach the model without deleting the local tier.
+
+    National YouTube views dwarf a Maps review. A global top-N by engagement
+    would drop every county signal the moment the corpus exceeds max_posts.
+    Scope and source floors reserve slots first; leftover room is filled by
+    engagement percentile.
+    """
+    cap = cfg.get("max_posts", 300)
+    if len(posts) <= cap:
+        return posts
+
+    reserved: list[Post] = []
+    taken: set[int] = set()
+
+    source_floors = cfg.get("source_floors") or {}
+    for source, floor in source_floors.items():
+        scoped = [p for p in posts if p.source == source]
+        keep = sorted(scoped, key=lambda p: p.engagement_pct or 0, reverse=True)[: int(floor)]
+        for post in keep:
+            reserved.append(post)
+            taken.add(id(post))
+
+    scope_floors = cfg.get("scope_floors") or {}
+    for scope, floor in scope_floors.items():
+        scoped = [p for p in posts if p.scope == scope and id(p) not in taken]
+        keep = sorted(scoped, key=lambda p: p.engagement_pct or 0, reverse=True)[: int(floor)]
+        for post in keep:
+            reserved.append(post)
+            taken.add(id(post))
+
+    leftover = cap - len(reserved)
+    rest = [p for p in posts if id(p) not in taken]
+    rest = sorted(rest, key=lambda p: p.engagement_pct or 0, reverse=True)[: max(0, leftover)]
+    selected = reserved + rest
+    print(
+        f"  [extract] {len(posts)} posts -> {len(selected)} sampled "
+        f"({sum(1 for p in selected if p.scope == 'local')} local reserved)"
+    )
+    return selected
+
+
 def dedupe(posts: list[Post]) -> list[Post]:
     """Drop repeats of the same (source, id).
 
