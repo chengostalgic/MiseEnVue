@@ -69,16 +69,30 @@ export default function Home() {
     }
 
     const supabase = getSupabaseClient();
-    void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+
+    async function applySession(nextSession: Session | null) {
+      if (!nextSession) {
+        setSession(null);
+        setChecking(false);
+        return;
+      }
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setChecking(false);
+        return;
+      }
+      setSession({ ...nextSession, user: data.user });
       setChecking(false);
-    });
+    }
+
+    void supabase.auth.getSession().then(({ data }) => applySession(data.session));
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setChecking(false);
+      void applySession(nextSession);
     });
 
     return () => subscription.unsubscribe();
@@ -99,6 +113,7 @@ export default function Home() {
       return;
     }
 
+    setProfileReady(false);
     setLoadError(null);
     void loadRestaurantProfile()
       .then((row) => setProfile(row))
