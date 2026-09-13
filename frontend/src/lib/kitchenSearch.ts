@@ -75,12 +75,39 @@ export function kitchenFoodTerms(cuisine?: string | null) {
   return [...new Set(terms)].slice(0, 6);
 }
 
-export function fallbackKitchenQueries(city?: string | null, cuisine?: string | null) {
+const US_STATES: Record<string, string> = {
+  AL: "alabama", AK: "alaska", AZ: "arizona", AR: "arkansas", CA: "california",
+  CO: "colorado", CT: "connecticut", DE: "delaware", FL: "florida", GA: "georgia",
+  HI: "hawaii", ID: "idaho", IL: "illinois", IN: "indiana", IA: "iowa",
+  KS: "kansas", KY: "kentucky", LA: "louisiana", ME: "maine", MD: "maryland",
+  MA: "massachusetts", MI: "michigan", MN: "minnesota", MS: "mississippi", MO: "missouri",
+  MT: "montana", NE: "nebraska", NV: "nevada", NH: "new hampshire", NJ: "new jersey",
+  NM: "new mexico", NY: "new york", NC: "north carolina", ND: "north dakota", OH: "ohio",
+  OK: "oklahoma", OR: "oregon", PA: "pennsylvania", RI: "rhode island", SC: "south carolina",
+  SD: "south dakota", TN: "tennessee", TX: "texas", UT: "utah", VT: "vermont",
+  VA: "virginia", WA: "washington", WV: "west virginia", WI: "wisconsin", WY: "wyoming",
+  DC: "washington dc",
+};
+
+export function placeTokens(city?: string | null, state?: string | null) {
+  const tokens: string[] = [];
+  const cityName = (city || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const stateCode = (state || "").replace(/\s+/g, " ").trim().toUpperCase();
+  if (cityName) tokens.push(cityName);
+  if (stateCode) {
+    tokens.push(stateCode.toLowerCase());
+    const named = US_STATES[stateCode];
+    if (named) tokens.push(named);
+  }
+  return [...new Set(tokens.filter((token) => token.length > 1))];
+}
+
+export function fallbackKitchenQueries(city?: string | null, cuisine?: string | null, state?: string | null) {
   const terms = kitchenFoodTerms(cuisine);
-  const place = (city || "").replace(/\s+/g, " ").trim();
   const primary = terms[0] || "dinner";
-  const secondary = terms[1] || primary;
-  const queries = [`viral ${primary} recipe`, `viral ${secondary} recipe`];
-  if (place && primary) queries[1] = `${place} ${primary} recipe`;
-  return [...new Set(queries)].slice(0, 2);
+  const secondary = terms[1] && terms[1] !== primary ? terms[1] : primary;
+  const place = [city, state].map((part) => (part || "").replace(/\s+/g, " ").trim()).filter(Boolean).join(" ");
+  const national = `viral ${primary} recipe US`;
+  const local = place ? `${place} ${primary} recipe` : `most popular ${secondary} recipe US`;
+  return [...new Set([national, local])].slice(0, 2);
 }

@@ -261,19 +261,21 @@ Return STRICT JSON with no markdown fences:
 Give one dish per food video. Skip a video that is not a cookable recipe. Skip restaurant tours, openings, and reviews. Recipe fields can be short.`;
 }
 
-export function kitchenSearchPlanPrompt(input: { city?: string | null; cuisine?: string | null }) {
+export function kitchenSearchPlanPrompt(input: { city?: string | null; cuisine?: string | null; state?: string | null }) {
   const described = input.cuisine?.trim() || "food a small restaurant would cook";
-  const city = input.city?.trim();
-  return `A cook described what they make as: "${described}"${city ? ` in ${city}` : ""}.
+  const place = [input.city, input.state].filter((part) => part?.trim()).join(", ");
+  return `A cook described what they make as: "${described}"${place ? ` in ${place}` : ""}.
 That phrase may be a cuisine, a dish, a vibe, a fusion, a service style, misspellings, or a messy sentence. Do not assume it is Country + Dish. Do not invent a restaurant review.
 
-Return 2 YouTube search queries for VIRAL RECIPES — how to cook a specific plate people are making on video right now. Never search for restaurants, openings, chefs, or city guides.
+Return 2 YouTube search queries for VIRAL RECIPES a United States cook would make — how to cook a specific plate.
+Query 1: nationwide US, high views. Add US if needed. Never name another country.
+Query 2: as local as possible using ${place || "the US"} — still a recipe, not a restaurant, opening, or city dining guide.
 
 Also list 4-6 short food words we can use to recognize matching recipes.
 
 STRICT JSON, no markdown:
 {
-  "queries": ["viral ... recipe", "viral ... recipe"],
+  "queries": ["viral ... recipe US", "${place || "US"} ... recipe"],
   "foodWords": ["word", "word"]
 }`;
 }

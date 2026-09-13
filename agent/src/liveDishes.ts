@@ -137,6 +137,7 @@ export type KitchenSearchPlan = {
 export async function planKitchenSearches(input: {
   city?: string | null;
   cuisine?: string | null;
+  state?: string | null;
 }): Promise<KitchenSearchPlan> {
   try {
     const { text } = await generateLiveText(kitchenSearchPlanPrompt(input), {
@@ -146,7 +147,7 @@ export async function planKitchenSearches(input: {
     const parsed = parsePayload(text) as { queries?: unknown; foodWords?: unknown } | null;
     const queries = asStringList(parsed?.queries)
       .filter((query) => /recipe|cook|how to/i.test(query) && !/restaurant|opening|best \w+ in/i.test(query))
-      .map((query) => (/viral/i.test(query) ? query : `viral ${query}`))
+      .map((query) => (/viral|most popular|tiktok|\bUS\b/i.test(query) ? query : `viral ${query}`))
       .slice(0, 2);
     const foodWords = asStringList(parsed?.foodWords).slice(0, 8);
     if (queries.length) return { queries, foodWords };
