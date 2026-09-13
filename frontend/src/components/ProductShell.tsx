@@ -12,7 +12,8 @@ import { jobBusy, queuedKinds, resetKitchenOutputs, useGenerationJobs } from "@/
 import { hasResearchEvidence, isCachedFixtureDish } from "@/lib/discoverFeed";
 import { looksLikeRestaurantStory } from "@/lib/kitchenSearch";
 import type { RestaurantProfile } from "@/lib/restaurantProfile";
-import { ChefHat, ClipboardList, Loader2, Megaphone, Search, Sparkles, UtensilsCrossed } from "lucide-react";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { ChefHat, ClipboardList, Loader2, LogOut, Megaphone, Search, Sparkles, UtensilsCrossed } from "lucide-react";
 
 type View = "opportunities" | "pipeline" | "ideas" | "campaign" | "csv";
 
@@ -234,7 +235,18 @@ export default function ProductShell({
               );
             })}
           </nav>
-          <div />
+          {session && isSupabaseConfigured() ? (
+            <button
+              type="button"
+              onClick={() => void getSupabaseClient().auth.signOut()}
+              className="justify-self-end inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-600 hover:border-neutral-400 hover:text-neutral-950"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign out
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
       </header>
 
