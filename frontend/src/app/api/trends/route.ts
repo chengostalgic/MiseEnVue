@@ -22,8 +22,8 @@ function kitchenFromRequest(req: NextRequest) {
   return { city, cuisine, neighborhood, region: state, name };
 }
 
-function cacheKey(kitchen: { city?: string | null; cuisine?: string | null; neighborhood?: string | null }) {
-  return ["v19", kitchen.city, kitchen.cuisine, kitchen.neighborhood]
+function cacheKey(kitchen: { city?: string | null; cuisine?: string | null; neighborhood?: string | null; region?: string | null }) {
+  return ["v21", kitchen.city, kitchen.region, kitchen.cuisine, kitchen.neighborhood]
     .map((part) => (part || "").toLowerCase())
     .join("|");
 }
@@ -66,13 +66,15 @@ async function liveDishes(kitchen: ReturnType<typeof kitchenFromRequest>, fresh:
   const planned = await planKitchenSearches({
     city: kitchen.city,
     cuisine: kitchen.cuisine,
+    state: kitchen.region,
   }).catch(() => ({ queries: [] as string[], foodWords: [] as string[] }));
-  const queries = (planned.queries.length ? planned.queries : fallbackKitchenQueries(kitchen.city, kitchen.cuisine)).slice(
-    0,
-    2,
-  );
+  const queries = (
+    planned.queries.length
+      ? planned.queries
+      : fallbackKitchenQueries(kitchen.city, kitchen.cuisine, kitchen.region)
+  ).slice(0, 2);
   const [{ clips, note }, webHits, newsArticles] = await Promise.all([
-    searchYouTubeClips(queries, 8),
+    searchYouTubeClips(queries, 15, { recentOnly: false, city: kitchen.city, state: kitchen.region }),
     searchWebDishes(kitchen.city, kitchen.cuisine).catch(() => []),
     searchNewsArticles(kitchen.city, kitchen.cuisine).catch(() => []),
   ]);

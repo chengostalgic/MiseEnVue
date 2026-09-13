@@ -170,7 +170,7 @@ export function dishesFromClips(
       });
     })
     .filter((dish): dish is ScrapedDish => dish != null)
-    .sort((a, b) => b.trend_score - a.trend_score);
+    .sort((a, b) => (b.metrics?.total_engagement || 0) - (a.metrics?.total_engagement || 0));
 }
 
 export function dishesFromInterpreted(
