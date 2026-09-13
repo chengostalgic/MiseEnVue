@@ -86,6 +86,51 @@ export type RestaurantSummary = {
   city: string | null;
 };
 
+export const OPPORTUNITY_SELECT = `
+  id,
+  restaurant_id,
+  suggested_name,
+  status,
+  recommendation,
+  missing_ingredients,
+  trend_score,
+  local_relevance_score,
+  menu_fit_score,
+  operational_fit_score,
+  profitability_score,
+  overall_score,
+  suggested_price,
+  estimated_cost,
+  estimated_incremental_revenue,
+  estimated_incremental_profit,
+  analysis,
+  menu_items ( name, price ),
+  trends ( name, region ),
+  campaigns (
+    id,
+    name,
+    offer,
+    start_date,
+    end_date,
+    status,
+    created_at,
+    campaign_assets ( channel, variant_label, headline, body, call_to_action ),
+    experiments (
+      status,
+      experiment_results (
+        baseline_value,
+        actual_value,
+        estimated_incremental_profit,
+        roi,
+        confidence_score,
+        recommendation,
+        computed_at
+      )
+    )
+  ),
+  opportunity_evidence ( evidence_type, source, display_value, description )
+`;
+
 type OpportunityRow = {
   id: string;
   restaurant_id: string;
@@ -461,51 +506,7 @@ export async function fetchRestaurantOpportunities() {
 
       const { data, error } = await supabase
         .from("opportunities")
-        .select(
-          `
-          id,
-          restaurant_id,
-          suggested_name,
-          status,
-          recommendation,
-          missing_ingredients,
-          trend_score,
-          local_relevance_score,
-          menu_fit_score,
-          operational_fit_score,
-          profitability_score,
-          overall_score,
-          suggested_price,
-          estimated_cost,
-          estimated_incremental_revenue,
-          estimated_incremental_profit,
-          menu_items ( name, price ),
-          trends ( name, region ),
-          campaigns (
-            id,
-            name,
-            offer,
-            start_date,
-            end_date,
-            status,
-            created_at,
-            campaign_assets ( channel, variant_label, headline, body, call_to_action ),
-            experiments (
-              status,
-              experiment_results (
-                baseline_value,
-                actual_value,
-                estimated_incremental_profit,
-                roi,
-                confidence_score,
-                recommendation,
-                computed_at
-              )
-            )
-          ),
-          opportunity_evidence ( evidence_type, source, display_value, description )
-        `,
-        )
+        .select(OPPORTUNITY_SELECT)
         .order("overall_score", { ascending: false });
 
       if (!error && data && data.length > 0) {

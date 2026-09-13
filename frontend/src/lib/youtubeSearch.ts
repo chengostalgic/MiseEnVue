@@ -189,12 +189,13 @@ export async function searchYouTubeClips(
     const statRes = await fetch(stats);
     if (statRes.ok) {
       const body = await statRes.json();
-      const byId = new Map(
-        (body.items ?? []).map((item: {
-          id: string;
-          snippet?: { description?: string };
-          statistics?: { viewCount?: string; likeCount?: string };
-        }) => [item.id, item]),
+      type VideoStat = {
+        id: string;
+        snippet?: { description?: string };
+        statistics?: { viewCount?: string; likeCount?: string };
+      };
+      const byId = new Map<string, VideoStat>(
+        (body.items ?? []).map((item: VideoStat) => [item.id, item]),
       );
       for (const clip of clips) {
         const item = byId.get(clip.id);

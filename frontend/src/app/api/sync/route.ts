@@ -337,17 +337,19 @@ async function loadPairedOpportunities(client: ServerClient, restaurantId: strin
       .eq("scoring_version", SCRAPE_SCORING_VERSION)
       .order("overall_score", { ascending: false });
 
-  let result = await query();
+  const result = await query();
   if (result.error?.message?.includes("analysis")) {
-    result = await client
+    const retry = await client
       .from("opportunities")
       .select(OPPORTUNITY_SELECT.replace(",\n  analysis", ""))
       .eq("restaurant_id", restaurantId)
       .eq("scoring_version", SCRAPE_SCORING_VERSION)
       .order("overall_score", { ascending: false });
+    if (retry.error) throw retry.error;
+    return (retry.data ?? []).map((row) => mapOpportunity(row as unknown as Parameters<typeof mapOpportunity>[0]));
   }
   if (result.error) throw result.error;
-  return (result.data ?? []).map((row) => mapOpportunity(row));
+  return (result.data ?? []).map((row) => mapOpportunity(row as unknown as Parameters<typeof mapOpportunity>[0]));
 }
 
 export async function POST(req: NextRequest) {
@@ -360,7 +362,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, persisted: false, error: "Missing Authorization header." }, { status: 401 });
   }
 
-  const cityHint = req.nextUrl?.searchParams.get("city");
+  const cityHint = req.nextUrl?.searchParams.get("city") ?? undefined;
   let scrape = loadScrapeDishes(cityHint);
   if (!scrape.dishes.length) {
     return NextResponse.json({
@@ -399,7 +401,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, persisted: false, error: "Could not load restaurant state." }, { status: 404 });
     }
 
-    scrape = loadScrapeDishes(kitchen.restaurant.city || restaurant.city || cityHint);
+    scrape = loadScrapeDishes(kitchen.restaurant.city || restaurant.city || cityHint || undefined);
     const pairings = pairScrapeToKitchen(scrape.dishes, kitchen).slice(0, 8);
     const runId = await insertIngestRun(service, pairings.length);
 

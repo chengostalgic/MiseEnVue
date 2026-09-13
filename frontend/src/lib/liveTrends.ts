@@ -54,26 +54,25 @@ export function dishesFromIdeas(
     evidence?: ScrapedDish["evidence"];
   }>,
 ): ScrapedDish[] {
-  return ideas
-    .map((idea, index) => {
-      const name = (idea.name || "").trim();
-      if (!name) return null;
-      const why = (idea.why || "Live find from a market search.").trim();
-      const drivers = [idea.spin, idea.marketingMove].filter(Boolean) as string[];
-      return {
-        id: `live-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}-${index}`,
-        name,
-        lane: "national" as const,
-        whyHere: idea.spin || why,
-        kitchenFit: idea.marketingMove || "Live find — not paired to the menu yet",
-        kitchenScore: 44,
-        trend_score: 55,
-        momentum: idea.momentum || "rising",
-        why_trending: { summary: why, drivers },
-        metrics: { mention_count: Math.max(1, idea.evidence?.length ?? 1), window_days: 21 },
-        evidence: idea.evidence ?? [],
-        cuisine_tags: ["live"],
-      } satisfies ScrapedDish;
-    })
-    .filter((dish): dish is ScrapedDish => dish != null);
+  return ideas.flatMap((idea, index) => {
+    const name = (idea.name || "").trim();
+    if (!name) return [];
+    const why = (idea.why || "Live find from a market search.").trim();
+    const drivers = [idea.spin, idea.marketingMove].filter(Boolean) as string[];
+    const dish: ScrapedDish = {
+      id: `live-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}-${index}`,
+      name,
+      lane: "national",
+      whyHere: idea.spin || why,
+      kitchenFit: idea.marketingMove || "Live find — not paired to the menu yet",
+      kitchenScore: 44,
+      trend_score: 55,
+      momentum: idea.momentum || "rising",
+      why_trending: { summary: why, drivers },
+      metrics: { mention_count: Math.max(1, idea.evidence?.length ?? 1), window_days: 21 },
+      evidence: idea.evidence ?? [],
+      cuisine_tags: ["live"],
+    };
+    return [dish];
+  });
 }

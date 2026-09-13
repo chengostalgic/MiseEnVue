@@ -40,14 +40,13 @@ export async function updateOpportunityStatus(
   }
 
   if (isSupabaseConfigured() && !opportunityId.startsWith("opp-")) {
-    void getSupabaseClient()
-      .from("opportunities")
-      .update({ status })
-      .eq("id", opportunityId)
+    void Promise.resolve(
+      getSupabaseClient().from("opportunities").update({ status }).eq("id", opportunityId),
+    )
       .then(({ error }) => {
         if (error) console.warn("Supabase update error:", error);
       })
-      .catch((err) => console.warn("Supabase update error:", err));
+      .catch((err: unknown) => console.warn("Supabase update error:", err));
   }
 }
 

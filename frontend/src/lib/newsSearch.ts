@@ -137,38 +137,37 @@ export function dishesFromNewsRecipes(
 ): ScrapedDish[] {
   const byUrl = new Map(articles.map((article) => [article.url, article]));
   const seen = new Set<string>();
-  return recipes
-    .map((recipe) => {
-      if (!recipe.name || !recipe.url || seen.has(recipe.url)) return null;
-      if (looksLikeRestaurantStory(recipe.name)) return null;
-      seen.add(recipe.url);
-      const article = byUrl.get(recipe.url);
-      const what = recipe.description || `${recipe.name} from a viral recipe write-up.`;
-      return {
-        id: slugId(recipe.url),
-        name: recipe.name,
-        description: what,
-        recipe:
-          recipe.ingredients.length || recipe.method.length
-            ? { ingredients: recipe.ingredients, method: recipe.method }
-            : undefined,
-        trend_score: 68,
-        momentum: "rising" as const,
-        whyHere: what,
-        why_trending: { summary: what },
-        metrics: { mention_count: 1, by_source: { news: 1 } },
-        evidence: [
-          {
-            source: "news",
-            url: recipe.url,
-            excerpt: article?.source || "News recipe",
-            engagement: null,
-            image: article?.image || null,
-          },
-        ],
-      } satisfies ScrapedDish;
-    })
-    .filter((dish): dish is ScrapedDish => dish != null);
+  return recipes.flatMap((recipe) => {
+    if (!recipe.name || !recipe.url || seen.has(recipe.url)) return [];
+    if (looksLikeRestaurantStory(recipe.name)) return [];
+    seen.add(recipe.url);
+    const article = byUrl.get(recipe.url);
+    const what = recipe.description || `${recipe.name} from a viral recipe write-up.`;
+    const dish: ScrapedDish = {
+      id: slugId(recipe.url),
+      name: recipe.name,
+      description: what,
+      recipe:
+        recipe.ingredients.length || recipe.method.length
+          ? { ingredients: recipe.ingredients, method: recipe.method }
+          : undefined,
+      trend_score: 68,
+      momentum: "rising",
+      whyHere: what,
+      why_trending: { summary: what },
+      metrics: { mention_count: 1, by_source: { news: 1 } },
+      evidence: [
+        {
+          source: "news",
+          url: recipe.url,
+          excerpt: article?.source || "News recipe",
+          engagement: null,
+          image: article?.image || null,
+        },
+      ],
+    };
+    return [dish];
+  });
 }
 
 export function dishesFromNewsArticles(
@@ -176,79 +175,77 @@ export function dishesFromNewsArticles(
   extra?: { cuisine?: string | null },
 ): ScrapedDish[] {
   const seen = new Set<string>();
-  return articles
-    .map((article) => {
-      const url = article.url;
-      if (!url || seen.has(url)) return null;
-      seen.add(url);
-      const name = cleanNewsTitle(article.title);
-      if (!name) return null;
-      const where = article.source ? `${article.source}` : "Google News";
-      const what = `${name}. ${where}.`;
-      return {
-        id: slugId(url),
-        name,
-        description: what,
-        cuisine_tags: extra?.cuisine ? extra.cuisine.split(/[^a-z0-9]+/i).filter((word) => word.length > 3) : undefined,
-        trend_score: 70,
-        momentum: "rising" as const,
-        whyHere: what,
-        why_trending: { summary: what, drivers: [where] },
-        metrics: { mention_count: 1, by_source: { news: 1 } },
-        evidence: [
-          {
-            source: "news",
-            url,
-            excerpt: where,
-            engagement: null,
-            image: article.image || null,
-          },
-        ],
-      } satisfies ScrapedDish;
-    })
-    .filter((dish): dish is ScrapedDish => dish != null);
+  return articles.flatMap((article) => {
+    const url = article.url;
+    if (!url || seen.has(url)) return [];
+    seen.add(url);
+    const name = cleanNewsTitle(article.title);
+    if (!name) return [];
+    const where = article.source ? `${article.source}` : "Google News";
+    const what = `${name}. ${where}.`;
+    const dish: ScrapedDish = {
+      id: slugId(url),
+      name,
+      description: what,
+      cuisine_tags: extra?.cuisine ? extra.cuisine.split(/[^a-z0-9]+/i).filter((word) => word.length > 3) : undefined,
+      trend_score: 70,
+      momentum: "rising",
+      whyHere: what,
+      why_trending: { summary: what, drivers: [where] },
+      metrics: { mention_count: 1, by_source: { news: 1 } },
+      evidence: [
+        {
+          source: "news",
+          url,
+          excerpt: where,
+          engagement: null,
+          image: article.image || null,
+        },
+      ],
+    };
+    return [dish];
+  });
 }
 
 export function dishesFromSourceHits(
   hits: Array<{ name: string; description?: string; sources: Array<{ title: string; url: string; note?: string; image?: string | null }> }>,
 ): ScrapedDish[] {
   const seen = new Set<string>();
-  return hits
-    .flatMap((hit) =>
-      (hit.sources ?? []).map((source) => {
-        if (!/^https?:\/\//i.test(source.url)) return null;
-        if (/youtube\.com\/results|google\.com\/search/i.test(source.url)) return null;
-        if (/youtube\.com\/watch|youtu\.be\//i.test(source.url)) return null;
-        if (seen.has(source.url)) return null;
-        seen.add(source.url);
-        const name = cleanNewsTitle(hit.name || source.title);
-        if (OFF_TOPIC_NEWS.test(name) || looksLikeRestaurantStory(name) || looksLikeRestaurantStory(source.title || "")) {
-          return null;
-        }
-        const isNews = !/trends\.google/i.test(source.url);
-        if (!name) return null;
-        const excerpt = source.note ? `${source.title} — ${source.note}` : source.title || name;
-        return {
-          id: slugId(source.url),
-          name,
-          description: hit.description || excerpt,
-          trend_score: 71,
-          momentum: "rising" as const,
-          why_trending: { summary: hit.description || excerpt },
-          metrics: { mention_count: 1, by_source: { [isNews ? "news" : "web"]: 1 } },
-          evidence: [
-            {
-              source: /trends/i.test(source.url) ? "google_trends" : "news",
-              url: source.url,
-              excerpt,
-              engagement: null,
-              image: source.image || null,
-            },
-          ],
-        } satisfies ScrapedDish;
-      }),
-    )
-    .filter((dish): dish is ScrapedDish => dish != null);
+  return hits.flatMap((hit) =>
+    (hit.sources ?? []).flatMap((source) => {
+      if (!/^https?:\/\//i.test(source.url)) return [];
+      if (/youtube\.com\/results|google\.com\/search/i.test(source.url)) return [];
+      if (/youtube\.com\/watch|youtu\.be\//i.test(source.url)) return [];
+      if (seen.has(source.url)) return [];
+      seen.add(source.url);
+      const name = cleanNewsTitle(hit.name || source.title);
+      if (OFF_TOPIC_NEWS.test(name) || looksLikeRestaurantStory(name) || looksLikeRestaurantStory(source.title || "")) {
+        return [];
+      }
+      const isNews = !/trends\.google/i.test(source.url);
+      if (!name) return [];
+      const excerpt = source.note ? `${source.title} — ${source.note}` : source.title || name;
+      const dish: ScrapedDish = {
+        id: slugId(source.url),
+        name,
+        description: hit.description || excerpt,
+        trend_score: 71,
+        momentum: "rising",
+        why_trending: { summary: hit.description || excerpt },
+        metrics: { mention_count: 1, by_source: { [isNews ? "news" : "web"]: 1 } },
+        evidence: [
+          {
+            source: /trends/i.test(source.url) ? "google_trends" : "news",
+            url: source.url,
+            excerpt,
+            engagement: null,
+            image: source.image || null,
+          },
+        ],
+      };
+      return [dish];
+    }),
+  );
 }
 
 const OFF_TOPIC_NEWS =

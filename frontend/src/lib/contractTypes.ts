@@ -64,7 +64,14 @@ export type TrendsContract = {
 
 export type BudgetContract = {
   health?: { band?: string };
-  ratios?: { food_cost_pct?: number };
+  ratios?: {
+    food_cost_pct?: number;
+    labor_cost_pct?: number;
+    prime_cost_pct?: number;
+    occupancy_pct?: number;
+    marketing_pct?: number;
+    net_margin_pct?: number;
+  };
   allocation?: {
     monthly_revenue?: number;
     total_budget?: {
@@ -91,7 +98,6 @@ export type BudgetContract = {
       avg_check?: number;
     };
     split?: Record<string, number>;
-    breakeven?: { avg_check?: number };
   };
   constraints?: {
     max_trial_ingredient_spend?: number;
@@ -105,14 +111,6 @@ export type BudgetContract = {
     total_expenses?: number;
     net_profit?: number;
     by_category?: Record<string, number>;
-  };
-  ratios?: {
-    food_cost_pct?: number;
-    labor_cost_pct?: number;
-    prime_cost_pct?: number;
-    occupancy_pct?: number;
-    marketing_pct?: number;
-    net_margin_pct?: number;
   };
   benchmarks?: Array<{
     metric: string;
