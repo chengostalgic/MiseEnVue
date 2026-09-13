@@ -101,7 +101,7 @@ export default function AuthPanel({
                 {mode === "sign-in" ? "Sign in to your kitchen" : "Create your kitchen"}
               </h1>
               <p className="text-sm text-neutral-500">
-                Use the account for this restaurant. After you sign in, we load your kitchen — not a demo list.
+                Sign in with the same email you used before. We open that kitchen’s board — setup is only for a new account.
               </p>
             </div>
 

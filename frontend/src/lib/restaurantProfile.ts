@@ -92,12 +92,18 @@ export function isProfileComplete(row: RestaurantProfile | null | undefined): ro
   return Boolean(row.id || row.name?.trim());
 }
 
-function cacheLocalProfile(row: RestaurantProfile) {
+function profileStorageKeys(userId?: string | null) {
+  return userId ? [`${LOCAL_PROFILE_KEY}.${userId}`, LOCAL_PROFILE_KEY] : [LOCAL_PROFILE_KEY];
+}
+
+function cacheLocalProfile(row: RestaurantProfile, userId?: string | null) {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(row));
-  } catch {
-    // ignore quota / private mode
+  for (const key of profileStorageKeys(userId)) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(row));
+    } catch {
+      // ignore quota / private mode
+    }
   }
 }
 
@@ -143,28 +149,45 @@ function profileFromInput(input: KitchenInput, id: string): RestaurantProfile {
   };
 }
 
-export function loadLocalProfile(): RestaurantProfile | null {
+export function loadLocalProfile(userId?: string | null): RestaurantProfile | null {
   if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(LOCAL_PROFILE_KEY);
-    return raw ? (JSON.parse(raw) as RestaurantProfile) : null;
-  } catch {
-    return null;
+  for (const key of profileStorageKeys(userId)) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const row = JSON.parse(raw) as RestaurantProfile;
+      if (row?.id || row?.name?.trim()) return row;
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 export function saveLocalProfile(input: KitchenInput): RestaurantProfile {
   const row = profileFromInput(input, loadLocalProfile()?.id ?? "res-local");
-  window.localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(row));
+  cacheLocalProfile(row);
   return row;
+}
+
+function firstKitchen(data: unknown): RestaurantProfile | null {
+  const row = (Array.isArray(data) ? data[0] : data) as RestaurantProfile | null;
+  return row && (row.id || row.name?.trim()) ? row : null;
+}
+
+function isMissingColumn(message: string | undefined) {
+  return /PGRST204|schema cache|column|does not exist/i.test(message || "");
 }
 
 export async function loadRestaurantProfile() {
   if (!isSupabaseConfigured()) return loadLocalProfile();
 
   const supabase = getSupabaseClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const ownerId = auth.user?.id ?? null;
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth.user) {
+    throw new Error("Please sign in again.");
+  }
+
   const selects = [
     PROFILE_SELECT,
     "id, name, city, state, neighborhood, cuisine_type, pride_in, price_band, service_occasions, never_serve, profile_completed_at",
@@ -174,32 +197,53 @@ export async function loadRestaurantProfile() {
     "id, name",
   ];
 
-  let lastError: { message?: string } | null = null;
   for (const columns of selects) {
-    let query = supabase.from("restaurants").select(columns).limit(1);
-    if (ownerId) query = query.eq("owner_id", ownerId);
-    const result = await query.maybeSingle();
-    if (!result.error) {
-      const row = (result.data as RestaurantProfile | null) ?? null;
-      if (row && (row.id || row.name)) {
-        cacheLocalProfile(row);
-        return row;
+    const visible = await supabase.from("restaurants").select(columns).limit(1);
+    if (visible.error) {
+      if (isMissingColumn(visible.error.message)) continue;
+      if (/JWT|expired|not authenticated|Auth session/i.test(visible.error.message || "")) {
+        throw new Error("Please sign in again.");
       }
-      return null;
-    }
-    lastError = result.error;
-    if (!/PGRST204|schema cache|column|does not exist/i.test(result.error.message || "")) {
       break;
     }
+    const row = firstKitchen(visible.data);
+    if (row) {
+      cacheLocalProfile(row, auth.user.id);
+      return row;
+    }
+
+    const owned = await supabase.from("restaurants").select(columns).eq("owner_id", auth.user.id).limit(1);
+    if (!owned.error) {
+      const ownedRow = firstKitchen(owned.data);
+      if (ownedRow) {
+        cacheLocalProfile(ownedRow, auth.user.id);
+        return ownedRow;
+      }
+    }
+    break;
   }
 
-  const cached = loadLocalProfile();
-  if (cached && isProfileComplete(cached)) return cached;
-
-  if (lastError && /JWT|expired|not authenticated|Auth session/i.test(lastError.message || "")) {
-    throw new Error("Please sign in again.");
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (token) {
+    try {
+      const response = await fetch("/api/kitchen", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) throw new Error("Please sign in again.");
+      if (response.ok) {
+        const payload = (await response.json()) as { kitchen?: RestaurantProfile | null };
+        if (payload.kitchen && (payload.kitchen.id || payload.kitchen.name)) {
+          cacheLocalProfile(payload.kitchen, auth.user.id);
+          return payload.kitchen;
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && /sign in again/i.test(error.message)) throw error;
+    }
   }
-  return null;
+
+  return loadLocalProfile(auth.user.id);
 }
 
 export async function saveRestaurantProfile(input: KitchenInput) {
@@ -282,6 +326,6 @@ export async function saveRestaurantProfile(input: KitchenInput) {
   if (result.error) throw new Error(explainKitchenError(result.error));
 
   const saved = (result.data as RestaurantProfile | null) ?? profileFromInput(input, kitchenId ?? "res-local");
-  cacheLocalProfile(saved);
+  cacheLocalProfile(saved, auth.user.id);
   return saved;
 }

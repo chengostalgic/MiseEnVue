@@ -9,7 +9,8 @@ import {
   saveRestaurantProfile,
   type RestaurantProfile,
 } from "@/lib/restaurantProfile";
-import { ArrowLeft, ChefHat } from "lucide-react";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { ArrowLeft, ChefHat, LogOut } from "lucide-react";
 
 export default function KitchenIntake({
   existing,
@@ -88,7 +89,19 @@ export default function KitchenIntake({
             <ChefHat className="w-3.5 h-3.5" />
             {existing?.id ? "Edit kitchen" : "Set up kitchen"}
           </div>
-          <p className="justify-self-end text-xs text-neutral-400 truncate">{email || existing?.name || ""}</p>
+          <div className="justify-self-end flex items-center gap-2 min-w-0">
+            <p className="text-xs text-neutral-400 truncate">{email || existing?.name || ""}</p>
+            {isSupabaseConfigured() && !onCancel ? (
+              <button
+                type="button"
+                onClick={() => void getSupabaseClient().auth.signOut()}
+                className="shrink-0 inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-600 hover:border-neutral-400 hover:text-neutral-950"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign out
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 
