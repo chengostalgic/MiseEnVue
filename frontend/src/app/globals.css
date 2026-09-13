@@ -43,8 +43,16 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
+}
+
+input,
+textarea,
+select {
+  background-color: #ffffff;
+  color: var(--foreground);
 }
 
 .idea-slider {
@@ -93,13 +101,12 @@ button:disabled {
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
 .animate-butter-section {
-  animation: butterSectionIn 950ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform;
+  animation: butterSectionIn 950ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 
@@ -201,12 +208,12 @@ button:disabled {
   background: #27272a;
 }
 
-form {
+.auth-card form {
   display: grid;
   gap: 17px;
 }
 
-label {
+.auth-card label {
   display: grid;
   gap: 7px;
   font-size: 0.88rem;

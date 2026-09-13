@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowRight,
   Check,
@@ -193,6 +194,11 @@ export default function TrendPipeline({
   const [engine, setEngine] = useState<Engine>("gemini");
   const [customKey, setCustomKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [isEnriching, setIsEnriching] = useState(false);
   const isAnalyzing = jobBusy("analyze", generation);
   const isGenerating = jobBusy("campaign", generation);
@@ -1316,11 +1322,16 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
       )}
 
       {/* ENGINE SETTINGS MODAL */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-5 sm:p-6 space-y-4 shadow-2xl font-sans">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <h3 className="text-base font-medium text-neutral-950">AI Inference Engine</h3>
+      {showSettings && mounted && createPortal(
+        <div
+          className="fixed inset-0 z-[999] bg-neutral-950/40 backdrop-blur-md flex items-center justify-center p-4 transition-all"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSettings(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 sm:p-6 space-y-4 shadow-2xl font-sans border-0">
+            <div className="flex items-center justify-between pb-1">
+              <h3 className="text-base font-semibold text-neutral-950">AI Inference Engine</h3>
               <button
                 type="button"
                 onClick={() => setShowSettings(false)}
@@ -1357,12 +1368,13 @@ ${parsedPlaybook.tiktok.map((c) => `  - ${c.time}: ${c.action}`).join("\n")}
             <button
               type="button"
               onClick={() => setShowSettings(false)}
-              className="w-full rounded-[4px] bg-neutral-950 py-2 text-xs font-medium text-white hover:bg-neutral-800 transition"
+              className="w-full rounded-[4px] bg-[#0047FF] hover:bg-[#0038df] py-2 text-xs font-medium text-white transition shadow-xs"
             >
               Save &amp; Close
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
