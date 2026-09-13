@@ -2,8 +2,6 @@
 
 MiseEnVue connects culinary trend intelligence with restaurant financial constraints. It derives strict operational spending envelopes directly from restaurant P&L statements and pairs them with viral food trends to propose feasible, high-margin menu specials.
 
-![MiseEnVue Autonomous Decision Card](docs/images/decision_card.png)
-
 ---
 
 ## System Architecture
@@ -20,46 +18,66 @@ Neither backend pipeline runs within HTTP request cycles. The web interface dire
 
 ---
 
-## 1. Financial Baseline Calibration
+## Core Cockpit Modules & Widgets
 
-Derives unit economics from monthly profit-and-loss statements to establish the maximum capital a restaurant can allocate toward testing new menu concepts without threatening operating margins.
+### 1. Financial Spending Envelope
 
-![Financial Envelope Calibration](docs/images/financial_envelope.png)
+Calibrates safe capital boundaries directly from restaurant profit-and-loss statements to prevent overspending on unproven menu experiments.
 
-### Operational Constraints Enforced
+![Financial Spending Envelope](docs/images/financial_envelope.png)
 
-The financial envelope enforces hard limits across five dimensions:
-
-- **Capex Available**: Strict 0 baseline prevents recommending items that require new cooking equipment.
-- **Minimum Contribution Margin**: Filters out recipes falling below target margin thresholds (e.g., ≥ 68%).
-- **Trial Ingredient Budget**: Hard spending cap for initial test batches (e.g., $2,016).
-- **Creator Tasting Budget**: Bounds influencer tasting honorariums (e.g., $1,440).
-- **Paid Media Allocation**: Sizes social advertising budgets strictly from available profit margins (e.g., $3,024).
+- **P&L Health Tracking**: Automatically categorizes operational stability based on prime cost benchmarks (target: 60-65%).
+- **Hard Capital Caps**: Enforces non-negotiable boundaries for menu ingredient trials ($2,016), creator tasting honorariums ($1,440), and paid media ($3,024).
+- **Zero Capex Guarantee**: Eliminates recommendations requiring new cooking equipment, restricting innovation to existing line stations.
 
 ---
 
-## 2. Viral Trend Ingestion Pipeline
+### 2. Autonomous Decision Card & 5-Factor Scorecard
 
-Monitors creator upload velocity across 30+ curated food media channels, clusters scattered video mentions into canonical dishes, and synthesizes verifiable evidence packages.
+Synthesizes viral candidates with kitchen capacity to generate executive go/no-go recommendations and two-week incremental profit projections.
 
-### Pipeline Workflow
+![Autonomous Decision Card](docs/images/decision_card.png)
 
-1. **Upload Extraction**: Scrapes uploads from channels defined in `ingestion/config.yaml` using channel upload playlists (1 quota unit per channel vs. 100 for search queries).
-2. **Breakout Scoring**: Compares video view velocity against channel median views to calculate breakout ratio, isolating viral culinary innovations from baseline creator reach.
-3. **Local Maps Signals**: Injects restaurant market coordinates to capture localized Google Maps dining reviews and neighborhood demand spikes.
-4. **LLM Clustering**: Aggregates disparate video mentions, creator variations, and comment threads into unified dish concepts.
-5. **Evidence Provenance**: Links every trend candidate to verifiable video URLs, engagement metrics, and sentiment distribution for operator review.
+- **5-Factor Scorecard Engine**: Evaluates every opportunity across Trend Strength, Local Relevance, Menu Fit, Operational Compatibility, and Contribution Margin.
+- **Unit Economics**: Calculates per-plate food cost ($12.70), suggested menu price ($16.50), and net margin lift (+$8,005 over two weeks).
+- **Observed Signals Slider**: Allows operators to scrub through authentic social evidence, review volume, and guest sentiment quotes.
 
 ---
 
-## 3. Web Application & Decision Studio
+### 3. Demand Radar & Trend Discovery
 
-The Next.js frontend synthesizes the financial constraints and viral trends into an operator cockpit:
+Scans creator velocity across food media channels to detect breakout culinary concepts before they reach saturation.
 
-- **Decide (Matrix)**: Evaluates opportunity candidates using a 5-factor scorecard (Trend Strength, Local Relevance, Menu Fit, Operational Compatibility, and Profitability).
-- **Discover (Pipeline)**: Explores real-time creator velocity and breakout metrics.
-- **Inventory & Menu Studio**: Parses client-side CSV files (`inventory.csv`, `menu.csv`, `sales_30d.csv`) to compute recipe coverage and inventory availability on demand.
-- **Campaign Studio**: Generates tailored 4-channel promotion plans (Instagram Reels ASMR scripts, TikTok pacing guides, Facebook local ads, and VIP creator pitches).
+![Demand Radar and Trend Discovery](docs/images/trend_radar.png)
+
+- **Breakout Multiplier**: Measures upload view velocity against creator median views to separate genuine virality from baseline audience reach.
+- **Momentum Filtering**: Categorizes trends by trajectory (Rising, Stable, Explosive) to help operators time menu launches.
+- **Verifiable Provenance**: Every dish card links to timestamped video clips, engagement metrics, and regional dining commentary.
+
+---
+
+### 4. Walk-In Inventory & Recipe Feasibility Diagnosis
+
+Audits existing restaurant inventory against trending recipes using client-side CSV parsing.
+
+![Walk-In Inventory Feasibility Diagnosis](docs/images/kitchen_feasibility.png)
+
+- **Pantry Coverage Scoring**: Computes the percentage of required recipe ingredients already present in the walk-in cooler (e.g., 80% in-stock).
+- **Missing SKU Detection**: Identifies unstocked specialty ingredients and calculates incremental cost to test.
+- **One-Click Procurement**: Adds missing ingredients into walk-in tracking while verifying total expense remains within the $2,016 menu trials envelope.
+
+---
+
+### 5. 4-Channel Launch Playbook Studio
+
+Translates approved menu experiments into coordinated promotional creative across four distinct acquisition channels.
+
+![4-Channel Launch Playbook](docs/images/campaign_playbook.png)
+
+- **Channel 01 · Instagram Reels**: Generates visual ASMR hooks (0-2s), lo-fi culinary audio recommendations, and caption copy with targeted hashtags.
+- **Channel 02 · TikTok Algorithm**: Provides a second-by-second fast-cut sequence engineered for >74% loop completion rates.
+- **Channel 03 · Facebook Local**: Structures geo-targeted community feed ads within a 5-mile dining radius, bounded by the paid social cap ($3,024).
+- **Channel 04 · Creator Outreach**: Generates personalized VIP tasting invitation briefs for local food influencers within the allocated tasting budget ($1,440).
 
 ---
 
@@ -67,7 +85,7 @@ The Next.js frontend synthesizes the financial constraints and viral trends into
 
 The application is configured for deployment on Vercel:
 
-- **Root Directory**: Leave empty (repository root). The root `package.json` instructs Vercel to build the Next.js frontend.
-- **Build Command**: `npm run build`
+- **Root Directory**: Leave empty (repository root). The root configuration instructs Vercel to build the Next.js frontend.
+- **Build Output**: Static HTML and optimized Next.js server routes.
 - **Environment Variables**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`.
-- **Standalone Mode**: Without hosted Supabase or Gemini API keys, the application automatically runs in standalone demo mode backed by committed contracts in `data/out/`.
+- **Standalone Mode**: Without hosted Supabase or Gemini API keys, the application automatically runs in standalone mode backed by committed contracts in `data/out/`.

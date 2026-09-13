@@ -142,6 +142,30 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const fallback = loadScrapeDishes(kitchen);
+  if (fallback.dishes.length) {
+    return NextResponse.json({
+      success: true,
+      source: "contract",
+      cached: false,
+      queries: live.queries,
+      generatedAt: new Date().toISOString(),
+      window: { days: 45 },
+      sourcesUsed: fallback.sourcesUsed.length ? fallback.sourcesUsed : ["youtube", "google_news", "web"],
+      market: fallback.market || (kitchen.city ? { city: kitchen.city, state: kitchen.region } : undefined),
+      kitchen: {
+        name: kitchen.name,
+        city: kitchen.city,
+        cuisine: kitchen.cuisine,
+      },
+      counts: {
+        total: fallback.dishes.length,
+        nearby: fallback.localCount,
+      },
+      dishes: fallback.dishes,
+    });
+  }
+
   return NextResponse.json({
     success: true,
     source: "live",

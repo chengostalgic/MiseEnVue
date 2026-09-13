@@ -97,7 +97,6 @@ export default function ProductShell({
     setDishes(
       (data.dishes as ScrapedDish[]).filter(
         (dish) =>
-          !isCachedFixtureDish(dish) &&
           hasResearchEvidence(dish) &&
           !looksLikeRestaurantStory(dish.name),
       ),
@@ -169,7 +168,6 @@ export default function ProductShell({
         ? []
         : dishes.filter(
             (dish) =>
-              !isCachedFixtureDish(dish) &&
               hasResearchEvidence(dish) &&
               !looksLikeRestaurantStory(dish.name),
           ),
