@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MiseEnVue",
-  description: "Opportunity scoring, kitchen data, and campaign research for one restaurant.",
+  title: "Mise-en-vue — Your next best dish",
+  description: "Turn what everyone’s craving into what your kitchen does next. Discover food trends, check kitchen feasibility, and plan your next campaign with Mise-en-vue.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
